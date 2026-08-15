@@ -11,7 +11,7 @@ _G["BINDING_NAME_CLICK ExplorationActionButton:LeftButton"] = "Action Button"
 Exploration = Exploration or {}
 local addon = Exploration
 
-addon.VERSION = "2.0.0"
+addon.VERSION = "2.0.1"
 addon.ICON = "Interface\\AddOns\\Exploration\\Textures\\compass.tga"
 addon.active = nil
 addon.segment = { route = {} }

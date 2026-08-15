@@ -3,7 +3,7 @@
 ## Notes: Outdoor zone exploration guide by Blind Mice Gaming.
 ## Author: Blind Mice Gaming
 ## Category-enUS: Blind Mice Gaming
-## Version: 2.0.0
+## Version: 2.0.1
 ## IconTexture: Interface\AddOns\Exploration\Textures\compass.tga
 ## SavedVariables: ExplorationDB
 ## OptionalDeps: TomTom

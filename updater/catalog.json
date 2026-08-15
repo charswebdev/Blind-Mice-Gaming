@@ -46,7 +46,7 @@
       "id": "Exploration",
       "name": "Exploration",
       "folders": ["Exploration"],
-      "version": "2.0.0",
+      "version": "2.0.1",
       "interfaces": [120100],
       "saved": ["ExplorationDB"]
     },
