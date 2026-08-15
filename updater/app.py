@@ -22,7 +22,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 APP_NAME = "Blind Mice Gaming Updater"
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.1.1"
 BG = "#000000"
 FG = "#FFFFFF"
 YELLOW = "#FFE600"
@@ -52,8 +52,11 @@ COPY_IGNORE = shutil.ignore_patterns(
     ".git",
     ".cursor",
     ".github",
+    "*.py",
     "*.pyc",
     "*.pyo",
+    "tools",
+    "REGRESSION.md",
     "Thumbs.db",
     ".DS_Store",
 )
