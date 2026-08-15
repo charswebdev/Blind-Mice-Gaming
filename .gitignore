@@ -3,3 +3,8 @@ Thumbs.db
 *.log
 *.bak
 .cursor/
+__pycache__/
+*.pyc
+updater/build/
+updater/dist/
+updater/launch-error.txt

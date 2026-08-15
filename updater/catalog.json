@@ -1,0 +1,55 @@
+{
+  "repo": "charswebdev/Blind-Mice-Gaming",
+  "branch": "main",
+  "addons": [
+    {
+      "id": "AccessibilityHelper",
+      "name": "Accessibility Helper",
+      "folders": ["AccessibilityHelper"]
+    },
+    {
+      "id": "AllQuest",
+      "name": "AllQuest",
+      "folders": [
+        "AllQuest",
+        "AllQuest_Data_BFA",
+        "AllQuest_Data_Cata",
+        "AllQuest_Data_Classic",
+        "AllQuest_Data_Dragonflight",
+        "AllQuest_Data_Legion",
+        "AllQuest_Data_Midnight",
+        "AllQuest_Data_MoP",
+        "AllQuest_Data_Shadowlands",
+        "AllQuest_Data_TBC",
+        "AllQuest_Data_TWW",
+        "AllQuest_Data_WoD",
+        "AllQuest_Data_Wrath"
+      ]
+    },
+    {
+      "id": "CooldownAssist",
+      "name": "Cooldown Assist",
+      "folders": ["CooldownAssist"]
+    },
+    {
+      "id": "Exploration",
+      "name": "Exploration",
+      "folders": ["Exploration"]
+    },
+    {
+      "id": "FPSDiag",
+      "name": "FPSDiag",
+      "folders": ["FPSDiag"]
+    },
+    {
+      "id": "lpl",
+      "name": "Light Paws Loadouts",
+      "folders": ["lpl"]
+    },
+    {
+      "id": "wowgps",
+      "name": "WowGPS",
+      "folders": ["wowgps"]
+    }
+  ]
+}

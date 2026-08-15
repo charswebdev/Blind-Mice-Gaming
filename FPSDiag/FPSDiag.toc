@@ -1,0 +1,18 @@
+## Interface: 110007, 111000, 111500, 111700, 120000, 120001, 120005, 120100
+## Title: FPSDiag
+## Notes: Diagnose FPS. Clear addon memory, compact VRAM, and restart audio/video.
+## Author: Blind Mice Gaming
+## Version: 0.2.0
+## SavedVariables: FPSDiagDB
+## IconTexture: Interface\AddOns\FPSDiag\Media\icon
+## AddonCompartmentFunc: FPSDiag_OnAddonCompartmentClick
+## Category: Blind Mice Gaming
+## Category-enUS: Blind Mice Gaming
+## DefaultState: enabled
+
+Init.lua
+Profiler.lua
+Classifier.lua
+Tools.lua
+Overlay.lua
+Panel.lua
