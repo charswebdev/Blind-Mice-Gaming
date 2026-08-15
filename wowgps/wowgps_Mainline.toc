@@ -1,0 +1,116 @@
+## Interface: 120100, 120007
+
+## Title: WowGPS
+
+## Notes: In-game GPS with smart routes, step-by-step directions, and map guidance. Requires Zygor Guides Viewer with pathfinding enabled.
+
+## Author: Blind Mice Gaming
+
+## Version: 0.4.3
+
+## SavedVariables: WowGPSDB
+
+## OptionalDeps: ZygorGuidesViewer, TomTom
+
+## DefaultState: enabled
+
+## IconTexture: Interface\AddOns\wowgps\Media\WowGPS.png
+
+## X-License: GPL-3.0
+
+
+
+## Category-enUS: Blind Mice Gaming
+
+
+
+Libs\LibStub\LibStub.lua
+
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
+
+Libs\AceAddon-3.0\AceAddon-3.0.xml
+
+Libs\AceEvent-3.0\AceEvent-3.0.xml
+
+Libs\AceDB-3.0\AceDB-3.0.xml
+
+Libs\AceConsole-3.0\AceConsole-3.0.xml
+
+Libs\AceLocale-3.0\AceLocale-3.0.xml
+
+Core\EarlyLoad.lua
+
+Libs\HereBeDragons\HereBeDragons-2.0.lua
+
+Libs\HereBeDragons\HereBeDragons-Pins-2.0.lua
+
+
+
+Locale\enUS.lua
+
+Core\Constants.lua
+
+Core\Database.lua
+
+Core\PlayerContext.lua
+
+Data\AreaTable.lua
+
+Data\InstanceEntrances.lua
+
+Data\Destinations_seed.lua
+
+Core\Destination.lua
+
+UI\LocationTags.lua
+
+Personal\CustomLocations.lua
+
+Routing\TravelRegions.lua
+
+Routing\MapCoords.lua
+
+Routing\RouteValidator.lua
+
+Routing\MidnightLocalRoutes.lua
+
+Routing\MawLocalRoutes.lua
+
+Routing\TravelActions.lua
+
+Routing\StepBuilder.lua
+
+Routing\SubStepResolver.lua
+
+Routing\RouteTracker.lua
+
+Integrations\ZygorTravel.lua
+
+Integrations\TomTom.lua
+
+Integrations\MapRoute.lua
+
+Integrations\StepPins.lua
+
+Integrations\MapPinLinks.lua
+
+UI\Theme.lua
+
+UI\MainFrame.lua
+
+UI\SearchTab.lua
+
+UI\RouteTab.lua
+
+UI\SavedTab.lua
+
+UI\ExportDialog.lua
+
+UI\ImportDialog.lua
+
+UI\AddTab.lua
+
+UI\FallbackArrow.lua
+
+Core\Init.lua
+

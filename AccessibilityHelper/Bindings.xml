@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WoW loads Bindings.xml from this folder; do not list it in the .toc (Binding XML is not a valid .toc file type). -->
+<Bindings>
+    <!-- Preserved binding name= IDs must never change (user keybinds are saved by these strings). -->
+    <Binding name="ACCESSIBILITYHELPER_READTOOLTIP" description="Read hovered tooltip with in-game Text to Speech." category="Accessibility Helper">
+        AccessibilityHelper_ReadTooltipBinding();
+    </Binding>
+    <Binding name="CLICK AccessibilityHelperTomTomReadBindProxy:LeftButton" description="Read TomTom crazy-arrow distance with Text to Speech." category="Accessibility Helper"></Binding>
+    <Binding name="CLICK AccessibilityHelperZygorReadBindProxy:LeftButton" description="Read Zygor Guides waypoint arrow with Text to Speech." category="Accessibility Helper"></Binding>
+    <!-- New binds (safe to add; do not rename after users bind them). -->
+    <Binding name="ACCESSIBILITYHELPER_OPENSETTINGS" description="Open Accessibility Helper settings." category="Accessibility Helper">
+        AccessibilityHelper_OpenSettingsBinding();
+    </Binding>
+    <Binding name="ACCESSIBILITYHELPER_TARGETDISTANCE" description="Read distance to current target with Text to Speech." category="Accessibility Helper">
+        AccessibilityHelper_TargetDistanceBinding();
+    </Binding>
+    <Binding name="ACCESSIBILITYHELPER_READTARGET" description="Read current target (name, health, facing, distance)." category="Accessibility Helper">
+        AccessibilityHelper_ReadTargetBinding();
+    </Binding>
+    <Binding name="ACCESSIBILITYHELPER_STOPSPEAK" description="Stop Accessibility Helper text to speech." category="Accessibility Helper">
+        AccessibilityHelper_StopSpeakBinding();
+    </Binding>
+    <Binding name="ACCESSIBILITYHELPER_REPEATLAST" description="Repeat the last Accessibility Helper speech line." category="Accessibility Helper">
+        AccessibilityHelper_RepeatLastBinding();
+    </Binding>
+    <Binding name="ACCESSIBILITYHELPER_READQUESTOBJECTIVES" description="Read current quest objectives with Text to Speech." category="Accessibility Helper">
+        AccessibilityHelper_ReadQuestObjectivesBinding();
+    </Binding>
+    <Binding name="ACCESSIBILITYHELPER_READQUESTWINDOW" description="Read the open quest window with Text to Speech." category="Accessibility Helper">
+        AccessibilityHelper_ReadQuestWindowBinding();
+    </Binding>
+</Bindings>

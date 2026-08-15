@@ -1,0 +1,30 @@
+ <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+	<Frame name="ExplorationFrame" toplevel="true" parent="UIParent" movable="true" enableMouse="true" hidden="true" inherits="BasicFrameTemplateWithInset">
+        <Size x="400" y="400"/>
+        <Anchors>
+            <Anchor point="CENTER"/>
+        </Anchors>
+        <Frames>
+            <Frame parentKey="TabBar" frameLevel="10">
+                <Size y="24"/>
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="12" y="-60"/>
+                    <Anchor point="TOPRIGHT" x="-12" y="-60"/>
+                </Anchors>
+            </Frame>
+
+            <Frame parentKey="Content" frameLevel="5">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeKey="$parent.TabBar" relativePoint="BOTTOMLEFT" x="0" y="-2"/>
+                    <Anchor point="BOTTOMRIGHT" x="-12" y="12"/>
+                </Anchors>
+                <Frames>
+                    <Frame parentKey="SegmentFrame" setAllPoints="true" frameLevel="10"/>
+                    <Frame parentKey="RoutesFrame" setAllPoints="true" frameLevel="10" hidden="true"/>
+                    <Frame parentKey="SettingsFrame" setAllPoints="true" frameLevel="10" hidden="true"/>
+                </Frames>
+            </Frame>
+        </Frames>
+    </Frame>
+ </Ui>

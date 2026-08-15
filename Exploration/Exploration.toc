@@ -1,0 +1,45 @@
+## Interface: 120100
+## Title: Exploration
+## Notes: Outdoor zone exploration guide by Blind Mice Gaming.
+## Author: Blind Mice Gaming
+## Category-enUS: Blind Mice Gaming
+## Version: 2.0.0
+## IconTexture: Interface\AddOns\Exploration\Textures\compass.tga
+## SavedVariables: ExplorationDB
+## OptionalDeps: TomTom
+
+Exploration.xml
+Exploration.lua
+
+Data\ATT\ExplorationATTByMap.lua
+Data\SubzoneFilter.lua
+Data\Coords\Manual.lua
+Data\DB2\Coords.lua
+Data\Routes\Generated.lua
+
+Util\Conditions.lua
+Util\ProcessRoutes.lua
+Util\Layout.lua
+Util\Theme.lua
+Util\Progress.lua
+Util\LearnedRoute.lua
+Util\Waypoints.lua
+Util\Nav.lua
+Util\Triggers.lua
+Util\Taxi.lua
+Util\Housing.lua
+Util\Tts.lua
+Util\Discovery.lua
+Util\ExploreImport.lua
+Util\MarkUX.lua
+Util\OverlayWorldMap.lua
+Util\OverlayMinimap.lua
+Util\Overlay.lua
+
+Core\Bindings.lua
+Core\MinimapButton.lua
+Core\Main.lua
+Core\Note.lua
+Core\Segment.lua
+Core\Routes.lua
+Core\Settings.lua

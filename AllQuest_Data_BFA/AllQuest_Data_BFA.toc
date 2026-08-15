@@ -1,0 +1,15 @@
+## Interface: 120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508
+## Title: AllQuest: Battle for Azeroth
+## Notes: Battle for Azeroth questline data for AllQuest. Fill with extract_chains.py and Overlay.lua.
+## Version: 1.0.0
+## Author: Blind Mice Gaming
+## Dependencies: AllQuest
+## LoadOnDemand: 1
+## X-AllQuest-Expansion: 7
+## X-AllQuest-Expansion-Name: Battle for Azeroth
+## Group: AllQuest
+## Category-enUS: Blind Mice Gaming
+
+Expansion.lua
+Generated.lua
+Overlay.lua

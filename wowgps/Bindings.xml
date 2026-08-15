@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WoW auto-loads Bindings.xml by filename; do not list it in the .toc (causes LUA_WARNING on Binding name=). -->
+<Bindings>
+  <Binding name="WOWGPS_TOGGLE" category="WOWGPS" default="ALT-G">
+    if WowGPS and WowGPS.ToggleMainFrame then WowGPS:ToggleMainFrame() end
+  </Binding>
+  <Binding name="WOWGPS_STEP_COMPLETE" category="WOWGPS" default="CTRL-EQUALS">
+    if WowGPS and WowGPS.RouteTracker and WowGPS.RouteTracker.AdvanceStep then
+      WowGPS.RouteTracker:AdvanceStep(true)
+    end
+  </Binding>
+  <Binding name="WOWGPS_STEP_BACK" category="WOWGPS" default="CTRL-MINUS">
+    if WowGPS and WowGPS.RouteTracker and WowGPS.RouteTracker.PreviousStep then
+      WowGPS.RouteTracker:PreviousStep()
+    end
+  </Binding>
+  <Binding name="WOWGPS_WORLDMAP_ROUTE" category="WOWGPS" default="CTRL-M">
+    if WowGPS and WowGPS.ToggleWorldMapRouteMode then WowGPS:ToggleWorldMapRouteMode() end
+  </Binding>
+  <Binding name="WOWGPS_CHAT_PIN_ROUTE" category="WOWGPS" default="CTRL-SHIFT-P">
+    if WowGPS and WowGPS.ToggleChatPinRouteMode then WowGPS:ToggleChatPinRouteMode() end
+  </Binding>
+</Bindings>

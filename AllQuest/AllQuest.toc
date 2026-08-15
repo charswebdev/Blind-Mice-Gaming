@@ -1,0 +1,61 @@
+## Interface: 120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508
+## Title: AllQuest
+## Notes: High-contrast quest tracker and questline journal. Custom tracker, plugins, and original chain data for every WoW client.
+## Version: 1.0.0
+## Author: Blind Mice Gaming
+## Category-enUS: Blind Mice Gaming
+## IconTexture: Interface\AddOns\AllQuest\Media\AllQuestLogo
+## OptionalDeps: AccessibilityHelper, TomTom, Masque, RareScanner, PetTracker, BattlePetCompletionist, AllTheThings, ZygorGuidesViewer, SilverDragon, QuestCompletist, BtWQuests
+## SavedVariables: AllQuestDB
+## SavedVariablesPerCharacter: AllQuestCharDB
+## AddonCompartmentFunc: AllQuest_OnAddonCompartmentClick
+## X-Website: Blind Mice Gaming
+## DefaultState: enabled
+
+Core\Addon.lua
+Journal\ZoneArt.lua
+Core\Compat.lua
+Core\DB.lua
+Core\Events.lua
+Core\PluginAPI.lua
+Theme\Colors.lua
+Media\Sounds.lua
+Theme\Widgets.lua
+Speech\Announce.lua
+UI\Settings.lua
+UI\MinimapButton.lua
+Tracker\HideBlizzard.lua
+Tracker\Items.lua
+Tracker\AutoQuest.lua
+Tracker\Menu.lua
+Tracker\Frame.lua
+Tracker\Sections\Popups.lua
+Tracker\Sections\Quests.lua
+Tracker\Sections\WorldQuests.lua
+Tracker\Sections\Scenarios.lua
+Tracker\Sections\Campaigns.lua
+Tracker\Sections\Achievements.lua
+Tracker\Sections\Recipes.lua
+Tracker\Sections\Activities.lua
+Tracker\Sections\Collectibles.lua
+Tracker\Sections\Pets.lua
+Tracker\Sections\Rares.lua
+Journal\Frame.lua
+Journal\ListView.lua
+Journal\GraphView.lua
+Journal\QuestDetail.lua
+Integrations\Conflicts.lua
+Integrations\TomTom.lua
+Integrations\QuestSources.lua
+Integrations\Masque.lua
+Integrations\RareScanner.lua
+Integrations\SilverDragon.lua
+Integrations\PetTracker.lua
+Integrations\BattlePetCompletionist.lua
+Integrations\QuestCompletist.lua
+Integrations\AllTheThings.lua
+Integrations\Zygor.lua
+Integrations\BtWQuests.lua
+Core\Debug.lua
+Core\Help.lua
+Core\Init.lua

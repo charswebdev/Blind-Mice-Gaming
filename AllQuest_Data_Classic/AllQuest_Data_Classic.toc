@@ -1,0 +1,17 @@
+## Interface: 120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508
+## Title: AllQuest: Classic
+## Notes: Classic questline data for AllQuest (original Blind Mice Gaming chains + extractor output).
+## Version: 1.0.0
+## Author: Blind Mice Gaming
+## Dependencies: AllQuest
+## LoadOnDemand: 1
+## X-AllQuest-Expansion: 0
+## X-AllQuest-Expansion-Name: Classic
+## Group: AllQuest
+## Category-enUS: Blind Mice Gaming
+
+Expansion.lua
+Chains\Elwynn.lua
+Chains\Durotar.lua
+Generated.lua
+Overlay.lua

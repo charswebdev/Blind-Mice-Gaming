@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WoW auto-loads Bindings.xml by filename; do not list it in the .toc (causes LUA_WARNING on Binding). -->
+<!-- category: plain label shown as the Key Bindings section (retail). Binding label via BINDING_NAME_* in lpl.lua. -->
+<Bindings>
+    <Binding name="TOGGLE_LPL" category="Light Paws Loadouts">
+        if LPL_ToggleMainFrame then
+            LPL_ToggleMainFrame()
+        end
+    </Binding>
+</Bindings>

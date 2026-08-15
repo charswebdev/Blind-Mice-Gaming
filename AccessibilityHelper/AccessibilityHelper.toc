@@ -1,0 +1,33 @@
+## Interface: 120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508
+## Title: Accessibility Helper
+## Version: 3.0.0
+## Notes: TTS accessibility helper for blind and visually impaired players. Tooltips, waypoints, distance, chat channels, subzones, discoveries, loot, currencies, UI errors, player state, professions, reputation, XP, and combat alerts.
+## Author: Blind Mice Gaming
+## Category-enUS: Blind Mice Gaming
+## IconTexture: Interface\AddOns\AccessibilityHelper\Media\Icon.png
+## OptionalDeps: TomTom, ZygorGuidesViewer, MountSpy, QuestCompletist, RareScanner, SilverDragon, HandyNotes, Zugzug, ZugZug, Titan, TitanClassic
+## SavedVariables: AccessibilityHelperDB
+
+Core\Compat.lua
+Core\DB.lua
+Core\ChatText.lua
+Core\Speech.lua
+Core\Help.lua
+Features\ChatChannels.lua
+Features\AddonChat.lua
+UI\Settings.lua
+UI\MinimapButton.lua
+Features\Tooltips.lua
+Features\Waypoints.lua
+Features\Distance.lua
+Features\Facing.lua
+Features\Location.lua
+Features\UIErrors.lua
+Features\PlayerState.lua
+Features\BNFriends.lua
+Features\Progress.lua
+Features\Combat.lua
+Features\Loot.lua
+Features\Quests.lua
+Core\Bindings.lua
+Core\Init.lua

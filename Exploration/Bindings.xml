@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WoW auto-loads Bindings.xml by filename; do not list it in the .toc (causes LUA_WARNING on Binding). -->
+<!-- category: plain label for Key Bindings UI (retail). CLICK labels via BINDING_NAME_* in Exploration.lua. -->
+<Bindings>
+    <Binding name="CLICK ExplorationGoPreviousButton:LeftButton" category="Exploration"></Binding>
+    <Binding name="CLICK ExplorationGoNextButton:LeftButton" category="Exploration"></Binding>
+    <Binding name="CLICK ExplorationPrevZoneButton:LeftButton" category="Exploration"></Binding>
+    <Binding name="CLICK ExplorationNextZoneButton:LeftButton" category="Exploration"></Binding>
+    <Binding name="CLICK ExplorationMarkDiscoveredButton:LeftButton" category="Exploration"></Binding>
+    <Binding name="CLICK ExplorationAbandonButton:LeftButton" category="Exploration"></Binding>
+    <Binding name="CLICK ExplorationActionButton:LeftButton" category="Exploration"></Binding>
+</Bindings>

@@ -1,0 +1,733 @@
+local addonName, LPL = ...
+
+LPL.ActionBarCodec = {}
+
+local defs = LPL.ActionBarDefinitions
+local DEFAULT_ICON = 134400
+
+local function Trim(text)
+    if type(text) ~= "string" then
+        return ""
+    end
+    return text:match("^%s*(.-)%s*$") or ""
+end
+
+local function FindBaseSpellByID(spellID)
+    spellID = tonumber(spellID)
+    if not spellID then
+        return nil
+    end
+    if C_Spell and C_Spell.GetBaseSpell then
+        local base = C_Spell.GetBaseSpell(spellID)
+        if base and base > 0 then
+            return base
+        end
+    end
+    return spellID
+end
+
+local function CopyAction(action)
+    if type(action) ~= "table" or not action.type then
+        return nil
+    end
+    return CopyTable(action)
+end
+
+local function GetActionsTable(draftSet, isPet)
+    if isPet then
+        draftSet.petActions = draftSet.petActions or {}
+        return draftSet.petActions
+    end
+    draftSet.actions = draftSet.actions or {}
+    return draftSet.actions
+end
+
+local function GetIgnoredTable(draftSet, isPet)
+    if isPet then
+        draftSet.petIgnored = draftSet.petIgnored or {}
+        return draftSet.petIgnored
+    end
+    draftSet.ignored = draftSet.ignored or {}
+    return draftSet.ignored
+end
+
+function LPL.ActionBarCodec:SanitizeDraft(draftSet)
+    if not draftSet then
+        return
+    end
+    draftSet.actions = draftSet.actions or {}
+    draftSet.ignored = draftSet.ignored or {}
+    draftSet.petActions = draftSet.petActions or {}
+    draftSet.petIgnored = draftSet.petIgnored or {}
+    for slot = 133, 144 do
+        draftSet.actions[slot] = nil
+        draftSet.ignored[slot] = true
+    end
+end
+
+function LPL.ActionBarCodec:SetSlotAction(draftSet, slotID, isPet, action)
+    if not draftSet or not slotID then
+        return
+    end
+    local actions = GetActionsTable(draftSet, isPet)
+    if action and action.type then
+        actions[slotID] = CopyAction(action)
+    else
+        actions[slotID] = nil
+    end
+end
+
+function LPL.ActionBarCodec:ClearSlotAction(draftSet, slotID, isPet)
+    self:SetSlotAction(draftSet, slotID, isPet, nil)
+end
+
+function LPL.ActionBarCodec:ToggleSlotIgnore(draftSet, slotID, isPet)
+    if not draftSet or not slotID then
+        return
+    end
+    local ignored = GetIgnoredTable(draftSet, isPet)
+    if ignored[slotID] then
+        ignored[slotID] = nil
+    else
+        ignored[slotID] = true
+    end
+end
+
+function LPL.ActionBarCodec:ToggleRowIgnore(draftSet, startID, endID, isPet)
+    if not draftSet or not startID or not endID then
+        return
+    end
+    local ignored = GetIgnoredTable(draftSet, isPet)
+    local allIgnored = true
+    for slotID = startID, endID do
+        if not ignored[slotID] then
+            allIgnored = false
+            break
+        end
+    end
+    for slotID = startID, endID do
+        if allIgnored then
+            ignored[slotID] = nil
+        else
+            ignored[slotID] = true
+        end
+    end
+end
+
+function LPL.ActionBarCodec:GetActionInfoFromSlot(slot)
+    if not GetActionInfo then
+        return nil
+    end
+
+    local actionType, id, subType = GetActionInfo(slot)
+    if not actionType then
+        -- Some utility buttons still expose a spell id via C_ActionBar.
+        if C_ActionBar and C_ActionBar.GetSpell then
+            local barSpell = C_ActionBar.GetSpell(slot)
+            if barSpell and barSpell > 0 then
+                actionType = "spell"
+                id = barSpell
+                subType = "spell"
+            else
+                return nil
+            end
+        else
+            return nil
+        end
+    end
+
+    if subType == "assistedcombat" then
+        id = 1229376
+        subType = "spell"
+        actionType = "spell"
+    end
+
+    -- Normalize Warband Bank Distance Inhibitor and Switch Flight Style to stable base ids.
+    if actionType == "spell" and id then
+        local baseID = FindBaseSpellByID(id) or id
+        local skyridingIDs = {
+            [372608] = true, -- Surge Forward
+            [372610] = true, -- Skyward Ascent
+            [361584] = true, -- Whirling Surge
+            [418592] = true, -- Lightning Rush
+            [403092] = true, -- Aerial Halt
+            [425782] = true, -- Second Wind
+        }
+        if skyridingIDs[id] or skyridingIDs[baseID] then
+            id = skyridingIDs[baseID] and baseID or id
+            subType = "spell"
+        elseif baseID == 460905 or id == 460905 then
+            id = 460905
+            subType = "spell"
+        elseif baseID == 436854 or id == 436854 or id == 459988 or baseID == 459988 then
+            id = 436854
+            subType = "spell"
+        else
+            -- Switch Flight Style live override may not report 436854 as GetBaseSpell.
+            if C_Spell and C_Spell.GetOverrideSpell then
+                local ok, override = pcall(C_Spell.GetOverrideSpell, 436854)
+                if ok and override and tonumber(override) == id then
+                    id = 436854
+                    subType = "spell"
+                else
+                    id = baseID
+                end
+            elseif FindSpellOverrideByID and FindSpellOverrideByID(436854) == id then
+                id = 436854
+                subType = "spell"
+            else
+                id = baseID
+            end
+        end
+    elseif actionType == "macro" and id and id ~= 0 then
+        local macroText = Trim(GetMacroBody and GetMacroBody(id) or "")
+        local name, icon = GetMacroInfo and GetMacroInfo(id)
+        return {
+            type = "macro",
+            id = id,
+            icon = icon,
+            name = name,
+            macroText = macroText,
+        }
+    elseif actionType == "macro" and (not id or id == 0) then
+        return nil
+    end
+
+    local icon = GetActionTexture and GetActionTexture(slot)
+    local name = GetActionText and GetActionText(slot)
+    if actionType == "spell" and id then
+        if (not name or name == "") and GetSpellInfo then
+            local spellName, _, spellIcon = GetSpellInfo(id)
+            name = spellName or name
+            icon = icon or spellIcon
+        elseif (not icon or icon == 0) and GetSpellInfo then
+            local _, _, spellIcon = GetSpellInfo(id)
+            icon = icon or spellIcon
+        end
+        if C_Spell and C_Spell.GetSpellInfo then
+            local ok, info = pcall(C_Spell.GetSpellInfo, id)
+            if ok and type(info) == "table" then
+                name = name or info.name
+                icon = icon or info.iconID or info.originalIconID
+            end
+        end
+    end
+    return {
+        type = actionType,
+        id = id,
+        subType = subType or (actionType == "spell" and "spell" or nil),
+        icon = icon,
+        name = name,
+    }
+end
+
+local function IsPetActionTextureValue(value)
+    if type(value) == "number" and value > 0 then
+        return true
+    end
+    if type(value) == "string" and value ~= "" then
+        return true
+    end
+    return false
+end
+
+local function GetPetActionSlotFields(slot)
+    local r1, r2, r3, r4, r5, r6, r7, r8 = GetPetActionInfo(slot)
+    if r1 == nil and r2 == nil then
+        return nil, nil, nil, nil, nil, nil, nil
+    end
+    if IsPetActionTextureValue(r2) then
+        return r1, r2, r3, r4, r5, r6, r7
+    end
+    if IsPetActionTextureValue(r3) then
+        return r1, r3, r4, r5, r6, r7, r8
+    end
+    return r1, r2, r3, r4, r5, r6, r7
+end
+
+function LPL.ActionBarCodec:GetPetActionInfoFromSlot(slot)
+    if not GetPetActionInfo then
+        return nil
+    end
+
+    local name, texture, isToken, _, _, _, spellID = GetPetActionSlotFields(slot)
+    if (not name or name == "") and not IsPetActionTextureValue(texture) then
+        return nil
+    end
+
+    local petActionNameToken
+    if isToken and type(name) == "string" and name ~= "" then
+        petActionNameToken = name
+    end
+    local petTextureToken
+    if type(texture) == "string" and texture:match("^PET_[A-Z0-9_]+$") then
+        petTextureToken = texture
+    end
+
+    local displayName = name
+    local rawTexture = texture
+    if isToken and type(name) == "string" then
+        displayName = _G[name] or name
+    end
+    if isToken and type(texture) == "string" and texture:match("^PET_[A-Z0-9_]+$") then
+        local g = rawget(_G, texture)
+        if type(g) == "number" or type(g) == "string" then
+            texture = g
+        end
+    end
+
+    spellID = spellID and spellID ~= 0 and spellID or nil
+    local storeId = spellID and (FindBaseSpellByID(spellID) or spellID) or nil
+    local icon = texture
+    if type(icon) == "string" and tonumber(icon) then
+        icon = tonumber(icon)
+    end
+    if spellID and GetSpellInfo then
+        local spellName, _, spellIcon = GetSpellInfo(spellID)
+        displayName = displayName or spellName
+        icon = icon or spellIcon
+    end
+
+    return {
+        type = "petspell",
+        id = storeId,
+        spellID = spellID,
+        icon = icon,
+        name = displayName,
+        petActionNameToken = petActionNameToken,
+        petTextureToken = petTextureToken,
+        petBookActionID = nil,
+        rawTexture = rawTexture,
+    }
+end
+
+function LPL.ActionBarCodec:CaptureFromCharacter(draftSet)
+    if not draftSet then
+        return false
+    end
+
+    draftSet.actions = {}
+    draftSet.petActions = {}
+    draftSet.ignored = draftSet.ignored or {}
+    draftSet.petIgnored = draftSet.petIgnored or {}
+
+    for _, slot in ipairs(defs:GetManagedPlayerSlots()) do
+        local action = self:GetActionInfoFromSlot(slot)
+        if action then
+            draftSet.actions[slot] = action
+        end
+    end
+
+    for slot = 1, defs.PET_SLOT_MAX do
+        local action = self:GetPetActionInfoFromSlot(slot)
+        if action then
+            draftSet.petActions[slot] = action
+        end
+    end
+
+    self:SanitizeDraft(draftSet)
+    LPL.ActionBarStore:ApplyPlayerMetadata(draftSet)
+
+    return true
+end
+
+function LPL.ActionBarCodec:BuildActionTableFromCursor()
+    if not GetCursorInfo then
+        return nil
+    end
+
+    local cursorType, a2, a3 = GetCursorInfo()
+    if not cursorType then
+        return nil
+    end
+
+    if cursorType == "battlepet" then
+        return { type = "summonpet", id = a2 }
+    elseif cursorType == "mount" then
+        return { type = "summonmount", id = a2 }
+    elseif cursorType == "petaction" then
+        local rawId = a2
+        local name, _, icon = GetSpellInfo and GetSpellInfo(rawId)
+        return {
+            type = "spell",
+            id = FindBaseSpellByID(rawId) or rawId,
+            subType = "pet",
+            icon = icon,
+            name = name,
+        }
+    elseif cursorType == "spell" then
+        local rawId, subType = a2, a3 or "spell"
+        local dragName, _, dragIcon
+        if GetSpellInfo then
+            dragName, _, dragIcon = GetSpellInfo(rawId)
+        end
+        if (not dragName or not dragIcon) and C_Spell and C_Spell.GetSpellInfo then
+            local ok, info = pcall(C_Spell.GetSpellInfo, rawId)
+            if ok and type(info) == "table" then
+                dragName = dragName or info.name
+                dragIcon = dragIcon or info.iconID or info.originalIconID
+            end
+        end
+        local id = FindBaseSpellByID(rawId) or rawId
+        if id == 436854 or rawId == 436854 or rawId == 459988 or id == 459988 then
+            id = 436854
+            subType = "spell"
+        elseif C_Spell and C_Spell.GetOverrideSpell then
+            local ok, override = pcall(C_Spell.GetOverrideSpell, 436854)
+            if ok and override and tonumber(override) == tonumber(rawId) then
+                id = 436854
+                subType = "spell"
+            end
+        end
+        local name, _, icon = GetSpellInfo and GetSpellInfo(id)
+        if (not name or not icon) and C_Spell and C_Spell.GetSpellInfo then
+            local ok, info = pcall(C_Spell.GetSpellInfo, id)
+            if ok and type(info) == "table" then
+                name = name or info.name
+                icon = icon or info.iconID or info.originalIconID
+            end
+        end
+        return {
+            type = "spell",
+            id = id,
+            subType = subType,
+            icon = icon or dragIcon,
+            name = name or dragName,
+        }
+    elseif cursorType == "equipmentset" then
+        local id = a2
+        local name, icon
+        if C_EquipmentSet and C_EquipmentSet.GetEquipmentSetInfo then
+            local resolved = C_EquipmentSet.GetEquipmentSetID(id)
+            name, icon = C_EquipmentSet.GetEquipmentSetInfo(resolved)
+        end
+        return { type = "equipmentset", id = id, icon = icon, name = name }
+    elseif cursorType == "macro" then
+        local id = a2
+        local macroText = Trim(GetMacroBody and GetMacroBody(id) or "")
+        local name, icon = GetMacroInfo and GetMacroInfo(id)
+        return { type = "macro", id = id, icon = icon, name = name, macroText = macroText }
+    elseif cursorType == "flyout" then
+        return { type = "flyout", id = a2, icon = a3 }
+    elseif cursorType == "item" then
+        return { type = "item", id = a2 }
+    end
+
+    return nil
+end
+
+local function FindPetSpellBookIndexByActionID(actionID)
+    if not actionID or actionID == 0 then
+        return nil
+    end
+    local petBank = Enum and Enum.SpellBookSpellBank and Enum.SpellBookSpellBank.Pet
+    if not (C_SpellBook and petBank and C_SpellBook.GetSpellBookItemInfo) then
+        return nil
+    end
+    local n = 0
+    if C_SpellBook.HasPetSpells then
+        n = C_SpellBook.HasPetSpells() or 0
+    end
+    if type(n) ~= "number" or n < 1 then
+        if UnitExists and UnitExists("pet") then
+            n = 120
+        else
+            return nil
+        end
+    end
+    local function Norm(aid)
+        if type(aid) ~= "number" or aid == 0 then
+            return nil
+        end
+        if bit and bit.band then
+            return bit.band(aid, 0xFFFFFF)
+        end
+        return aid % 16777216
+    end
+    local want = Norm(actionID) or actionID
+    for i = 1, n do
+        local ok, info = pcall(C_SpellBook.GetSpellBookItemInfo, i, petBank)
+        if ok and info and type(info.actionID) == "number" then
+            if info.actionID == actionID or Norm(info.actionID) == want then
+                return i, info
+            end
+        end
+    end
+    return nil
+end
+
+function LPL.ActionBarCodec:BuildPetActionTableFromCursor()
+    if not GetCursorInfo then
+        return nil
+    end
+
+    local cursorType, a2, a3 = GetCursorInfo()
+    if not cursorType then
+        return nil
+    end
+
+    if cursorType == "petaction" then
+        local rawId = a2
+        if rawId and IsSpellKnown and IsSpellKnown(rawId, true) then
+            local storeId = FindBaseSpellByID(rawId) or rawId
+            local name, _, icon = GetSpellInfo and GetSpellInfo(rawId)
+            return {
+                type = "petspell",
+                id = storeId,
+                spellID = rawId,
+                icon = icon,
+                name = name,
+                petBookActionID = nil,
+                petTextureToken = nil,
+                petActionNameToken = nil,
+                rawTexture = nil,
+            }
+        end
+        local _, info = FindPetSpellBookIndexByActionID(rawId)
+        local icon, name
+        if info then
+            name = info.name
+            icon = type(info.iconID) == "number" and info.iconID or nil
+        end
+        return {
+            type = "petspell",
+            id = nil,
+            spellID = nil,
+            icon = icon,
+            name = name,
+            petBookActionID = rawId,
+            petTextureToken = nil,
+            petActionNameToken = nil,
+            rawTexture = nil,
+        }
+    elseif cursorType == "spell" and a3 == "pet" then
+        local rawId = a2
+        local name, _, icon = GetSpellInfo and GetSpellInfo(rawId)
+        return {
+            type = "petspell",
+            id = FindBaseSpellByID(rawId) or rawId,
+            spellID = rawId,
+            icon = icon,
+            name = name,
+            petBookActionID = nil,
+            petTextureToken = nil,
+            petActionNameToken = nil,
+            rawTexture = nil,
+        }
+    end
+
+    return nil
+end
+
+local function FindMacroIndexByText(macroText)
+    macroText = Trim(macroText)
+    if macroText == "" then
+        return nil
+    end
+
+    local maxGlobal = MAX_ACCOUNT_MACROS or 120
+    local maxChar = MAX_CHARACTER_MACROS or 12
+    for index = 1, maxGlobal + maxChar do
+        local body = GetMacroBody and GetMacroBody(index)
+        if body and Trim(body) == macroText then
+            return index
+        end
+    end
+    return nil
+end
+
+function LPL.ActionBarCodec:IsSlotIgnored(draftSet, slotID, isPet)
+    if not draftSet or not slotID then
+        return false
+    end
+    if isPet then
+        return draftSet.petIgnored and draftSet.petIgnored[slotID] == true
+    end
+    return draftSet.ignored and draftSet.ignored[slotID] == true
+end
+
+function LPL.ActionBarCodec:GetStoredAction(draftSet, slotID, isPet)
+    if not draftSet or not slotID then
+        return nil
+    end
+    if isPet then
+        return draftSet.petActions and draftSet.petActions[slotID]
+    end
+    return draftSet.actions and draftSet.actions[slotID]
+end
+
+function LPL.ActionBarCodec:IsRangeFullyIgnored(draftSet, startID, endID, isPet)
+    if not draftSet or not startID or not endID then
+        return false
+    end
+    for slotID = startID, endID do
+        if not self:IsSlotIgnored(draftSet, slotID, isPet) then
+            return false
+        end
+    end
+    return true
+end
+
+function LPL.ActionBarCodec:ResolveActionDisplay(action, ignored)
+    if type(action) ~= "table" or not action.type then
+        return nil, nil, nil
+    end
+
+    local icon = action.icon
+    local name = action.name
+    local errorText
+
+    if action.type == "item" then
+        if GetItemInfoInstant then
+            name = name or select(1, GetItemInfoInstant(action.id))
+            icon = icon or select(5, GetItemInfoInstant(action.id))
+        end
+    elseif action.type == "spell" or action.type == "petspell" then
+        local spellID = action.id or action.spellID
+        if GetSpellInfo then
+            local spellName, _, spellIcon = GetSpellInfo(spellID)
+            name = name or spellName
+            icon = icon or spellIcon
+        end
+        if (not name or not icon) and C_Spell and C_Spell.GetSpellInfo then
+            local ok, info = pcall(C_Spell.GetSpellInfo, spellID)
+            if ok and type(info) == "table" then
+                name = name or info.name
+                icon = icon or info.iconID or info.originalIconID
+            end
+        end
+    elseif action.type == "macro" then
+        local index = FindMacroIndexByText(action.macroText)
+        if index and GetMacroInfo then
+            name, icon = GetMacroInfo(index)
+        elseif not ignored then
+            errorText = "Macro missing"
+            name = name or action.name or "Macro"
+        end
+    elseif action.type == "summonmount" then
+        if action.id == 0xFFFFFFF then
+            icon = icon or 413588
+            name = name or "Random mount"
+        elseif C_MountJournal and C_MountJournal.GetMountInfoByID then
+            name = name or select(1, C_MountJournal.GetMountInfoByID(action.id))
+            icon = icon or select(3, C_MountJournal.GetMountInfoByID(action.id))
+        end
+    elseif action.type == "summonpet" then
+        if C_PetJournal and C_PetJournal.GetPetInfoByPetID then
+            name = name or select(1, C_PetJournal.GetPetInfoByPetID(action.id))
+            icon = icon or select(9, C_PetJournal.GetPetInfoByPetID(action.id))
+        end
+    elseif action.type == "flyout" then
+        icon = icon or action.icon
+        name = name or "Flyout"
+    elseif action.type == "equipmentset" then
+        if C_EquipmentSet and C_EquipmentSet.GetEquipmentSetInfo then
+            local setID = C_EquipmentSet.GetEquipmentSetID(action.id)
+            if setID then
+                name, icon = C_EquipmentSet.GetEquipmentSetInfo(setID)
+            elseif not ignored then
+                errorText = "Equipment set missing"
+            end
+        end
+    end
+
+    if not icon or icon == 0 then
+        icon = DEFAULT_ICON
+    end
+
+    return icon, name, errorText
+end
+
+function LPL.ActionBarCodec:BuildTooltipLines(action, slotID, isPet)
+    local lines = {}
+    if not action then
+        lines[#lines + 1] = { text = "Empty slot", color = "title" }
+        if isPet then
+            lines[#lines + 1] = { text = string.format("Pet slot %d", slotID or 0), color = "gray" }
+        else
+            lines[#lines + 1] = { text = string.format("Slot %d", slotID or 0), color = "gray" }
+        end
+        return lines
+    end
+
+    local _, name = self:ResolveActionDisplay(action, false)
+    lines[#lines + 1] = { text = name or action.name or action.type or "Action", color = "title" }
+
+    if action.type == "macro" and action.macroText then
+        for line in string.gmatch(action.macroText, "([^\r\n]+)") do
+            lines[#lines + 1] = { text = line, color = "normal" }
+        end
+    end
+
+    return lines
+end
+
+function LPL.ActionBarCodec:BuildActionSlotLine(slotID, isPet)
+    if isPet then
+        return { text = string.format("Pet slot %d", slotID or 0), color = "gray" }
+    end
+    return { text = string.format("Slot %d", slotID or 0), color = "gray" }
+end
+
+function LPL.ActionBarCodec:BuildActionTooltipExtraLines(slotID, isPet, ignored, hasPickup, errorText, includeSlot)
+    local lines = {}
+
+    if includeSlot then
+        lines[#lines + 1] = self:BuildActionSlotLine(slotID, isPet)
+    end
+    if ignored then
+        lines[#lines + 1] = { text = "Ignored on activate", color = "gold" }
+    end
+    if hasPickup then
+        lines[#lines + 1] = { text = "Click to place picked-up action", color = "gray" }
+    end
+    if errorText then
+        lines[#lines + 1] = { text = errorText, color = "red" }
+    end
+
+    return lines
+end
+
+function LPL.ActionBarCodec:BuildActionTooltipSpec(action, slotID, isPet, options)
+    options = options or {}
+
+    if not action or not action.type then
+        local lines = self:BuildTooltipLines(action, slotID, isPet)
+        for _, line in ipairs(self:BuildActionTooltipExtraLines(slotID, isPet, options.ignored, options.hasPickup, options.errorText, false)) do
+            lines[#lines + 1] = line
+        end
+        return { lines = lines }
+    end
+
+    local extraLines = self:BuildActionTooltipExtraLines(
+        slotID,
+        isPet,
+        options.ignored,
+        options.hasPickup,
+        options.errorText,
+        true
+    )
+
+    local spellID = action.id or action.spellID
+    if (action.type == "spell" or action.type == "petspell") and spellID then
+        return {
+            spellID = spellID,
+            lines = extraLines,
+        }
+    end
+
+    if action.type == "item" and action.id then
+        return {
+            hyperlink = "item:" .. action.id,
+            lines = extraLines,
+        }
+    end
+
+    local lines = self:BuildTooltipLines(action, slotID, isPet)
+    lines[#lines + 1] = self:BuildActionSlotLine(slotID, isPet)
+    for _, line in ipairs(self:BuildActionTooltipExtraLines(slotID, isPet, options.ignored, options.hasPickup, options.errorText, false)) do
+        lines[#lines + 1] = line
+    end
+
+    return { lines = lines }
+end

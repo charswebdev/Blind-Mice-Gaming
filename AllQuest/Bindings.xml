@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WoW loads Bindings.xml from this folder; do not list it in the .toc. -->
+<Bindings>
+    <Binding name="ALLQUEST_TOGGLETRACKER" description="Toggle the AllQuest tracker." category="AllQuest">
+        AllQuest_ToggleTrackerBinding();
+    </Binding>
+    <Binding name="ALLQUEST_TOGGLEJOURNAL" description="Toggle the AllQuest questline journal." category="AllQuest">
+        AllQuest_ToggleJournalBinding();
+    </Binding>
+    <Binding name="ALLQUEST_READFOCUS" description="Read the focused AllQuest tracker or journal row." category="AllQuest">
+        AllQuest_ReadFocusBinding();
+    </Binding>
+    <Binding name="ALLQUEST_OPENSETTINGS" description="Open AllQuest settings." category="AllQuest">
+        AllQuest_OpenSettingsBinding();
+    </Binding>
+</Bindings>

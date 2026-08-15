@@ -1,0 +1,26 @@
+Accessibility Helper v3.0.0 — preserve + verify notes
+
+=== Must keep ===
+Category-enUS: Blind Mice Gaming
+Binding IDs:
+  ACCESSIBILITYHELPER_READTOOLTIP
+  CLICK AccessibilityHelperTomTomReadBindProxy:LeftButton
+  CLICK AccessibilityHelperZygorReadBindProxy:LeftButton
+  ACCESSIBILITYHELPER_OPENSETTINGS
+  ACCESSIBILITYHELPER_TARGETDISTANCE
+
+=== Interface (wiki; verify per client) ===
+## Interface: 120007, 50504, 40402, 38001, 30405, 20506, 11509, 11508
+In-game: /dump select(4, GetBuildInfo())
+
+=== Final checklist ===
+[ ] Loads; category Blind Mice Gaming; icon visible
+[ ] /ah and /ahelp open settings; /ahcmds lists commands; /ahs speaks
+[ ] Tooltip keybind / /ahreadtip reads full tooltip; re-press cancels
+[ ] TomTom / Zygor binds or /ahtt /ahz
+[ ] Distance bind / /ahdist (same-area yards; different area message)
+[ ] Subzone announce; red UI errors (spell-not-ready ignored)
+[ ] Player state toggles work
+[ ] Skill / XP / rep / standing
+[ ] LoC / debuff types
+[ ] Preserved keybinds still bound correctly

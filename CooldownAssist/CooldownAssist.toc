@@ -1,0 +1,29 @@
+## Interface: 120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508
+## Title: Cooldown Assist
+## Version: 1.1.0
+## Notes: Announces when cooldowns become ready or buffs fade for blind and visually impaired players.
+## Notes-enUS: Own TTS for abilities, items, consumables, toys, teleports, and utilities. Works on Retail and Classic flavors. Blind Mice Gaming.
+## Author: Blind Mice Gaming
+## Category-enUS: Blind Mice Gaming
+## IconTexture: Interface\AddOns\CooldownAssist\Media\Icon.tga
+## SavedVariables: CooldownAssistDB
+## DefaultState: enabled
+## X-License: All Rights Reserved
+
+Core\Compat.lua
+Core\DB.lua
+Core\Speech.lua
+Core\Announce.lua
+Core\Ready.lua
+Core\Profiles.lua
+Core\Categories.lua
+Core\Teleports.lua
+Core\Racials.lua
+Core\Help.lua
+Core\Bindings.lua
+Trackers\Spells.lua
+Trackers\Items.lua
+Trackers\Buffs.lua
+UI\Settings.lua
+UI\MinimapButton.lua
+Core\Init.lua

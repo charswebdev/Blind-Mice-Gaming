@@ -1,0 +1,5422 @@
+[
+  {
+    "name": "Temple of Ahn'Qiraj",
+    "kind": "Raid",
+    "mapId": 12,
+    "x": 40.67,
+    "y": 83.58,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 744
+  },
+  {
+    "name": "Ruins of Ahn'Qiraj",
+    "kind": "Raid",
+    "mapId": 12,
+    "x": 42.06,
+    "y": 83.58,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 743
+  },
+  {
+    "name": "Throne of the Four Winds",
+    "kind": "Raid",
+    "mapId": 12,
+    "x": 45.92,
+    "y": 96.63,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 74
+  },
+  {
+    "name": "Ny'alotha, the Waking City",
+    "kind": "Raid",
+    "mapId": 12,
+    "x": 49.15,
+    "y": 90.32,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1180
+  },
+  {
+    "name": "Firelands",
+    "kind": "Raid",
+    "mapId": 12,
+    "x": 54.24,
+    "y": 33.97,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 78
+  },
+  {
+    "name": "Onyxia's Lair",
+    "kind": "Raid",
+    "mapId": 12,
+    "x": 56.52,
+    "y": 69.46,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 760
+  },
+  {
+    "name": "Baradin Hold",
+    "kind": "Raid",
+    "mapId": 13,
+    "x": 35.56,
+    "y": 51.5,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 75
+  },
+  {
+    "name": "Blackwing Descent",
+    "kind": "Raid",
+    "mapId": 13,
+    "x": 47.53,
+    "y": 68.94,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 73
+  },
+  {
+    "name": "The Bastion of Twilight",
+    "kind": "Raid",
+    "mapId": 13,
+    "x": 54.9,
+    "y": 58.99,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 72
+  },
+  {
+    "name": "Sunwell Plateau",
+    "kind": "Raid",
+    "mapId": 13,
+    "x": 55.16,
+    "y": 3.7,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 752
+  },
+  {
+    "name": "JournalInstance 1308",
+    "kind": "Raid",
+    "mapId": 13,
+    "x": 56.56,
+    "y": 7.95,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1308
+  },
+  {
+    "name": "JournalInstance 1307",
+    "kind": "Raid",
+    "mapId": 13,
+    "x": 64.94,
+    "y": 11.64,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1307
+  },
+  {
+    "name": "JournalInstance 1314",
+    "kind": "Raid",
+    "mapId": 13,
+    "x": 74.89,
+    "y": 8.97,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1314
+  },
+  {
+    "name": "Karazhan",
+    "kind": "Raid",
+    "mapId": 17,
+    "x": 22.23,
+    "y": 21.77,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 745
+  },
+  {
+    "name": "Blackwing Descent",
+    "kind": "Raid",
+    "mapId": 32,
+    "x": 39.02,
+    "y": 96.79,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 73
+  },
+  {
+    "name": "Molten Core / Blackrock Depths",
+    "kind": "Raid",
+    "mapId": 33,
+    "x": 45.0,
+    "y": 47.0,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Blackwing Lair",
+    "kind": "Raid",
+    "mapId": 33,
+    "x": 64.01,
+    "y": 71.53,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 742
+  },
+  {
+    "name": "Molten Core",
+    "kind": "Raid",
+    "mapId": 35,
+    "x": 53.77,
+    "y": 81.31,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 741
+  },
+  {
+    "name": "Blackwing Descent",
+    "kind": "Raid",
+    "mapId": 36,
+    "x": 23.13,
+    "y": 26.39,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 73
+  },
+  {
+    "name": "Karazhan",
+    "kind": "Raid",
+    "mapId": 42,
+    "x": 46.98,
+    "y": 74.9,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 745
+  },
+  {
+    "name": "The Bastion of Twilight",
+    "kind": "Raid",
+    "mapId": 48,
+    "x": 81.24,
+    "y": 22.07,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 72
+  },
+  {
+    "name": "Firelands",
+    "kind": "Raid",
+    "mapId": 63,
+    "x": 79.82,
+    "y": 17.12,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 78
+  },
+  {
+    "name": "Onyxia's Lair",
+    "kind": "Raid",
+    "mapId": 64,
+    "x": 74.61,
+    "y": 24.69,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 760
+  },
+  {
+    "name": "Onyxia's Lair",
+    "kind": "Raid",
+    "mapId": 70,
+    "x": 52.21,
+    "y": 75.93,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 760
+  },
+  {
+    "name": "Ny'alotha, the Waking City",
+    "kind": "Raid",
+    "mapId": 71,
+    "x": 12.66,
+    "y": 84.71,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1180
+  },
+  {
+    "name": "The Battle for Mount Hyjal",
+    "kind": "Raid",
+    "mapId": 75,
+    "x": 39.6,
+    "y": 17.04,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 750
+  },
+  {
+    "name": "Dragon Soul",
+    "kind": "Raid",
+    "mapId": 75,
+    "x": 60.87,
+    "y": 21.15,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 187
+  },
+  {
+    "name": "Temple of Ahn'Qiraj",
+    "kind": "Raid",
+    "mapId": 81,
+    "x": 24.32,
+    "y": 87.29,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 744
+  },
+  {
+    "name": "Ruins of Ahn'Qiraj",
+    "kind": "Raid",
+    "mapId": 81,
+    "x": 36.44,
+    "y": 94.03,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 743
+  },
+  {
+    "name": "Magtheridon's Lair",
+    "kind": "Raid",
+    "mapId": 100,
+    "x": 46.57,
+    "y": 52.83,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 747
+  },
+  {
+    "name": "Gruul's Lair",
+    "kind": "Raid",
+    "mapId": 101,
+    "x": 45.13,
+    "y": 19.01,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 746
+  },
+  {
+    "name": "The Eye",
+    "kind": "Raid",
+    "mapId": 101,
+    "x": 66.45,
+    "y": 23.35,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 749
+  },
+  {
+    "name": "Black Temple",
+    "kind": "Raid",
+    "mapId": 101,
+    "x": 72.29,
+    "y": 80.69,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 751
+  },
+  {
+    "name": "Serpentshrine Cavern",
+    "kind": "Raid",
+    "mapId": 102,
+    "x": 51.9,
+    "y": 33.48,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 748
+  },
+  {
+    "name": "Black Temple",
+    "kind": "Raid",
+    "mapId": 104,
+    "x": 71.05,
+    "y": 46.28,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 751
+  },
+  {
+    "name": "Serpentshrine Cavern",
+    "kind": "Raid",
+    "mapId": 105,
+    "x": 36.5,
+    "y": 99.41,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 748
+  },
+  {
+    "name": "Gruul's Lair",
+    "kind": "Raid",
+    "mapId": 105,
+    "x": 69.06,
+    "y": 24.14,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 746
+  },
+  {
+    "name": "Gruul's Lair",
+    "kind": "Raid",
+    "mapId": 109,
+    "x": 6.89,
+    "y": 51.68,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 746
+  },
+  {
+    "name": "Gruul's Lair",
+    "kind": "Raid",
+    "mapId": 109,
+    "x": 73.59,
+    "y": 63.72,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 746
+  },
+  {
+    "name": "Vault of Archavon",
+    "kind": "Raid",
+    "mapId": 113,
+    "x": 36.62,
+    "y": 44.57,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 753
+  },
+  {
+    "name": "Icecrown Citadel",
+    "kind": "Raid",
+    "mapId": 113,
+    "x": 40.79,
+    "y": 41.99,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 758
+  },
+  {
+    "name": "The Obsidian Sanctum / The Ruby Sanctum",
+    "kind": "Raid",
+    "mapId": 113,
+    "x": 50.34,
+    "y": 60.38,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Ulduar",
+    "kind": "Raid",
+    "mapId": 113,
+    "x": 57.72,
+    "y": 13.89,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 759
+  },
+  {
+    "name": "Naxxramas",
+    "kind": "Raid",
+    "mapId": 113,
+    "x": 58.41,
+    "y": 58.88,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 754
+  },
+  {
+    "name": "The Eye of Eternity",
+    "kind": "Raid",
+    "mapId": 114,
+    "x": 27.52,
+    "y": 26.73,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 756
+  },
+  {
+    "name": "The Obsidian Sanctum",
+    "kind": "Raid",
+    "mapId": 115,
+    "x": 60.0,
+    "y": 57.01,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 755
+  },
+  {
+    "name": "The Ruby Sanctum",
+    "kind": "Raid",
+    "mapId": 115,
+    "x": 61.34,
+    "y": 52.59,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 761
+  },
+  {
+    "name": "Naxxramas",
+    "kind": "Raid",
+    "mapId": 115,
+    "x": 87.34,
+    "y": 51.0,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 754
+  },
+  {
+    "name": "Naxxramas",
+    "kind": "Raid",
+    "mapId": 116,
+    "x": 3.06,
+    "y": 52.82,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 754
+  },
+  {
+    "name": "Vault of Archavon",
+    "kind": "Raid",
+    "mapId": 118,
+    "x": 41.51,
+    "y": 94.28,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 753
+  },
+  {
+    "name": "Icecrown Citadel",
+    "kind": "Raid",
+    "mapId": 118,
+    "x": 53.8,
+    "y": 87.09,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 758
+  },
+  {
+    "name": "Trial of the Crusader",
+    "kind": "Raid",
+    "mapId": 118,
+    "x": 75.16,
+    "y": 21.8,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 757
+  },
+  {
+    "name": "Vault of Archavon",
+    "kind": "Raid",
+    "mapId": 119,
+    "x": 93.86,
+    "y": 62.06,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 753
+  },
+  {
+    "name": "Trial of the Crusader",
+    "kind": "Raid",
+    "mapId": 120,
+    "x": 15.62,
+    "y": 35.48,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 757
+  },
+  {
+    "name": "Ulduar",
+    "kind": "Raid",
+    "mapId": 120,
+    "x": 41.57,
+    "y": 17.79,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 759
+  },
+  {
+    "name": "Sunwell Plateau",
+    "kind": "Raid",
+    "mapId": 122,
+    "x": 44.26,
+    "y": 45.6,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 752
+  },
+  {
+    "name": "Vault of Archavon",
+    "kind": "Raid",
+    "mapId": 123,
+    "x": 50.04,
+    "y": 11.68,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 753
+  },
+  {
+    "name": "Firelands",
+    "kind": "Raid",
+    "mapId": 198,
+    "x": 46.79,
+    "y": 78.38,
+    "source": "MapNotes_Instances",
+    "expansion": "Cataclysm",
+    "journalId": 78
+  },
+  {
+    "name": "Onyxia's Lair",
+    "kind": "Raid",
+    "mapId": 199,
+    "x": 68.43,
+    "y": 99.06,
+    "source": "MapNotes_Instances",
+    "expansion": "Cataclysm",
+    "journalId": 760
+  },
+  {
+    "name": "Karazhan",
+    "kind": "Raid",
+    "mapId": 224,
+    "x": 76.08,
+    "y": 3.44,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 745
+  },
+  {
+    "name": "The Bastion of Twilight",
+    "kind": "Raid",
+    "mapId": 241,
+    "x": 34.09,
+    "y": 77.88,
+    "source": "MapNotes_Instances",
+    "expansion": "Cataclysm",
+    "journalId": 72
+  },
+  {
+    "name": "Baradin Hold",
+    "kind": "Raid",
+    "mapId": 244,
+    "x": 46.05,
+    "y": 47.93,
+    "source": "MapNotes_Instances",
+    "expansion": "Cataclysm",
+    "journalId": 75
+  },
+  {
+    "name": "Throne of the Four Winds",
+    "kind": "Raid",
+    "mapId": 249,
+    "x": 37.0,
+    "y": 81.43,
+    "source": "MapNotes_Instances",
+    "expansion": "Cataclysm",
+    "journalId": 74
+  },
+  {
+    "name": "Ny'alotha, the Waking City",
+    "kind": "Raid",
+    "mapId": 249,
+    "x": 55.18,
+    "y": 43.95,
+    "source": "MapNotes_Instances",
+    "expansion": "Cataclysm",
+    "journalId": 1180
+  },
+  {
+    "name": "Temple of Ahn'Qiraj",
+    "kind": "Raid",
+    "mapId": 327,
+    "x": 46.79,
+    "y": 7.47,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 744
+  },
+  {
+    "name": "Ruins of Ahn'Qiraj",
+    "kind": "Raid",
+    "mapId": 327,
+    "x": 58.94,
+    "y": 14.23,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 743
+  },
+  {
+    "name": "Siege of Orgrimmar",
+    "kind": "Raid",
+    "mapId": 371,
+    "x": 12.0,
+    "y": 52.02,
+    "source": "MapNotes_Instances",
+    "expansion": "Mists of Pandaria",
+    "journalId": 369
+  },
+  {
+    "name": "Terrace of Endless Spring",
+    "kind": "Raid",
+    "mapId": 371,
+    "x": 21.59,
+    "y": 57.93,
+    "source": "MapNotes_Instances",
+    "expansion": "Mists of Pandaria",
+    "journalId": 320
+  },
+  {
+    "name": "Terrace of Endless Spring",
+    "kind": "Raid",
+    "mapId": 376,
+    "x": 69.68,
+    "y": 5.36,
+    "source": "MapNotes_Instances",
+    "expansion": "Mists of Pandaria",
+    "journalId": 320
+  },
+  {
+    "name": "Mogu'shan Vaults",
+    "kind": "Raid",
+    "mapId": 379,
+    "x": 59.6,
+    "y": 39.17,
+    "source": "MapNotes_Instances",
+    "expansion": "Mists of Pandaria",
+    "journalId": 317
+  },
+  {
+    "name": "Ny'alotha, the Waking City",
+    "kind": "Raid",
+    "mapId": 390,
+    "x": 39.6,
+    "y": 47.63,
+    "source": "MapNotes_Instances",
+    "expansion": "Mists of Pandaria",
+    "journalId": 1180
+  },
+  {
+    "name": "Siege of Orgrimmar",
+    "kind": "Raid",
+    "mapId": 390,
+    "x": 73.71,
+    "y": 42.48,
+    "source": "MapNotes_Instances",
+    "expansion": "Mists of Pandaria",
+    "journalId": 369
+  },
+  {
+    "name": "Heart of Fear",
+    "kind": "Raid",
+    "mapId": 422,
+    "x": 38.92,
+    "y": 34.99,
+    "source": "MapNotes_Instances",
+    "expansion": "Mists of Pandaria",
+    "journalId": 330
+  },
+  {
+    "name": "Throne of Thunder",
+    "kind": "Raid",
+    "mapId": 424,
+    "x": 23.1,
+    "y": 8.6,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 362
+  },
+  {
+    "name": "Heart of Fear",
+    "kind": "Raid",
+    "mapId": 424,
+    "x": 30.07,
+    "y": 62.96,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 330
+  },
+  {
+    "name": "Ny'alotha, the Waking City",
+    "kind": "Raid",
+    "mapId": 424,
+    "x": 47.01,
+    "y": 53.4,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1180
+  },
+  {
+    "name": "Mogu'shan Vaults",
+    "kind": "Raid",
+    "mapId": 424,
+    "x": 49.15,
+    "y": 26.06,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 317
+  },
+  {
+    "name": "Siege of Orgrimmar",
+    "kind": "Raid",
+    "mapId": 424,
+    "x": 52.35,
+    "y": 52.65,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 369
+  },
+  {
+    "name": "Terrace of Endless Spring",
+    "kind": "Raid",
+    "mapId": 424,
+    "x": 56.68,
+    "y": 55.29,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 320
+  },
+  {
+    "name": "Terrace of Endless Spring",
+    "kind": "Raid",
+    "mapId": 433,
+    "x": 48.45,
+    "y": 61.45,
+    "source": "MapNotes_Instances",
+    "expansion": "Mists of Pandaria",
+    "journalId": 320
+  },
+  {
+    "name": "Throne of Thunder",
+    "kind": "Raid",
+    "mapId": 504,
+    "x": 63.83,
+    "y": 32.03,
+    "source": "MapNotes_Instances",
+    "expansion": "Mists of Pandaria",
+    "journalId": 362
+  },
+  {
+    "name": "Hellfire Citadel",
+    "kind": "Raid",
+    "mapId": 534,
+    "x": 46.96,
+    "y": 52.64,
+    "source": "MapNotes_Instances",
+    "expansion": "Warlords of Draenor",
+    "journalId": 669
+  },
+  {
+    "name": "Blackrock Foundry",
+    "kind": "Raid",
+    "mapId": 543,
+    "x": 51.56,
+    "y": 27.19,
+    "source": "MapNotes_Instances",
+    "expansion": "Warlords of Draenor",
+    "journalId": 457
+  },
+  {
+    "name": "Highmaul",
+    "kind": "Raid",
+    "mapId": 550,
+    "x": 32.96,
+    "y": 38.37,
+    "source": "MapNotes_Instances",
+    "expansion": "Warlords of Draenor",
+    "journalId": 477
+  },
+  {
+    "name": "Highmaul",
+    "kind": "Raid",
+    "mapId": 572,
+    "x": 21.12,
+    "y": 50.32,
+    "source": "MapNotes_Instances",
+    "expansion": "Warlords of Draenor",
+    "journalId": 477
+  },
+  {
+    "name": "Blackrock Foundry",
+    "kind": "Raid",
+    "mapId": 572,
+    "x": 49.99,
+    "y": 20.14,
+    "source": "MapNotes_Instances",
+    "expansion": "Warlords of Draenor",
+    "journalId": 457
+  },
+  {
+    "name": "Hellfire Citadel",
+    "kind": "Raid",
+    "mapId": 572,
+    "x": 56.85,
+    "y": 46.85,
+    "source": "MapNotes_Instances",
+    "expansion": "Warlords of Draenor",
+    "journalId": 669
+  },
+  {
+    "name": "The Emerald Nightmare",
+    "kind": "Raid",
+    "mapId": 619,
+    "x": 34.98,
+    "y": 29.01,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 768
+  },
+  {
+    "name": "The Nighthold",
+    "kind": "Raid",
+    "mapId": 619,
+    "x": 46.86,
+    "y": 47.32,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 786
+  },
+  {
+    "name": "Tomb of Sargeras",
+    "kind": "Raid",
+    "mapId": 619,
+    "x": 56.5,
+    "y": 62.4,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 875
+  },
+  {
+    "name": "Trial of Valor",
+    "kind": "Raid",
+    "mapId": 619,
+    "x": 64.55,
+    "y": 39.03,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 861
+  },
+  {
+    "name": "Antorus, the Burning Throne",
+    "kind": "Raid",
+    "mapId": 619,
+    "x": 86.26,
+    "y": 20.11,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 946
+  },
+  {
+    "name": "Trial of Valor",
+    "kind": "Raid",
+    "mapId": 634,
+    "x": 71.12,
+    "y": 72.81,
+    "source": "MapNotes_Instances",
+    "expansion": "Legion",
+    "journalId": 861
+  },
+  {
+    "name": "The Emerald Nightmare",
+    "kind": "Raid",
+    "mapId": 641,
+    "x": 56.67,
+    "y": 37.47,
+    "source": "MapNotes_Instances",
+    "expansion": "Legion",
+    "journalId": 768
+  },
+  {
+    "name": "Tomb of Sargeras",
+    "kind": "Raid",
+    "mapId": 646,
+    "x": 64.0,
+    "y": 21.36,
+    "source": "MapNotes_Instances",
+    "expansion": "Legion",
+    "journalId": 875
+  },
+  {
+    "name": "The Nighthold",
+    "kind": "Raid",
+    "mapId": 680,
+    "x": 44.14,
+    "y": 59.79,
+    "source": "MapNotes_Instances",
+    "expansion": "Legion",
+    "journalId": 786
+  },
+  {
+    "name": "Battle of Dazar'alor",
+    "kind": "Raid",
+    "mapId": 862,
+    "x": 54.26,
+    "y": 29.93,
+    "source": "MapNotes_Instances",
+    "expansion": "Battle for Azeroth",
+    "journalId": 1176
+  },
+  {
+    "name": "Uldir",
+    "kind": "Raid",
+    "mapId": 863,
+    "x": 54.14,
+    "y": 63.02,
+    "source": "MapNotes_Instances",
+    "expansion": "Battle for Azeroth",
+    "journalId": 1031
+  },
+  {
+    "name": "Battle of Dazar'alor",
+    "kind": "Raid",
+    "mapId": 875,
+    "x": 56.0,
+    "y": 53.5,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1176
+  },
+  {
+    "name": "Uldir",
+    "kind": "Raid",
+    "mapId": 875,
+    "x": 59.41,
+    "y": 34.69,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1031
+  },
+  {
+    "name": "The Eternal Palace",
+    "kind": "Raid",
+    "mapId": 875,
+    "x": 86.73,
+    "y": 14.3,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1179
+  },
+  {
+    "name": "Battle of Dazar'alor",
+    "kind": "Raid",
+    "mapId": 876,
+    "x": 61.64,
+    "y": 53.08,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1176
+  },
+  {
+    "name": "Crucible of Storms",
+    "kind": "Raid",
+    "mapId": 876,
+    "x": 68.26,
+    "y": 23.54,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1177
+  },
+  {
+    "name": "The Eternal Palace",
+    "kind": "Raid",
+    "mapId": 876,
+    "x": 86.26,
+    "y": 11.71,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1179
+  },
+  {
+    "name": "Antorus, the Burning Throne",
+    "kind": "Raid",
+    "mapId": 885,
+    "x": 54.82,
+    "y": 62.53,
+    "source": "MapNotes_Instances",
+    "expansion": "Legion",
+    "journalId": 946
+  },
+  {
+    "name": "Battle of Dazar'alor",
+    "kind": "Raid",
+    "mapId": 895,
+    "x": 74.38,
+    "y": 28.37,
+    "source": "MapNotes_Instances",
+    "expansion": "Battle for Azeroth",
+    "journalId": 1176
+  },
+  {
+    "name": "Antorus, the Burning Throne",
+    "kind": "Raid",
+    "mapId": 905,
+    "x": 32.89,
+    "y": 60.84,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 946
+  },
+  {
+    "name": "Shrine of the Storm",
+    "kind": "Raid",
+    "mapId": 942,
+    "x": 83.89,
+    "y": 46.93,
+    "source": "MapNotes_Instances",
+    "expansion": "Battle for Azeroth",
+    "journalId": 1036
+  },
+  {
+    "name": "Battle of Dazar'alor",
+    "kind": "Raid",
+    "mapId": 1161,
+    "x": 70.44,
+    "y": 35.55,
+    "source": "MapNotes_Instances",
+    "expansion": "Battle for Azeroth",
+    "journalId": 1176
+  },
+  {
+    "name": "Battle of Dazar'alor",
+    "kind": "Raid",
+    "mapId": 1165,
+    "x": 38.92,
+    "y": 2.89,
+    "source": "MapNotes_Instances",
+    "expansion": "Battle for Azeroth",
+    "journalId": 1176
+  },
+  {
+    "name": "The Eternal Palace",
+    "kind": "Raid",
+    "mapId": 1355,
+    "x": 50.34,
+    "y": 12.33,
+    "source": "MapNotes_Instances",
+    "expansion": "Battle for Azeroth",
+    "journalId": 1179
+  },
+  {
+    "name": "Castle Nathria",
+    "kind": "Raid",
+    "mapId": 1525,
+    "x": 46.42,
+    "y": 41.49,
+    "source": "MapNotes_Instances",
+    "expansion": "Shadowlands",
+    "journalId": 1190
+  },
+  {
+    "name": "Temple of Ahn'Qiraj",
+    "kind": "Raid",
+    "mapId": 1527,
+    "x": 7.18,
+    "y": 4.99,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 744
+  },
+  {
+    "name": "Ruins of Ahn'Qiraj",
+    "kind": "Raid",
+    "mapId": 1527,
+    "x": 15.13,
+    "y": 9.4,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 743
+  },
+  {
+    "name": "Throne of the Four Winds",
+    "kind": "Raid",
+    "mapId": 1527,
+    "x": 37.0,
+    "y": 81.43,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 74
+  },
+  {
+    "name": "Throne of the Four Winds",
+    "kind": "Raid",
+    "mapId": 1527,
+    "x": 38.23,
+    "y": 80.69,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 74
+  },
+  {
+    "name": "Ny'alotha, the Waking City",
+    "kind": "Raid",
+    "mapId": 1527,
+    "x": 55.18,
+    "y": 43.95,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1180
+  },
+  {
+    "name": "The Eternal Palace",
+    "kind": "Raid",
+    "mapId": 1528,
+    "x": 47.35,
+    "y": 31.82,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1179
+  },
+  {
+    "name": "Ny'alotha, the Waking City",
+    "kind": "Raid",
+    "mapId": 1530,
+    "x": 40.04,
+    "y": 45.56,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1180
+  },
+  {
+    "name": "Siege of Orgrimmar",
+    "kind": "Raid",
+    "mapId": 1530,
+    "x": 72.68,
+    "y": 42.08,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 369
+  },
+  {
+    "name": "Siege of Orgrimmar",
+    "kind": "Raid",
+    "mapId": 1530,
+    "x": 74.11,
+    "y": 40.14,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 369
+  },
+  {
+    "name": "Sanctum of Domination",
+    "kind": "Raid",
+    "mapId": 1543,
+    "x": 69.74,
+    "y": 32.01,
+    "source": "MapNotes_Instances",
+    "expansion": "Shadowlands",
+    "journalId": 1193
+  },
+  {
+    "name": "Castle Nathria",
+    "kind": "Raid",
+    "mapId": 1550,
+    "x": 23.79,
+    "y": 50.72,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1190
+  },
+  {
+    "name": "Sanctum of Domination",
+    "kind": "Raid",
+    "mapId": 1550,
+    "x": 27.08,
+    "y": 13.59,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1193
+  },
+  {
+    "name": "Sepulcher of the First Ones",
+    "kind": "Raid",
+    "mapId": 1550,
+    "x": 89.06,
+    "y": 79.83,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1195
+  },
+  {
+    "name": "Sepulcher of the First Ones",
+    "kind": "Raid",
+    "mapId": 1970,
+    "x": 80.49,
+    "y": 53.4,
+    "source": "MapNotes_Instances",
+    "expansion": "Shadowlands",
+    "journalId": 1195
+  },
+  {
+    "name": "Amirdrassil, the Dream's Hope",
+    "kind": "Raid",
+    "mapId": 1978,
+    "x": 31.06,
+    "y": 56.86,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1207
+  },
+  {
+    "name": "Vault of the Incarnates",
+    "kind": "Raid",
+    "mapId": 1978,
+    "x": 69.07,
+    "y": 46.77,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1200
+  },
+  {
+    "name": "Aberrus, the Shadowed Crucible",
+    "kind": "Raid",
+    "mapId": 1978,
+    "x": 86.73,
+    "y": 73.09,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1208
+  },
+  {
+    "name": "Amirdrassil, the Dream's Hope",
+    "kind": "Raid",
+    "mapId": 2023,
+    "x": 18.85,
+    "y": 51.24,
+    "source": "MapNotes_Instances",
+    "expansion": "Dragonflight",
+    "journalId": 1207
+  },
+  {
+    "name": "Vault of the Incarnates",
+    "kind": "Raid",
+    "mapId": 2025,
+    "x": 73.06,
+    "y": 55.67,
+    "source": "MapNotes_Instances",
+    "expansion": "Dragonflight",
+    "journalId": 1200
+  },
+  {
+    "name": "Vault of the Incarnates",
+    "kind": "Raid",
+    "mapId": 2025,
+    "x": 74.85,
+    "y": 55.11,
+    "source": "MapNotes_Instances",
+    "expansion": "Dragonflight",
+    "journalId": 1200
+  },
+  {
+    "name": "Aberrus, the Shadowed Crucible",
+    "kind": "Raid",
+    "mapId": 2133,
+    "x": 48.45,
+    "y": 11.91,
+    "source": "MapNotes_Instances",
+    "expansion": "Dragonflight",
+    "journalId": 1208
+  },
+  {
+    "name": "Amirdrassil, the Dream's Hope",
+    "kind": "Raid",
+    "mapId": 2200,
+    "x": 27.31,
+    "y": 31.04,
+    "source": "MapNotes_Instances",
+    "expansion": "Dragonflight",
+    "journalId": 1207
+  },
+  {
+    "name": "Nerub-ar Palace",
+    "kind": "Raid",
+    "mapId": 2213,
+    "x": 35.04,
+    "y": 72.42,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1273
+  },
+  {
+    "name": "Nerub-ar Palace",
+    "kind": "Raid",
+    "mapId": 2216,
+    "x": 35.04,
+    "y": 72.42,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1273
+  },
+  {
+    "name": "Nerub-ar Palace",
+    "kind": "Raid",
+    "mapId": 2255,
+    "x": 43.55,
+    "y": 90.29,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1273
+  },
+  {
+    "name": "Nerub-ar Palace",
+    "kind": "Raid",
+    "mapId": 2256,
+    "x": 43.55,
+    "y": 90.29,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1273
+  },
+  {
+    "name": "JournalInstance 1302",
+    "kind": "Raid",
+    "mapId": 2274,
+    "x": 17.93,
+    "y": 12.05,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1302
+  },
+  {
+    "name": "Nerub-ar Palace",
+    "kind": "Raid",
+    "mapId": 2274,
+    "x": 41.46,
+    "y": 90.96,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1273
+  },
+  {
+    "name": "Nerub-ar Palace",
+    "kind": "Raid",
+    "mapId": 2274,
+    "x": 42.18,
+    "y": 86.73,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1273
+  },
+  {
+    "name": "JournalInstance 1296",
+    "kind": "Raid",
+    "mapId": 2274,
+    "x": 82.21,
+    "y": 72.45,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1296
+  },
+  {
+    "name": "JournalInstance 1296",
+    "kind": "Raid",
+    "mapId": 2346,
+    "x": 42.04,
+    "y": 50.31,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1296
+  },
+  {
+    "name": "JournalInstance 1302",
+    "kind": "Raid",
+    "mapId": 2371,
+    "x": 41.66,
+    "y": 21.52,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1302
+  },
+  {
+    "name": "JournalInstance 1307",
+    "kind": "Raid",
+    "mapId": 2405,
+    "x": 45.24,
+    "y": 64.83,
+    "source": "MapNotes_Instances",
+    "expansion": "Midnight",
+    "journalId": 1307
+  },
+  {
+    "name": "JournalInstance 1314",
+    "kind": "Raid",
+    "mapId": 2413,
+    "x": 61.38,
+    "y": 62.89,
+    "source": "MapNotes_Instances",
+    "expansion": "Midnight",
+    "journalId": 1314
+  },
+  {
+    "name": "JournalInstance 1308",
+    "kind": "Raid",
+    "mapId": 2424,
+    "x": 52.6,
+    "y": 85.29,
+    "source": "MapNotes_Instances",
+    "expansion": "Midnight",
+    "journalId": 1308
+  },
+  {
+    "name": "JournalInstance 1308",
+    "kind": "Raid",
+    "mapId": 2537,
+    "x": 27.02,
+    "y": 22.6,
+    "source": "MapNotes_Instances",
+    "expansion": "Midnight",
+    "journalId": 1308
+  },
+  {
+    "name": "JournalInstance 1307",
+    "kind": "Raid",
+    "mapId": 2537,
+    "x": 52.81,
+    "y": 29.48,
+    "source": "MapNotes_Instances",
+    "expansion": "Midnight",
+    "journalId": 1307
+  },
+  {
+    "name": "JournalInstance 1314",
+    "kind": "Raid",
+    "mapId": 2537,
+    "x": 83.14,
+    "y": 19.31,
+    "source": "MapNotes_Instances",
+    "expansion": "Midnight",
+    "journalId": 1314
+  },
+  {
+    "name": "Sepulcher of the First Ones / Sanctum of Domination / Castle Nathria",
+    "kind": "Raid",
+    "mapId": 946,
+    "x": 13.27,
+    "y": 40.83,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "The Eye / Black Temple",
+    "kind": "Raid",
+    "mapId": 946,
+    "x": 16.1,
+    "y": 89.8,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Throne of the Four Winds / Firelands / Onyxia's Lair / Ruins of Ahn'Qiraj / Temple of Ahn'Qiraj / Ny'alotha, the Waking City / Dragon Soul",
+    "kind": "Raid",
+    "mapId": 946,
+    "x": 39.0,
+    "y": 74.0,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Sunwell Plateau / Blackwing Descent / The Bastion of Twilight / Baradin Hold / Molten Core / Blackwing Lair / Karazhan",
+    "kind": "Raid",
+    "mapId": 946,
+    "x": 42.6,
+    "y": 74.0,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Naxxramas / Icecrown Citadel / Ulduar / Vault of Archavon / The Obsidian Sanctum / The Ruby Sanctum / The Eye of Eternity / Trial of the Crusader",
+    "kind": "Raid",
+    "mapId": 946,
+    "x": 46.2,
+    "y": 74.0,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Mogu'shan Vaults / Siege of Orgrimmar / Heart of Fear / Throne of Thunder / Terrace of Endless Spring / Ny'alotha, the Waking City",
+    "kind": "Raid",
+    "mapId": 946,
+    "x": 49.8,
+    "y": 74.0,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Antorus, the Burning Throne / The Nighthold / Tomb of Sargeras / Trial of Valor",
+    "kind": "Raid",
+    "mapId": 946,
+    "x": 53.4,
+    "y": 74.0,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Uldir / The Eternal Palace / Battle of Dazar'alor",
+    "kind": "Raid",
+    "mapId": 946,
+    "x": 57.0,
+    "y": 74.0,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "The Eternal Palace / Battle of Dazar'alor / Crucible of Storms",
+    "kind": "Raid",
+    "mapId": 946,
+    "x": 60.6,
+    "y": 74.0,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Vault of the Incarnates / Aberrus, the Shadowed Crucible / Amirdrassil, the Dream's Hope",
+    "kind": "Raid",
+    "mapId": 946,
+    "x": 64.2,
+    "y": 74.0,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Nerub-ar Palace",
+    "kind": "Raid",
+    "mapId": 946,
+    "x": 67.8,
+    "y": 74.0,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Blackrock Foundry / Highmaul / Hellfire Citadel",
+    "kind": "Raid",
+    "mapId": 946,
+    "x": 80.95,
+    "y": 43.89,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Temple of Ahn'Qiraj / Ruins of Ahn'Qiraj",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 12.95,
+    "y": 69.55,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Throne of the Four Winds",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 15.72,
+    "y": 75.88,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 74
+  },
+  {
+    "name": "Ny'alotha, the Waking City",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 16.9,
+    "y": 72.06,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1180
+  },
+  {
+    "name": "Firelands",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 19.52,
+    "y": 46.69,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 78
+  },
+  {
+    "name": "Onyxia's Lair",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 20.74,
+    "y": 63.46,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 760
+  },
+  {
+    "name": "Throne of Thunder",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 41.07,
+    "y": 70.05,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 362
+  },
+  {
+    "name": "Heart of Fear",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 43.59,
+    "y": 83.71,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 330
+  },
+  {
+    "name": "Vault of Archavon",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 46.29,
+    "y": 13.52,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 753
+  },
+  {
+    "name": "Ny'alotha, the Waking City",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 47.34,
+    "y": 81.5,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1180
+  },
+  {
+    "name": "Mogu'shan Vaults",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 47.85,
+    "y": 75.09,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 317
+  },
+  {
+    "name": "Terrace of Endless Spring",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 49.85,
+    "y": 81.98,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 320
+  },
+  {
+    "name": "The Obsidian Sanctum / The Ruby Sanctum",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 50.0,
+    "y": 17.36,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Naxxramas",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 52.13,
+    "y": 17.13,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 754
+  },
+  {
+    "name": "Battle of Dazar'alor",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 55.18,
+    "y": 63.52,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1176
+  },
+  {
+    "name": "The Eternal Palace",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 60.7,
+    "y": 56.7,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1179
+  },
+  {
+    "name": "Antorus, the Burning Throne",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 65.6,
+    "y": 36.82,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 946
+  },
+  {
+    "name": "Amirdrassil, the Dream's Hope",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 70.33,
+    "y": 22.74,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1207
+  },
+  {
+    "name": "Crucible of Storms",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 74.4,
+    "y": 44.22,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1177
+  },
+  {
+    "name": "Baradin Hold",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 80.45,
+    "y": 52.6,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 75
+  },
+  {
+    "name": "Vault of the Incarnates",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 81.37,
+    "y": 20.23,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1200
+  },
+  {
+    "name": "Aberrus, the Shadowed Crucible",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 85.0,
+    "y": 26.23,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1208
+  },
+  {
+    "name": "Sunwell Plateau",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 90.65,
+    "y": 27.24,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 752
+  },
+  {
+    "name": "The Bastion of Twilight",
+    "kind": "Raid",
+    "mapId": 947,
+    "x": 90.65,
+    "y": 56.21,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 72
+  },
+  {
+    "name": "Wailing Caverns",
+    "kind": "Dungeon",
+    "mapId": 1,
+    "x": 3.06,
+    "y": 74.58,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 240
+  },
+  {
+    "name": "Ragefire Chasm",
+    "kind": "Dungeon",
+    "mapId": 1,
+    "x": 46.2,
+    "y": 0.01,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 226
+  },
+  {
+    "name": "Wailing Caverns",
+    "kind": "Dungeon",
+    "mapId": 7,
+    "x": 79.42,
+    "y": 17.94,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 240
+  },
+  {
+    "name": "Wailing Caverns",
+    "kind": "Dungeon",
+    "mapId": 10,
+    "x": 40.49,
+    "y": 68.68,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 240
+  },
+  {
+    "name": "Ragefire Chasm",
+    "kind": "Dungeon",
+    "mapId": 10,
+    "x": 80.19,
+    "y": 0.06,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 226
+  },
+  {
+    "name": "Wailing Caverns",
+    "kind": "Dungeon",
+    "mapId": 11,
+    "x": 54.91,
+    "y": 66.46,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 240
+  },
+  {
+    "name": "Uldaman: Legacy of Tyr",
+    "kind": "Dungeon",
+    "mapId": 15,
+    "x": 41.12,
+    "y": 10.3,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1197
+  },
+  {
+    "name": "Uldaman",
+    "kind": "Dungeon",
+    "mapId": 15,
+    "x": 42.03,
+    "y": 11.47,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 239
+  },
+  {
+    "name": "Uldaman",
+    "kind": "Dungeon",
+    "mapId": 15,
+    "x": 58.54,
+    "y": 36.98,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 239
+  },
+  {
+    "name": "Uldaman",
+    "kind": "Dungeon",
+    "mapId": 16,
+    "x": 36.5,
+    "y": 27.65,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 239
+  },
+  {
+    "name": "Scarlet Monastery",
+    "kind": "Dungeon",
+    "mapId": 18,
+    "x": 84.82,
+    "y": 30.43,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 316
+  },
+  {
+    "name": "Scarlet Halls",
+    "kind": "Dungeon",
+    "mapId": 18,
+    "x": 85.32,
+    "y": 32.27,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 311
+  },
+  {
+    "name": "Scarlet Monastery",
+    "kind": "Dungeon",
+    "mapId": 19,
+    "x": 68.08,
+    "y": 20.61,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 316
+  },
+  {
+    "name": "Scarlet Halls",
+    "kind": "Dungeon",
+    "mapId": 19,
+    "x": 79.14,
+    "y": 61.19,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 311
+  },
+  {
+    "name": "Shadowfang Keep",
+    "kind": "Dungeon",
+    "mapId": 21,
+    "x": 44.92,
+    "y": 67.88,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 64
+  },
+  {
+    "name": "Scarlet Monastery",
+    "kind": "Dungeon",
+    "mapId": 22,
+    "x": 28.28,
+    "y": 15.55,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 316
+  },
+  {
+    "name": "Scarlet Halls",
+    "kind": "Dungeon",
+    "mapId": 22,
+    "x": 28.81,
+    "y": 17.49,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 311
+  },
+  {
+    "name": "Scholomance",
+    "kind": "Dungeon",
+    "mapId": 22,
+    "x": 69.79,
+    "y": 73.56,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 246
+  },
+  {
+    "name": "Scholomance",
+    "kind": "Dungeon",
+    "mapId": 23,
+    "x": 7.36,
+    "y": 91.02,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 246
+  },
+  {
+    "name": "Stratholme - Main Gate",
+    "kind": "Dungeon",
+    "mapId": 23,
+    "x": 27.07,
+    "y": 11.51,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 236
+  },
+  {
+    "name": "Stratholme - Main Gate",
+    "kind": "Dungeon",
+    "mapId": 23,
+    "x": 43.25,
+    "y": 18.54,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 236
+  },
+  {
+    "name": "Shadowfang Keep",
+    "kind": "Dungeon",
+    "mapId": 25,
+    "x": 5.89,
+    "y": 52.91,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 64
+  },
+  {
+    "name": "Scholomance",
+    "kind": "Dungeon",
+    "mapId": 25,
+    "x": 91.19,
+    "y": 6.89,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 246
+  },
+  {
+    "name": "Scholomance",
+    "kind": "Dungeon",
+    "mapId": 26,
+    "x": 26.21,
+    "y": 8.14,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 246
+  },
+  {
+    "name": "Gnomeregan",
+    "kind": "Dungeon",
+    "mapId": 27,
+    "x": 31.39,
+    "y": 38.04,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 231
+  },
+  {
+    "name": "Gnomeregan",
+    "kind": "Dungeon",
+    "mapId": 30,
+    "x": 29.5,
+    "y": 74.8,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 231
+  },
+  {
+    "name": "Gnomeregan",
+    "kind": "Dungeon",
+    "mapId": 30,
+    "x": 42.31,
+    "y": 12.88,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 231
+  },
+  {
+    "name": "Dungeon",
+    "kind": "Dungeon",
+    "mapId": 32,
+    "x": 35.26,
+    "y": 84.04,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Blackrock Caverns",
+    "kind": "Dungeon",
+    "mapId": 33,
+    "x": 75.51,
+    "y": 60.99,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 66
+  },
+  {
+    "name": "Upper Blackrock Spire",
+    "kind": "Dungeon",
+    "mapId": 33,
+    "x": 79.03,
+    "y": 33.79,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 559
+  },
+  {
+    "name": "Lower Blackrock Spire",
+    "kind": "Dungeon",
+    "mapId": 33,
+    "x": 80.45,
+    "y": 41.93,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 229
+  },
+  {
+    "name": "Blackrock Caverns",
+    "kind": "Dungeon",
+    "mapId": 34,
+    "x": 71.24,
+    "y": 53.37,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 66
+  },
+  {
+    "name": "Blackrock Depths",
+    "kind": "Dungeon",
+    "mapId": 35,
+    "x": 39.28,
+    "y": 18.19,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 228
+  },
+  {
+    "name": "Dungeon",
+    "kind": "Dungeon",
+    "mapId": 35,
+    "x": 58.16,
+    "y": 87.28,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "The Stockade",
+    "kind": "Dungeon",
+    "mapId": 37,
+    "x": 20.22,
+    "y": 36.35,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 238
+  },
+  {
+    "name": "Return to Karazhan",
+    "kind": "Dungeon",
+    "mapId": 42,
+    "x": 46.86,
+    "y": 69.79,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 860
+  },
+  {
+    "name": "Uldaman",
+    "kind": "Dungeon",
+    "mapId": 48,
+    "x": 43.47,
+    "y": 87.05,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 239
+  },
+  {
+    "name": "Zul'Gurub",
+    "kind": "Dungeon",
+    "mapId": 50,
+    "x": 72.08,
+    "y": 32.91,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 76
+  },
+  {
+    "name": "The Temple of Atal'hakkar",
+    "kind": "Dungeon",
+    "mapId": 51,
+    "x": 69.67,
+    "y": 53.53,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 237
+  },
+  {
+    "name": "Deadmines",
+    "kind": "Dungeon",
+    "mapId": 52,
+    "x": 42.52,
+    "y": 71.68,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 63
+  },
+  {
+    "name": "Deadmines",
+    "kind": "Dungeon",
+    "mapId": 55,
+    "x": 24.73,
+    "y": 51.43,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 63
+  },
+  {
+    "name": "Grim Batol",
+    "kind": "Dungeon",
+    "mapId": 56,
+    "x": 74.0,
+    "y": 69.3,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 71
+  },
+  {
+    "name": "Blackfathom Deeps",
+    "kind": "Dungeon",
+    "mapId": 62,
+    "x": 33.0,
+    "y": 94.67,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 227
+  },
+  {
+    "name": "Blackfathom Deeps",
+    "kind": "Dungeon",
+    "mapId": 63,
+    "x": 14.16,
+    "y": 13.8,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 227
+  },
+  {
+    "name": "Razorfen Kraul",
+    "kind": "Dungeon",
+    "mapId": 64,
+    "x": 28.02,
+    "y": 16.95,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 234
+  },
+  {
+    "name": "Razorfen Downs",
+    "kind": "Dungeon",
+    "mapId": 64,
+    "x": 41.66,
+    "y": 28.82,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 233
+  },
+  {
+    "name": "Razorfen Downs",
+    "kind": "Dungeon",
+    "mapId": 64,
+    "x": 46.74,
+    "y": 23.33,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 233
+  },
+  {
+    "name": "Zul'Farrak",
+    "kind": "Dungeon",
+    "mapId": 64,
+    "x": 56.3,
+    "y": 97.65,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 241
+  },
+  {
+    "name": "Maraudon",
+    "kind": "Dungeon",
+    "mapId": 66,
+    "x": 29.22,
+    "y": 62.53,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 232
+  },
+  {
+    "name": "Maraudon",
+    "kind": "Dungeon",
+    "mapId": 67,
+    "x": 78.28,
+    "y": 55.18,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 232
+  },
+  {
+    "name": "Maraudon",
+    "kind": "Dungeon",
+    "mapId": 68,
+    "x": 44.51,
+    "y": 76.69,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 232
+  },
+  {
+    "name": "Maraudon",
+    "kind": "Dungeon",
+    "mapId": 68,
+    "x": 52.15,
+    "y": 24.17,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 232
+  },
+  {
+    "name": "Dire Maul - Capital Gardens",
+    "kind": "Dungeon",
+    "mapId": 69,
+    "x": 60.3,
+    "y": 31.3,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 230
+  },
+  {
+    "name": "Dire Maul - Capital Gardens",
+    "kind": "Dungeon",
+    "mapId": 69,
+    "x": 60.32,
+    "y": 30.15,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 230
+  },
+  {
+    "name": "Dire Maul - Gordok Commons",
+    "kind": "Dungeon",
+    "mapId": 69,
+    "x": 62.5,
+    "y": 24.9,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1277
+  },
+  {
+    "name": "Dire Maul - Warpwood Quarter",
+    "kind": "Dungeon",
+    "mapId": 69,
+    "x": 65.5,
+    "y": 35.24,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1276
+  },
+  {
+    "name": "Dire Maul - Warpwood Quarter",
+    "kind": "Dungeon",
+    "mapId": 69,
+    "x": 77.07,
+    "y": 36.92,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1276
+  },
+  {
+    "name": "Razorfen Kraul",
+    "kind": "Dungeon",
+    "mapId": 70,
+    "x": 13.17,
+    "y": 69.45,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 234
+  },
+  {
+    "name": "Razorfen Downs",
+    "kind": "Dungeon",
+    "mapId": 70,
+    "x": 28.86,
+    "y": 74.79,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 233
+  },
+  {
+    "name": "Halls of Origination",
+    "kind": "Dungeon",
+    "mapId": 71,
+    "x": 24.61,
+    "y": 92.33,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 70
+  },
+  {
+    "name": "Zul'Farrak",
+    "kind": "Dungeon",
+    "mapId": 71,
+    "x": 39.48,
+    "y": 22.05,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 241
+  },
+  {
+    "name": "Well of Eternity",
+    "kind": "Dungeon",
+    "mapId": 75,
+    "x": 22.13,
+    "y": 63.81,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 185
+  },
+  {
+    "name": "Old Hillsbrad Foothills",
+    "kind": "Dungeon",
+    "mapId": 75,
+    "x": 26.33,
+    "y": 32.79,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 251
+  },
+  {
+    "name": "The Black Morass",
+    "kind": "Dungeon",
+    "mapId": 75,
+    "x": 34.43,
+    "y": 84.89,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 255
+  },
+  {
+    "name": "End Time",
+    "kind": "Dungeon",
+    "mapId": 75,
+    "x": 57.04,
+    "y": 25.78,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 184
+  },
+  {
+    "name": "The Culling of Stratholme",
+    "kind": "Dungeon",
+    "mapId": 75,
+    "x": 60.11,
+    "y": 82.72,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 279
+  },
+  {
+    "name": "Hour of Twilight",
+    "kind": "Dungeon",
+    "mapId": 75,
+    "x": 68.38,
+    "y": 29.51,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 186
+  },
+  {
+    "name": "Ragefire Chasm",
+    "kind": "Dungeon",
+    "mapId": 76,
+    "x": 18.72,
+    "y": 97.18,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 226
+  },
+  {
+    "name": "Blackfathom Deeps",
+    "kind": "Dungeon",
+    "mapId": 77,
+    "x": 15.09,
+    "y": 76.58,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 227
+  },
+  {
+    "name": "Zul'Farrak",
+    "kind": "Dungeon",
+    "mapId": 78,
+    "x": 93.07,
+    "y": 35.04,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 241
+  },
+  {
+    "name": "The Stockade",
+    "kind": "Dungeon",
+    "mapId": 84,
+    "x": 51.19,
+    "y": 67.79,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 238
+  },
+  {
+    "name": "Ragefire Chasm",
+    "kind": "Dungeon",
+    "mapId": 85,
+    "x": 51.68,
+    "y": 58.5,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 226
+  },
+  {
+    "name": "Ragefire Chasm",
+    "kind": "Dungeon",
+    "mapId": 86,
+    "x": 66.71,
+    "y": 51.54,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 226
+  },
+  {
+    "name": "Zul'Aman",
+    "kind": "Dungeon",
+    "mapId": 95,
+    "x": 81.95,
+    "y": 64.34,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 77
+  },
+  {
+    "name": "The Blood Furnace",
+    "kind": "Dungeon",
+    "mapId": 100,
+    "x": 46.01,
+    "y": 51.79,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 256
+  },
+  {
+    "name": "Hellfire Ramparts",
+    "kind": "Dungeon",
+    "mapId": 100,
+    "x": 47.92,
+    "y": 53.42,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 248
+  },
+  {
+    "name": "The Shattered Halls",
+    "kind": "Dungeon",
+    "mapId": 100,
+    "x": 48.06,
+    "y": 51.91,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 259
+  },
+  {
+    "name": "The Slave Pens",
+    "kind": "Dungeon",
+    "mapId": 102,
+    "x": 48.95,
+    "y": 35.92,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 260
+  },
+  {
+    "name": "The Steamvault",
+    "kind": "Dungeon",
+    "mapId": 102,
+    "x": 50.47,
+    "y": 33.33,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 261
+  },
+  {
+    "name": "The Underbog",
+    "kind": "Dungeon",
+    "mapId": 102,
+    "x": 54.17,
+    "y": 34.43,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 262
+  },
+  {
+    "name": "The Steamvault",
+    "kind": "Dungeon",
+    "mapId": 105,
+    "x": 35.17,
+    "y": 99.27,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 261
+  },
+  {
+    "name": "Auchenai Crypts",
+    "kind": "Dungeon",
+    "mapId": 107,
+    "x": 92.03,
+    "y": 92.39,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 247
+  },
+  {
+    "name": "Mana-Tombs",
+    "kind": "Dungeon",
+    "mapId": 107,
+    "x": 96.89,
+    "y": 85.03,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 250
+  },
+  {
+    "name": "Auchenai Crypts",
+    "kind": "Dungeon",
+    "mapId": 108,
+    "x": 34.67,
+    "y": 65.59,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 247
+  },
+  {
+    "name": "Shadow Labyrinth",
+    "kind": "Dungeon",
+    "mapId": 108,
+    "x": 39.62,
+    "y": 73.18,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 253
+  },
+  {
+    "name": "Mana-Tombs",
+    "kind": "Dungeon",
+    "mapId": 108,
+    "x": 39.64,
+    "y": 58.06,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 250
+  },
+  {
+    "name": "Sethekk Halls",
+    "kind": "Dungeon",
+    "mapId": 108,
+    "x": 44.59,
+    "y": 65.6,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 252
+  },
+  {
+    "name": "The Mechanar",
+    "kind": "Dungeon",
+    "mapId": 109,
+    "x": 70.53,
+    "y": 69.64,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 258
+  },
+  {
+    "name": "The Botanica",
+    "kind": "Dungeon",
+    "mapId": 109,
+    "x": 71.69,
+    "y": 55.06,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 257
+  },
+  {
+    "name": "The Arcatraz",
+    "kind": "Dungeon",
+    "mapId": 109,
+    "x": 74.36,
+    "y": 57.74,
+    "source": "MapNotes_Instances",
+    "expansion": "Burning Crusade",
+    "journalId": 254
+  },
+  {
+    "name": "The Oculus",
+    "kind": "Dungeon",
+    "mapId": 114,
+    "x": 26.6,
+    "y": 27.46,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 282
+  },
+  {
+    "name": "The Nexus",
+    "kind": "Dungeon",
+    "mapId": 114,
+    "x": 28.59,
+    "y": 27.72,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 281
+  },
+  {
+    "name": "Azjol-Nerub",
+    "kind": "Dungeon",
+    "mapId": 115,
+    "x": 25.99,
+    "y": 50.79,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 272
+  },
+  {
+    "name": "Ahn'kahet: The Old Kingdom",
+    "kind": "Dungeon",
+    "mapId": 115,
+    "x": 28.38,
+    "y": 51.67,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 271
+  },
+  {
+    "name": "Drak'Tharon Keep",
+    "kind": "Dungeon",
+    "mapId": 116,
+    "x": 17.55,
+    "y": 21.2,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 273
+  },
+  {
+    "name": "Utgarde Pinnacle",
+    "kind": "Dungeon",
+    "mapId": 117,
+    "x": 57.22,
+    "y": 46.49,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 286
+  },
+  {
+    "name": "Utgarde Keep",
+    "kind": "Dungeon",
+    "mapId": 117,
+    "x": 57.88,
+    "y": 49.51,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 285
+  },
+  {
+    "name": "Pit of Saron",
+    "kind": "Dungeon",
+    "mapId": 118,
+    "x": 54.72,
+    "y": 91.68,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 278
+  },
+  {
+    "name": "The Forge of Souls",
+    "kind": "Dungeon",
+    "mapId": 118,
+    "x": 54.84,
+    "y": 89.85,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 280
+  },
+  {
+    "name": "Halls of Reflection",
+    "kind": "Dungeon",
+    "mapId": 118,
+    "x": 55.31,
+    "y": 90.84,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 276
+  },
+  {
+    "name": "Trial of the Champion",
+    "kind": "Dungeon",
+    "mapId": 118,
+    "x": 74.17,
+    "y": 20.44,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 284
+  },
+  {
+    "name": "Trial of the Champion",
+    "kind": "Dungeon",
+    "mapId": 120,
+    "x": 14.75,
+    "y": 34.28,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 284
+  },
+  {
+    "name": "Halls of Stone",
+    "kind": "Dungeon",
+    "mapId": 120,
+    "x": 39.58,
+    "y": 26.89,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 277
+  },
+  {
+    "name": "Halls of Lightning",
+    "kind": "Dungeon",
+    "mapId": 120,
+    "x": 45.32,
+    "y": 21.48,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 275
+  },
+  {
+    "name": "Gundrak",
+    "kind": "Dungeon",
+    "mapId": 120,
+    "x": 87.99,
+    "y": 68.37,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 274
+  },
+  {
+    "name": "Drak'Tharon Keep",
+    "kind": "Dungeon",
+    "mapId": 121,
+    "x": 28.67,
+    "y": 86.93,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 273
+  },
+  {
+    "name": "Gundrak",
+    "kind": "Dungeon",
+    "mapId": 121,
+    "x": 76.43,
+    "y": 21.4,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 274
+  },
+  {
+    "name": "Gundrak",
+    "kind": "Dungeon",
+    "mapId": 121,
+    "x": 80.89,
+    "y": 28.32,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 274
+  },
+  {
+    "name": "Magisters' Terrace",
+    "kind": "Dungeon",
+    "mapId": 122,
+    "x": 60.97,
+    "y": 30.73,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 249
+  },
+  {
+    "name": "Pit of Saron",
+    "kind": "Dungeon",
+    "mapId": 123,
+    "x": 77.89,
+    "y": 6.2,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 278
+  },
+  {
+    "name": "The Forge of Souls",
+    "kind": "Dungeon",
+    "mapId": 123,
+    "x": 78.14,
+    "y": 2.36,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 280
+  },
+  {
+    "name": "Halls of Reflection",
+    "kind": "Dungeon",
+    "mapId": 123,
+    "x": 79.12,
+    "y": 4.44,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 276
+  },
+  {
+    "name": "The Violet Hold",
+    "kind": "Dungeon",
+    "mapId": 125,
+    "x": 66.16,
+    "y": 67.45,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 283
+  },
+  {
+    "name": "The Violet Hold",
+    "kind": "Dungeon",
+    "mapId": 127,
+    "x": 34.15,
+    "y": 44.13,
+    "source": "MapNotes_Instances",
+    "expansion": "Wrath of the Lich King",
+    "journalId": 283
+  },
+  {
+    "name": "Razorfen Kraul",
+    "kind": "Dungeon",
+    "mapId": 199,
+    "x": 40.77,
+    "y": 94.46,
+    "source": "MapNotes_Instances",
+    "expansion": "Cataclysm",
+    "journalId": 234
+  },
+  {
+    "name": "Razorfen Downs",
+    "kind": "Dungeon",
+    "mapId": 199,
+    "x": 45.08,
+    "y": 94.0,
+    "source": "MapNotes_Instances",
+    "expansion": "Cataclysm",
+    "journalId": 233
+  },
+  {
+    "name": "Wailing Caverns",
+    "kind": "Dungeon",
+    "mapId": 199,
+    "x": 46.95,
+    "y": 20.74,
+    "source": "MapNotes_Instances",
+    "expansion": "Cataclysm",
+    "journalId": 240
+  },
+  {
+    "name": "Razorfen Downs",
+    "kind": "Dungeon",
+    "mapId": 199,
+    "x": 51.89,
+    "y": 98.25,
+    "source": "MapNotes_Instances",
+    "expansion": "Cataclysm",
+    "journalId": 233
+  },
+  {
+    "name": "Throne of the Tides",
+    "kind": "Dungeon",
+    "mapId": 203,
+    "x": 48.17,
+    "y": 40.41,
+    "source": "MapNotes_Instances",
+    "expansion": "Cataclysm",
+    "journalId": 65
+  },
+  {
+    "name": "Throne of the Tides",
+    "kind": "Dungeon",
+    "mapId": 204,
+    "x": 70.4,
+    "y": 29.53,
+    "source": "MapNotes_Instances",
+    "expansion": "Cataclysm",
+    "journalId": 65
+  },
+  {
+    "name": "The Stonecore",
+    "kind": "Dungeon",
+    "mapId": 207,
+    "x": 47.38,
+    "y": 52.05,
+    "source": "MapNotes_Instances",
+    "expansion": "Cataclysm",
+    "journalId": 67
+  },
+  {
+    "name": "Deadmines",
+    "kind": "Dungeon",
+    "mapId": 224,
+    "x": 22.13,
+    "y": 2.43,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 63
+  },
+  {
+    "name": "Zul'Gurub",
+    "kind": "Dungeon",
+    "mapId": 224,
+    "x": 63.94,
+    "y": 21.79,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 76
+  },
+  {
+    "name": "Grim Batol",
+    "kind": "Dungeon",
+    "mapId": 241,
+    "x": 19.2,
+    "y": 54.11,
+    "source": "MapNotes_Instances",
+    "expansion": "Cataclysm",
+    "journalId": 71
+  },
+  {
+    "name": "Lost City of the Tol'vir",
+    "kind": "Dungeon",
+    "mapId": 249,
+    "x": 60.52,
+    "y": 64.15,
+    "source": "MapNotes_Instances",
+    "expansion": "Cataclysm",
+    "journalId": 69
+  },
+  {
+    "name": "Halls of Origination",
+    "kind": "Dungeon",
+    "mapId": 249,
+    "x": 69.09,
+    "y": 52.83,
+    "source": "MapNotes_Instances",
+    "expansion": "Cataclysm",
+    "journalId": 70
+  },
+  {
+    "name": "The Vortex Pinnacle",
+    "kind": "Dungeon",
+    "mapId": 249,
+    "x": 76.7,
+    "y": 84.35,
+    "source": "MapNotes_Instances",
+    "expansion": "Cataclysm",
+    "journalId": 68
+  },
+  {
+    "name": "Mogu'shan Palace",
+    "kind": "Dungeon",
+    "mapId": 371,
+    "x": 14.5,
+    "y": 48.59,
+    "source": "MapNotes_Instances",
+    "expansion": "Mists of Pandaria",
+    "journalId": 321
+  },
+  {
+    "name": "Temple of the Jade Serpent",
+    "kind": "Dungeon",
+    "mapId": 371,
+    "x": 56.17,
+    "y": 57.86,
+    "source": "MapNotes_Instances",
+    "expansion": "Mists of Pandaria",
+    "journalId": 313
+  },
+  {
+    "name": "Gate of the Setting Sun",
+    "kind": "Dungeon",
+    "mapId": 376,
+    "x": 15.26,
+    "y": 15.42,
+    "source": "MapNotes_Instances",
+    "expansion": "Mists of Pandaria",
+    "journalId": 303
+  },
+  {
+    "name": "Stormstout Brewery",
+    "kind": "Dungeon",
+    "mapId": 376,
+    "x": 36.06,
+    "y": 69.09,
+    "source": "MapNotes_Instances",
+    "expansion": "Mists of Pandaria",
+    "journalId": 302
+  },
+  {
+    "name": "Shado-Pan Monastery",
+    "kind": "Dungeon",
+    "mapId": 379,
+    "x": 36.71,
+    "y": 47.46,
+    "source": "MapNotes_Instances",
+    "expansion": "Mists of Pandaria",
+    "journalId": 312
+  },
+  {
+    "name": "Siege of Niuzao Temple",
+    "kind": "Dungeon",
+    "mapId": 388,
+    "x": 34.68,
+    "y": 81.51,
+    "source": "MapNotes_Instances",
+    "expansion": "Mists of Pandaria",
+    "journalId": 324
+  },
+  {
+    "name": "Shado-Pan Monastery",
+    "kind": "Dungeon",
+    "mapId": 388,
+    "x": 78.99,
+    "y": 24.02,
+    "source": "MapNotes_Instances",
+    "expansion": "Mists of Pandaria",
+    "journalId": 312
+  },
+  {
+    "name": "Gate of the Setting Sun",
+    "kind": "Dungeon",
+    "mapId": 390,
+    "x": 15.83,
+    "y": 74.41,
+    "source": "MapNotes_Instances",
+    "expansion": "Mists of Pandaria",
+    "journalId": 303
+  },
+  {
+    "name": "Mogu'shan Palace",
+    "kind": "Dungeon",
+    "mapId": 390,
+    "x": 80.6,
+    "y": 33.03,
+    "source": "MapNotes_Instances",
+    "expansion": "Mists of Pandaria",
+    "journalId": 321
+  },
+  {
+    "name": "Stormstout Brewery",
+    "kind": "Dungeon",
+    "mapId": 418,
+    "x": 35.93,
+    "y": 19.25,
+    "source": "MapNotes_Instances",
+    "expansion": "Mists of Pandaria",
+    "journalId": 302
+  },
+  {
+    "name": "Gate of the Setting Sun",
+    "kind": "Dungeon",
+    "mapId": 422,
+    "x": 75.84,
+    "y": 20.3,
+    "source": "MapNotes_Instances",
+    "expansion": "Mists of Pandaria",
+    "journalId": 303
+  },
+  {
+    "name": "Stormstout Brewery",
+    "kind": "Dungeon",
+    "mapId": 422,
+    "x": 91.1,
+    "y": 59.65,
+    "source": "MapNotes_Instances",
+    "expansion": "Mists of Pandaria",
+    "journalId": 302
+  },
+  {
+    "name": "Gnomeregan",
+    "kind": "Dungeon",
+    "mapId": 469,
+    "x": 32.79,
+    "y": 37.02,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 231
+  },
+  {
+    "name": "Bloodmaul Slag Mines",
+    "kind": "Dungeon",
+    "mapId": 525,
+    "x": 49.92,
+    "y": 24.8,
+    "source": "MapNotes_Instances",
+    "expansion": "Warlords of Draenor",
+    "journalId": 385
+  },
+  {
+    "name": "Auchindoun",
+    "kind": "Dungeon",
+    "mapId": 535,
+    "x": 46.29,
+    "y": 73.94,
+    "source": "MapNotes_Instances",
+    "expansion": "Warlords of Draenor",
+    "journalId": 547
+  },
+  {
+    "name": "Shadowmoon Burial Grounds",
+    "kind": "Dungeon",
+    "mapId": 539,
+    "x": 31.86,
+    "y": 42.55,
+    "source": "MapNotes_Instances",
+    "expansion": "Warlords of Draenor",
+    "journalId": 537
+  },
+  {
+    "name": "Skyreach",
+    "kind": "Dungeon",
+    "mapId": 542,
+    "x": 35.58,
+    "y": 33.61,
+    "source": "MapNotes_Instances",
+    "expansion": "Warlords of Draenor",
+    "journalId": 476
+  },
+  {
+    "name": "Shadowmoon Burial Grounds",
+    "kind": "Dungeon",
+    "mapId": 542,
+    "x": 75.03,
+    "y": 15.43,
+    "source": "MapNotes_Instances",
+    "expansion": "Warlords of Draenor",
+    "journalId": 537
+  },
+  {
+    "name": "Bloodmaul Slag Mines",
+    "kind": "Dungeon",
+    "mapId": 543,
+    "x": 7.49,
+    "y": 42.67,
+    "source": "MapNotes_Instances",
+    "expansion": "Warlords of Draenor",
+    "journalId": 385
+  },
+  {
+    "name": "Iron Docks",
+    "kind": "Dungeon",
+    "mapId": 543,
+    "x": 45.41,
+    "y": 13.53,
+    "source": "MapNotes_Instances",
+    "expansion": "Warlords of Draenor",
+    "journalId": 558
+  },
+  {
+    "name": "Grimrail Depot",
+    "kind": "Dungeon",
+    "mapId": 543,
+    "x": 55.15,
+    "y": 31.73,
+    "source": "MapNotes_Instances",
+    "expansion": "Warlords of Draenor",
+    "journalId": 536
+  },
+  {
+    "name": "The Everbloom",
+    "kind": "Dungeon",
+    "mapId": 543,
+    "x": 59.57,
+    "y": 45.66,
+    "source": "MapNotes_Instances",
+    "expansion": "Warlords of Draenor",
+    "journalId": 556
+  },
+  {
+    "name": "Assault on Violet Hold",
+    "kind": "Dungeon",
+    "mapId": 627,
+    "x": 65.57,
+    "y": 67.38,
+    "source": "MapNotes_Instances",
+    "expansion": "Legion",
+    "journalId": 777
+  },
+  {
+    "name": "Vault of the Wardens",
+    "kind": "Dungeon",
+    "mapId": 630,
+    "x": 48.06,
+    "y": 82.12,
+    "source": "MapNotes_Instances",
+    "expansion": "Legion",
+    "journalId": 707
+  },
+  {
+    "name": "Eye of Azshara",
+    "kind": "Dungeon",
+    "mapId": 630,
+    "x": 61.16,
+    "y": 41.11,
+    "source": "MapNotes_Instances",
+    "expansion": "Legion",
+    "journalId": 716
+  },
+  {
+    "name": "Assault on Violet Hold",
+    "kind": "Dungeon",
+    "mapId": 630,
+    "x": 87.51,
+    "y": 56.84,
+    "source": "MapNotes_Instances",
+    "expansion": "Legion",
+    "journalId": 777
+  },
+  {
+    "name": "Maw of Souls",
+    "kind": "Dungeon",
+    "mapId": 634,
+    "x": 52.47,
+    "y": 45.44,
+    "source": "MapNotes_Instances",
+    "expansion": "Legion",
+    "journalId": 727
+  },
+  {
+    "name": "Halls of Valor",
+    "kind": "Dungeon",
+    "mapId": 634,
+    "x": 72.64,
+    "y": 70.49,
+    "source": "MapNotes_Instances",
+    "expansion": "Legion",
+    "journalId": 721
+  },
+  {
+    "name": "Black Rook Hold",
+    "kind": "Dungeon",
+    "mapId": 641,
+    "x": 37.21,
+    "y": 50.31,
+    "source": "MapNotes_Instances",
+    "expansion": "Legion",
+    "journalId": 740
+  },
+  {
+    "name": "Darkheart Thicket",
+    "kind": "Dungeon",
+    "mapId": 641,
+    "x": 59.13,
+    "y": 31.35,
+    "source": "MapNotes_Instances",
+    "expansion": "Legion",
+    "journalId": 762
+  },
+  {
+    "name": "Assault on Violet Hold",
+    "kind": "Dungeon",
+    "mapId": 646,
+    "x": 15.31,
+    "y": 36.66,
+    "source": "MapNotes_Instances",
+    "expansion": "Legion",
+    "journalId": 777
+  },
+  {
+    "name": "Cathedral of Eternal Night",
+    "kind": "Dungeon",
+    "mapId": 646,
+    "x": 64.81,
+    "y": 16.75,
+    "source": "MapNotes_Instances",
+    "expansion": "Legion",
+    "journalId": 900
+  },
+  {
+    "name": "Neltharion's Lair",
+    "kind": "Dungeon",
+    "mapId": 650,
+    "x": 49.56,
+    "y": 68.54,
+    "source": "MapNotes_Instances",
+    "expansion": "Legion",
+    "journalId": 767
+  },
+  {
+    "name": "The Arcway",
+    "kind": "Dungeon",
+    "mapId": 680,
+    "x": 41.16,
+    "y": 61.5,
+    "source": "MapNotes_Instances",
+    "expansion": "Legion",
+    "journalId": 726
+  },
+  {
+    "name": "Court of Stars",
+    "kind": "Dungeon",
+    "mapId": 680,
+    "x": 50.76,
+    "y": 65.53,
+    "source": "MapNotes_Instances",
+    "expansion": "Legion",
+    "journalId": 800
+  },
+  {
+    "name": "Kings' Rest",
+    "kind": "Dungeon",
+    "mapId": 862,
+    "x": 37.59,
+    "y": 39.48,
+    "source": "MapNotes_Instances",
+    "expansion": "Battle for Azeroth",
+    "journalId": 1041
+  },
+  {
+    "name": "The MOTHERLODE!!",
+    "kind": "Dungeon",
+    "mapId": 862,
+    "x": 39.3,
+    "y": 71.54,
+    "source": "MapNotes_Instances",
+    "expansion": "Battle for Azeroth",
+    "journalId": 1012
+  },
+  {
+    "name": "Atal'Dazar",
+    "kind": "Dungeon",
+    "mapId": 862,
+    "x": 43.53,
+    "y": 39.48,
+    "source": "MapNotes_Instances",
+    "expansion": "Battle for Azeroth",
+    "journalId": 968
+  },
+  {
+    "name": "The MOTHERLODE!!",
+    "kind": "Dungeon",
+    "mapId": 862,
+    "x": 56.1,
+    "y": 59.84,
+    "source": "MapNotes_Instances",
+    "expansion": "Battle for Azeroth",
+    "journalId": 1012
+  },
+  {
+    "name": "The Underrot",
+    "kind": "Dungeon",
+    "mapId": 863,
+    "x": 51.25,
+    "y": 64.64,
+    "source": "MapNotes_Instances",
+    "expansion": "Battle for Azeroth",
+    "journalId": 1022
+  },
+  {
+    "name": "Temple of Sethraliss",
+    "kind": "Dungeon",
+    "mapId": 864,
+    "x": 51.92,
+    "y": 25.46,
+    "source": "MapNotes_Instances",
+    "expansion": "Battle for Azeroth",
+    "journalId": 1030
+  },
+  {
+    "name": "Seat of the Triumvirate",
+    "kind": "Dungeon",
+    "mapId": 882,
+    "x": 22.16,
+    "y": 56.61,
+    "source": "MapNotes_Instances",
+    "expansion": "Legion",
+    "journalId": 945
+  },
+  {
+    "name": "Siege of Boralus",
+    "kind": "Dungeon",
+    "mapId": 895,
+    "x": 75.63,
+    "y": 24.5,
+    "source": "MapNotes_Instances",
+    "expansion": "Battle for Azeroth",
+    "journalId": 1023
+  },
+  {
+    "name": "Freehold",
+    "kind": "Dungeon",
+    "mapId": 895,
+    "x": 84.56,
+    "y": 78.78,
+    "source": "MapNotes_Instances",
+    "expansion": "Battle for Azeroth",
+    "journalId": 1001
+  },
+  {
+    "name": "Siege of Boralus",
+    "kind": "Dungeon",
+    "mapId": 895,
+    "x": 88.28,
+    "y": 51.02,
+    "source": "MapNotes_Instances",
+    "expansion": "Battle for Azeroth",
+    "journalId": 1023
+  },
+  {
+    "name": "Waycrest Manor",
+    "kind": "Dungeon",
+    "mapId": 896,
+    "x": 33.67,
+    "y": 12.53,
+    "source": "MapNotes_Instances",
+    "expansion": "Battle for Azeroth",
+    "journalId": 1021
+  },
+  {
+    "name": "Shrine of the Storm",
+    "kind": "Dungeon",
+    "mapId": 942,
+    "x": 78.59,
+    "y": 26.63,
+    "source": "MapNotes_Instances",
+    "expansion": "Battle for Azeroth",
+    "journalId": 1036
+  },
+  {
+    "name": "Siege of Boralus",
+    "kind": "Dungeon",
+    "mapId": 1161,
+    "x": 71.97,
+    "y": 15.37,
+    "source": "MapNotes_Instances",
+    "expansion": "Battle for Azeroth",
+    "journalId": 1023
+  },
+  {
+    "name": "The MOTHERLODE!!",
+    "kind": "Dungeon",
+    "mapId": 1165,
+    "x": 44.04,
+    "y": 92.56,
+    "source": "MapNotes_Instances",
+    "expansion": "Battle for Azeroth",
+    "journalId": 1012
+  },
+  {
+    "name": "Tol Dagor",
+    "kind": "Dungeon",
+    "mapId": 1169,
+    "x": 38.92,
+    "y": 69.76,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1002
+  },
+  {
+    "name": "Operation: Mechagon",
+    "kind": "Dungeon",
+    "mapId": 1462,
+    "x": 72.93,
+    "y": 36.49,
+    "source": "MapNotes_Instances",
+    "expansion": "Battle for Azeroth",
+    "journalId": 1178
+  },
+  {
+    "name": "Sanguine Depths",
+    "kind": "Dungeon",
+    "mapId": 1525,
+    "x": 51.07,
+    "y": 30.12,
+    "source": "MapNotes_Instances",
+    "expansion": "Shadowlands",
+    "journalId": 1189
+  },
+  {
+    "name": "Halls of Atonement",
+    "kind": "Dungeon",
+    "mapId": 1525,
+    "x": 78.47,
+    "y": 49.07,
+    "source": "MapNotes_Instances",
+    "expansion": "Shadowlands",
+    "journalId": 1185
+  },
+  {
+    "name": "Lost City of the Tol'vir",
+    "kind": "Dungeon",
+    "mapId": 1527,
+    "x": 60.52,
+    "y": 64.15,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 69
+  },
+  {
+    "name": "Halls of Origination",
+    "kind": "Dungeon",
+    "mapId": 1527,
+    "x": 69.09,
+    "y": 52.83,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 70
+  },
+  {
+    "name": "Halls of Origination",
+    "kind": "Dungeon",
+    "mapId": 1527,
+    "x": 71.75,
+    "y": 52.22,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 70
+  },
+  {
+    "name": "The Vortex Pinnacle",
+    "kind": "Dungeon",
+    "mapId": 1527,
+    "x": 76.7,
+    "y": 84.35,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 68
+  },
+  {
+    "name": "Mogu'shan Palace",
+    "kind": "Dungeon",
+    "mapId": 1530,
+    "x": 81.09,
+    "y": 30.57,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 321
+  },
+  {
+    "name": "The Necrotic Wake",
+    "kind": "Dungeon",
+    "mapId": 1533,
+    "x": 40.14,
+    "y": 55.21,
+    "source": "MapNotes_Instances",
+    "expansion": "Shadowlands",
+    "journalId": 1182
+  },
+  {
+    "name": "Spires of Ascension",
+    "kind": "Dungeon",
+    "mapId": 1533,
+    "x": 58.55,
+    "y": 28.57,
+    "source": "MapNotes_Instances",
+    "expansion": "Shadowlands",
+    "journalId": 1186
+  },
+  {
+    "name": "Theater of Pain",
+    "kind": "Dungeon",
+    "mapId": 1536,
+    "x": 53.11,
+    "y": 52.91,
+    "source": "MapNotes_Instances",
+    "expansion": "Shadowlands",
+    "journalId": 1187
+  },
+  {
+    "name": "Plaguefall",
+    "kind": "Dungeon",
+    "mapId": 1536,
+    "x": 59.39,
+    "y": 65.01,
+    "source": "MapNotes_Instances",
+    "expansion": "Shadowlands",
+    "journalId": 1183
+  },
+  {
+    "name": "Mists of Tirna Scithe",
+    "kind": "Dungeon",
+    "mapId": 1565,
+    "x": 35.48,
+    "y": 54.13,
+    "source": "MapNotes_Instances",
+    "expansion": "Shadowlands",
+    "journalId": 1184
+  },
+  {
+    "name": "De Other Side",
+    "kind": "Dungeon",
+    "mapId": 1565,
+    "x": 68.66,
+    "y": 66.6,
+    "source": "MapNotes_Instances",
+    "expansion": "Shadowlands",
+    "journalId": 1188
+  },
+  {
+    "name": "Tazavesh, the Veiled Market",
+    "kind": "Dungeon",
+    "mapId": 2016,
+    "x": 88.91,
+    "y": 43.92,
+    "source": "MapNotes_Instances",
+    "expansion": "Shadowlands",
+    "journalId": 1194
+  },
+  {
+    "name": "Neltharus",
+    "kind": "Dungeon",
+    "mapId": 2022,
+    "x": 25.71,
+    "y": 56.31,
+    "source": "MapNotes_Instances",
+    "expansion": "Dragonflight",
+    "journalId": 1199
+  },
+  {
+    "name": "Ruby Life Pools",
+    "kind": "Dungeon",
+    "mapId": 2022,
+    "x": 60.08,
+    "y": 75.71,
+    "source": "MapNotes_Instances",
+    "expansion": "Dragonflight",
+    "journalId": 1202
+  },
+  {
+    "name": "The Nokhud Offensive",
+    "kind": "Dungeon",
+    "mapId": 2023,
+    "x": 60.84,
+    "y": 38.98,
+    "source": "MapNotes_Instances",
+    "expansion": "Dragonflight",
+    "journalId": 1198
+  },
+  {
+    "name": "Brackenhide Hollow",
+    "kind": "Dungeon",
+    "mapId": 2024,
+    "x": 11.51,
+    "y": 48.85,
+    "source": "MapNotes_Instances",
+    "expansion": "Dragonflight",
+    "journalId": 1196
+  },
+  {
+    "name": "The Azure Vault",
+    "kind": "Dungeon",
+    "mapId": 2024,
+    "x": 38.89,
+    "y": 64.59,
+    "source": "MapNotes_Instances",
+    "expansion": "Dragonflight",
+    "journalId": 1203
+  },
+  {
+    "name": "Algeth'ar Academy",
+    "kind": "Dungeon",
+    "mapId": 2025,
+    "x": 58.27,
+    "y": 42.35,
+    "source": "MapNotes_Instances",
+    "expansion": "Dragonflight",
+    "journalId": 1201
+  },
+  {
+    "name": "Halls of Infusion",
+    "kind": "Dungeon",
+    "mapId": 2025,
+    "x": 59.21,
+    "y": 60.57,
+    "source": "MapNotes_Instances",
+    "expansion": "Dragonflight",
+    "journalId": 1204
+  },
+  {
+    "name": "Dawn of the Infinite",
+    "kind": "Dungeon",
+    "mapId": 2025,
+    "x": 61.14,
+    "y": 84.46,
+    "source": "MapNotes_Instances",
+    "expansion": "Dragonflight",
+    "journalId": 1209
+  },
+  {
+    "name": "Scarlet Monastery",
+    "kind": "Dungeon",
+    "mapId": 2070,
+    "x": 83.81,
+    "y": 27.72,
+    "source": "MapNotes_Instances",
+    "expansion": "Dragonflight",
+    "journalId": 316
+  },
+  {
+    "name": "Scarlet Halls",
+    "kind": "Dungeon",
+    "mapId": 2070,
+    "x": 85.48,
+    "y": 31.58,
+    "source": "MapNotes_Instances",
+    "expansion": "Dragonflight",
+    "journalId": 311
+  },
+  {
+    "name": "City of Threads",
+    "kind": "Dungeon",
+    "mapId": 2213,
+    "x": 44.19,
+    "y": 11.24,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1274
+  },
+  {
+    "name": "Ara-Kara, City of Echoes",
+    "kind": "Dungeon",
+    "mapId": 2213,
+    "x": 52.16,
+    "y": 45.8,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1271
+  },
+  {
+    "name": "JournalInstance 1298",
+    "kind": "Dungeon",
+    "mapId": 2214,
+    "x": 42.08,
+    "y": 39.48,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1298
+  },
+  {
+    "name": "The Stonevault",
+    "kind": "Dungeon",
+    "mapId": 2214,
+    "x": 42.7,
+    "y": 8.56,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1269
+  },
+  {
+    "name": "Darkflame Cleft",
+    "kind": "Dungeon",
+    "mapId": 2214,
+    "x": 55.45,
+    "y": 21.62,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1210
+  },
+  {
+    "name": "Priory of the Sacred Flame",
+    "kind": "Dungeon",
+    "mapId": 2215,
+    "x": 41.32,
+    "y": 49.33,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1267
+  },
+  {
+    "name": "The Dawnbreaker",
+    "kind": "Dungeon",
+    "mapId": 2215,
+    "x": 54.9,
+    "y": 63.13,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1270
+  },
+  {
+    "name": "Darkflame Cleft",
+    "kind": "Dungeon",
+    "mapId": 2215,
+    "x": 96.97,
+    "y": 38.83,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1210
+  },
+  {
+    "name": "Ara-Kara, City of Echoes",
+    "kind": "Dungeon",
+    "mapId": 2216,
+    "x": 52.16,
+    "y": 45.8,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1271
+  },
+  {
+    "name": "The Rookery",
+    "kind": "Dungeon",
+    "mapId": 2248,
+    "x": 45.23,
+    "y": 41.08,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1268
+  },
+  {
+    "name": "Cinderbrew Meadery",
+    "kind": "Dungeon",
+    "mapId": 2248,
+    "x": 76.58,
+    "y": 43.78,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1272
+  },
+  {
+    "name": "City of Threads",
+    "kind": "Dungeon",
+    "mapId": 2255,
+    "x": 46.74,
+    "y": 69.17,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1274
+  },
+  {
+    "name": "Ara-Kara, City of Echoes",
+    "kind": "Dungeon",
+    "mapId": 2255,
+    "x": 49.53,
+    "y": 81.0,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1271
+  },
+  {
+    "name": "City of Threads",
+    "kind": "Dungeon",
+    "mapId": 2256,
+    "x": 46.74,
+    "y": 69.17,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1274
+  },
+  {
+    "name": "Ara-Kara, City of Echoes",
+    "kind": "Dungeon",
+    "mapId": 2256,
+    "x": 49.53,
+    "y": 81.0,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1271
+  },
+  {
+    "name": "Priory of the Sacred Flame",
+    "kind": "Dungeon",
+    "mapId": 2274,
+    "x": 35.09,
+    "y": 52.89,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1267
+  },
+  {
+    "name": "The Dawnbreaker",
+    "kind": "Dungeon",
+    "mapId": 2274,
+    "x": 40.46,
+    "y": 58.03,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1270
+  },
+  {
+    "name": "City of Threads",
+    "kind": "Dungeon",
+    "mapId": 2274,
+    "x": 43.33,
+    "y": 79.84,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1274
+  },
+  {
+    "name": "Ara-Kara, City of Echoes",
+    "kind": "Dungeon",
+    "mapId": 2274,
+    "x": 44.33,
+    "y": 83.72,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1271
+  },
+  {
+    "name": "JournalInstance 1298",
+    "kind": "Dungeon",
+    "mapId": 2274,
+    "x": 52.71,
+    "y": 55.61,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1298
+  },
+  {
+    "name": "The Stonevault",
+    "kind": "Dungeon",
+    "mapId": 2274,
+    "x": 53.0,
+    "y": 43.97,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1269
+  },
+  {
+    "name": "Darkflame Cleft",
+    "kind": "Dungeon",
+    "mapId": 2274,
+    "x": 57.81,
+    "y": 48.89,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1210
+  },
+  {
+    "name": "The Rookery",
+    "kind": "Dungeon",
+    "mapId": 2274,
+    "x": 70.3,
+    "y": 19.08,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1268
+  },
+  {
+    "name": "Cinderbrew Meadery",
+    "kind": "Dungeon",
+    "mapId": 2274,
+    "x": 84.36,
+    "y": 20.59,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1272
+  },
+  {
+    "name": "The Rookery",
+    "kind": "Dungeon",
+    "mapId": 2339,
+    "x": 31.89,
+    "y": 35.65,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1268
+  },
+  {
+    "name": "Tazavesh, the Veiled Market",
+    "kind": "Dungeon",
+    "mapId": 2371,
+    "x": 63.58,
+    "y": 70.21,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1194
+  },
+  {
+    "name": "JournalInstance 1303",
+    "kind": "Dungeon",
+    "mapId": 2371,
+    "x": 65.24,
+    "y": 68.41,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": 1303
+  },
+  {
+    "name": "JournalInstance 1299",
+    "kind": "Dungeon",
+    "mapId": 2395,
+    "x": 35.45,
+    "y": 78.82,
+    "source": "MapNotes_Instances",
+    "expansion": "Midnight",
+    "journalId": 1299
+  },
+  {
+    "name": "JournalInstance 1313",
+    "kind": "Dungeon",
+    "mapId": 2405,
+    "x": 51.66,
+    "y": 18.74,
+    "source": "MapNotes_Instances",
+    "expansion": "Midnight",
+    "journalId": 1313
+  },
+  {
+    "name": "JournalInstance 1316",
+    "kind": "Dungeon",
+    "mapId": 2405,
+    "x": 64.97,
+    "y": 61.78,
+    "source": "MapNotes_Instances",
+    "expansion": "Midnight",
+    "journalId": 1316
+  },
+  {
+    "name": "JournalInstance 1309",
+    "kind": "Dungeon",
+    "mapId": 2413,
+    "x": 26.46,
+    "y": 78.04,
+    "source": "MapNotes_Instances",
+    "expansion": "Midnight",
+    "journalId": 1309
+  },
+  {
+    "name": "JournalInstance 1300",
+    "kind": "Dungeon",
+    "mapId": 2424,
+    "x": 63.46,
+    "y": 15.38,
+    "source": "MapNotes_Instances",
+    "expansion": "Midnight",
+    "journalId": 1300
+  },
+  {
+    "name": "JournalInstance 1311",
+    "kind": "Dungeon",
+    "mapId": 2437,
+    "x": 29.83,
+    "y": 84.5,
+    "source": "MapNotes_Instances",
+    "expansion": "Midnight",
+    "journalId": 1311
+  },
+  {
+    "name": "JournalInstance 1315",
+    "kind": "Dungeon",
+    "mapId": 2437,
+    "x": 43.83,
+    "y": 39.5,
+    "source": "MapNotes_Instances",
+    "expansion": "Midnight",
+    "journalId": 1315
+  },
+  {
+    "name": "JournalInstance 1313",
+    "kind": "Dungeon",
+    "mapId": 2444,
+    "x": 53.65,
+    "y": 33.39,
+    "source": "MapNotes_Instances",
+    "expansion": "Midnight",
+    "journalId": 1313
+  },
+  {
+    "name": "Tazavesh, the Veiled Market",
+    "kind": "Dungeon",
+    "mapId": 2472,
+    "x": 36.32,
+    "y": 12.09,
+    "source": "MapNotes_Instances",
+    "expansion": "Midnight",
+    "journalId": 1194
+  },
+  {
+    "name": "JournalInstance 1303",
+    "kind": "Dungeon",
+    "mapId": 2472,
+    "x": 43.86,
+    "y": 3.93,
+    "source": "MapNotes_Instances",
+    "expansion": "Midnight",
+    "journalId": 1303
+  },
+  {
+    "name": "The Necrotic Wake / Spires of Ascension / Plaguefall / Theater of Pain / Mists of Tirna Scithe / De Other Side / Halls of Atonement / Sanguine Depths / Tazavesh, the Veiled Market",
+    "kind": "Dungeon",
+    "mapId": 946,
+    "x": 16.1,
+    "y": 40.83,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Auchenai Crypts / Mana-Tombs / Sethekk Halls / Shadow Labyrinth / The Arcatraz / The Botanica / The Mechanar",
+    "kind": "Dungeon",
+    "mapId": 946,
+    "x": 18.92,
+    "y": 89.8,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Razorfen Downs / Dire Maul - Capital Gardens / Zul'Farrak / Razorfen Kraul / The Vortex Pinnacle / Lost City of the Tol'vir / Halls of Origination / The Stonecore",
+    "kind": "Dungeon",
+    "mapId": 946,
+    "x": 39.0,
+    "y": 78.5,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Magisters' Terrace / Zul'Aman / Throne of the Tides / Zul'Gurub / Shadowfang Keep / Scholomance / Stratholme - Main Gate / Grim Batol / Gnomeregan / The Temple of Atal'hakkar / Deadmines / Blackwing Descent / Blackrock Caverns / Blackrock Depths / Lower Blackrock Spire / Upper Blackrock Spire / Return to Karazhan / Uldaman: Legacy of Tyr / Uldaman / Scarlet Halls / Scarlet Monastery / The Stockade",
+    "kind": "Dungeon",
+    "mapId": 946,
+    "x": 42.6,
+    "y": 78.5,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Utgarde Keep / Utgarde Pinnacle / Halls of Lightning / Halls of Stone / Drak'Tharon Keep / Gundrak / The Violet Hold",
+    "kind": "Dungeon",
+    "mapId": 946,
+    "x": 46.2,
+    "y": 78.5,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Temple of the Jade Serpent / Stormstout Brewery / Shado-Pan Monastery / Siege of Niuzao Temple / Gate of the Setting Sun / Mogu'shan Palace",
+    "kind": "Dungeon",
+    "mapId": 946,
+    "x": 49.8,
+    "y": 78.5,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Assault on Violet Hold / Eye of Azshara / Vault of the Wardens / Seat of the Triumvirate / Black Rook Hold / Maw of Souls / Neltharion's Lair / Court of Stars / The Arcway / Cathedral of Eternal Night / Halls of Valor / Darkheart Thicket",
+    "kind": "Dungeon",
+    "mapId": 946,
+    "x": 53.4,
+    "y": 78.5,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Atal'Dazar / Kings' Rest / The Underrot / Temple of Sethraliss / Operation: Mechagon",
+    "kind": "Dungeon",
+    "mapId": 946,
+    "x": 57.0,
+    "y": 78.5,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Freehold / Waycrest Manor / Shrine of the Storm / Tol Dagor / Operation: Mechagon",
+    "kind": "Dungeon",
+    "mapId": 946,
+    "x": 60.6,
+    "y": 78.5,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Ruby Life Pools / Neltharus / The Nokhud Offensive / Brackenhide Hollow / The Azure Vault / Algeth'ar Academy / Halls of Infusion / Dawn of the Infinite",
+    "kind": "Dungeon",
+    "mapId": 946,
+    "x": 64.2,
+    "y": 78.5,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Darkflame Cleft / Priory of the Sacred Flame / The Dawnbreaker / The Stonevault / The Rookery / Ara-Kara, City of Echoes / Cinderbrew Meadery / City of Threads",
+    "kind": "Dungeon",
+    "mapId": 946,
+    "x": 67.8,
+    "y": 78.5,
+    "source": "MapNotes_Instances",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Bloodmaul Slag Mines / Grimrail Depot / The Everbloom / Iron Docks / Shadowmoon Burial Grounds / Skyreach / Auchindoun",
+    "kind": "Dungeon",
+    "mapId": 946,
+    "x": 83.7,
+    "y": 43.89,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": null
+  },
+  {
+    "name": "Maraudon",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 11.89,
+    "y": 56.63,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 232
+  },
+  {
+    "name": "Dire Maul - Capital Gardens",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 13.96,
+    "y": 62.0,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 230
+  },
+  {
+    "name": "Blackfathom Deeps",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 14.56,
+    "y": 45.85,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 227
+  },
+  {
+    "name": "JournalInstance 2176",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 15.55,
+    "y": 61.44,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 2176
+  },
+  {
+    "name": "Lost City of the Tol'vir",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 17.07,
+    "y": 74.26,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 69
+  },
+  {
+    "name": "Razorfen Kraul",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 17.6,
+    "y": 62.18,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 234
+  },
+  {
+    "name": "Halls of Origination",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 18.17,
+    "y": 73.16,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 70
+  },
+  {
+    "name": "Wailing Caverns",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 18.47,
+    "y": 55.36,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 240
+  },
+  {
+    "name": "The Vortex Pinnacle",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 18.61,
+    "y": 75.8,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 68
+  },
+  {
+    "name": "Razorfen Downs",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 19.0,
+    "y": 63.01,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 233
+  },
+  {
+    "name": "Zul'Farrak",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 19.25,
+    "y": 66.97,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 241
+  },
+  {
+    "name": "Ragefire Chasm",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 20.98,
+    "y": 50.86,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 226
+  },
+  {
+    "name": "Siege of Niuzao Temple",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 41.91,
+    "y": 80.9,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 324
+  },
+  {
+    "name": "Shado-Pan Monastery",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 45.73,
+    "y": 75.84,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 312
+  },
+  {
+    "name": "The Stonecore",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 46.05,
+    "y": 47.97,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 67
+  },
+  {
+    "name": "Gate of the Setting Sun",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 46.46,
+    "y": 82.44,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 303
+  },
+  {
+    "name": "Stormstout Brewery",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 47.64,
+    "y": 85.4,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 302
+  },
+  {
+    "name": "The Violet Hold",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 50.73,
+    "y": 14.62,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 283
+  },
+  {
+    "name": "Temple of Sethraliss",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 52.72,
+    "y": 56.72,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1030
+  },
+  {
+    "name": "Kings' Rest",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 52.72,
+    "y": 64.53,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1041
+  },
+  {
+    "name": "Drak'Tharon Keep",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 53.11,
+    "y": 14.87,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 273
+  },
+  {
+    "name": "Temple of the Jade Serpent",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 53.13,
+    "y": 81.89,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 313
+  },
+  {
+    "name": "The MOTHERLODE!!",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 53.38,
+    "y": 67.95,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1012
+  },
+  {
+    "name": "Atal'Dazar",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 54.11,
+    "y": 64.71,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 968
+  },
+  {
+    "name": "Black Rook Hold",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 54.74,
+    "y": 38.61,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 740
+  },
+  {
+    "name": "The MOTHERLODE!!",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 55.15,
+    "y": 66.68,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1012
+  },
+  {
+    "name": "Vault of the Wardens",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 55.94,
+    "y": 47.83,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 707
+  },
+  {
+    "name": "Gundrak",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 56.48,
+    "y": 10.47,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 274
+  },
+  {
+    "name": "Eye of Azshara",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 56.86,
+    "y": 44.11,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 716
+  },
+  {
+    "name": "Assault on Violet Hold",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 58.69,
+    "y": 47.05,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 777
+  },
+  {
+    "name": "Neltharion's Lair",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 58.88,
+    "y": 37.44,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 767
+  },
+  {
+    "name": "Maw of Souls",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 61.53,
+    "y": 38.01,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 727
+  },
+  {
+    "name": "Seat of the Triumvirate",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 66.41,
+    "y": 33.95,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 945
+  },
+  {
+    "name": "Operation: Mechagon",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 66.82,
+    "y": 44.86,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1178
+  },
+  {
+    "name": "Waycrest Manor",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 68.35,
+    "y": 49.01,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1021
+  },
+  {
+    "name": "Brackenhide Hollow",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 73.35,
+    "y": 26.89,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1196
+  },
+  {
+    "name": "Shrine of the Storm",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 74.22,
+    "y": 42.4,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1036
+  },
+  {
+    "name": "Freehold",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 74.65,
+    "y": 54.31,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1001
+  },
+  {
+    "name": "Siege of Boralus",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 74.82,
+    "y": 51.59,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1023
+  },
+  {
+    "name": "Neltharus",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 74.89,
+    "y": 17.65,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1199
+  },
+  {
+    "name": "The Nokhud Offensive",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 75.19,
+    "y": 21.61,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1198
+  },
+  {
+    "name": "The Azure Vault",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 76.07,
+    "y": 28.54,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1203
+  },
+  {
+    "name": "Tol Dagor",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 76.68,
+    "y": 50.32,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1002
+  },
+  {
+    "name": "Ruby Life Pools",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 77.24,
+    "y": 18.64,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1202
+  },
+  {
+    "name": "Halls of Infusion",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 79.53,
+    "y": 21.36,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1204
+  },
+  {
+    "name": "Algeth'ar Academy",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 79.61,
+    "y": 18.25,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1201
+  },
+  {
+    "name": "Dawn of the Infinite",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 79.9,
+    "y": 23.31,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1209
+  },
+  {
+    "name": "Throne of the Tides",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 79.98,
+    "y": 59.2,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 65
+  },
+  {
+    "name": "Shadowfang Keep",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 83.2,
+    "y": 47.21,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 64
+  },
+  {
+    "name": "Deadmines",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 83.22,
+    "y": 68.5,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 63
+  },
+  {
+    "name": "The Stockade",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 84.02,
+    "y": 64.58,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 238
+  },
+  {
+    "name": "Gnomeregan",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 84.44,
+    "y": 56.88,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 231
+  },
+  {
+    "name": "Zul'Gurub",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 86.76,
+    "y": 70.11,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 76
+  },
+  {
+    "name": "Scholomance",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 88.63,
+    "y": 44.02,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 246
+  },
+  {
+    "name": "JournalInstance 1299",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 89.44,
+    "y": 36.55,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1299
+  },
+  {
+    "name": "Stratholme - Main Gate",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 89.59,
+    "y": 39.95,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 236
+  },
+  {
+    "name": "Uldaman",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 89.85,
+    "y": 60.28,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 239
+  },
+  {
+    "name": "Grim Batol",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 89.94,
+    "y": 54.6,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 71
+  },
+  {
+    "name": "The Temple of Atal'hakkar",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 90.36,
+    "y": 67.09,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 237
+  },
+  {
+    "name": "Stratholme - Main Gate",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 90.5,
+    "y": 39.29,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 236
+  },
+  {
+    "name": "JournalInstance 1300",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 90.8,
+    "y": 24.76,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1300
+  },
+  {
+    "name": "Magisters' Terrace",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 91.97,
+    "y": 26.14,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 249
+  },
+  {
+    "name": "Zul'Aman",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 92.81,
+    "y": 38.01,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 77
+  },
+  {
+    "name": "JournalInstance 1311",
+    "kind": "Dungeon",
+    "mapId": 947,
+    "x": 93.5,
+    "y": 40.44,
+    "source": "MapNotes_Instances",
+    "expansion": "Classic",
+    "journalId": 1311
+  },
+  {
+    "name": "Earthcrawl Mines",
+    "kind": "Delve",
+    "mapId": 2248,
+    "x": 38.55,
+    "y": 73.93,
+    "source": "Method/RaidLine",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Fungal Folly",
+    "kind": "Delve",
+    "mapId": 2248,
+    "x": 51.9,
+    "y": 65.51,
+    "source": "Method",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Kriegval's Rest",
+    "kind": "Delve",
+    "mapId": 2248,
+    "x": 62.12,
+    "y": 42.74,
+    "source": "Method",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "The Waterworks",
+    "kind": "Delve",
+    "mapId": 2214,
+    "x": 46.34,
+    "y": 48.67,
+    "source": "Method",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "The Dread Pit",
+    "kind": "Delve",
+    "mapId": 2214,
+    "x": 74.37,
+    "y": 37.37,
+    "source": "Method",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Nightfall Sanctum",
+    "kind": "Delve",
+    "mapId": 2215,
+    "x": 34.28,
+    "y": 47.32,
+    "source": "RaidLine",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Mycomancer Cavern",
+    "kind": "Delve",
+    "mapId": 2215,
+    "x": 70.91,
+    "y": 31.0,
+    "source": "Method",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "The Sinkhole",
+    "kind": "Delve",
+    "mapId": 2215,
+    "x": 50.75,
+    "y": 50.38,
+    "source": "Method",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Skittering Breach",
+    "kind": "Delve",
+    "mapId": 2215,
+    "x": 66.54,
+    "y": 61.74,
+    "source": "Method",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "The Underkeep",
+    "kind": "Delve",
+    "mapId": 2216,
+    "x": 58.57,
+    "y": 66.43,
+    "source": "Method",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Tak-Rethan Abyss",
+    "kind": "Delve",
+    "mapId": 2216,
+    "x": 67.72,
+    "y": 24.29,
+    "source": "Method",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "The Spiral Weave",
+    "kind": "Delve",
+    "mapId": 2255,
+    "x": 45.07,
+    "y": 18.75,
+    "source": "RaidLine",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Zekvir's Lair",
+    "kind": "Delve",
+    "mapId": 2216,
+    "x": 9.8,
+    "y": 33.8,
+    "source": "Wowhead-aligned",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Demolition Dome",
+    "kind": "Delve",
+    "mapId": 2346,
+    "x": 52.16,
+    "y": 9.24,
+    "source": "Method",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Excavation Site 9",
+    "kind": "Delve",
+    "mapId": 2214,
+    "x": 76.63,
+    "y": 97.71,
+    "source": "Method",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Sidestreet Sluice",
+    "kind": "Delve",
+    "mapId": 2346,
+    "x": 35.24,
+    "y": 51.66,
+    "source": "Method",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Archival Assault",
+    "kind": "Delve",
+    "mapId": 2371,
+    "x": 55.01,
+    "y": 47.69,
+    "source": "Method",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Voidrazor Sanctuary",
+    "kind": "Delve",
+    "mapId": 2371,
+    "x": 38.91,
+    "y": 51.82,
+    "source": "Method",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Shadow Enclave",
+    "kind": "Delve",
+    "mapId": 2395,
+    "x": 45.55,
+    "y": 86.31,
+    "source": "Method",
+    "expansion": "Midnight",
+    "journalId": null
+  },
+  {
+    "name": "Twilight Crypts",
+    "kind": "Delve",
+    "mapId": 2437,
+    "x": 28.4,
+    "y": 80.6,
+    "source": "Method-aligned",
+    "expansion": "Midnight",
+    "journalId": null
+  },
+  {
+    "name": "The Gulf of Memory",
+    "kind": "Delve",
+    "mapId": 2413,
+    "x": 45.36,
+    "y": 51.34,
+    "source": "Method",
+    "expansion": "Midnight",
+    "journalId": null
+  },
+  {
+    "name": "Shadowguard Point",
+    "kind": "Delve",
+    "mapId": 2405,
+    "x": 37.38,
+    "y": 47.74,
+    "source": "Method",
+    "expansion": "Midnight",
+    "journalId": null
+  },
+  {
+    "name": "The Grudge Pit",
+    "kind": "Delve",
+    "mapId": 2413,
+    "x": 70.3,
+    "y": 67.14,
+    "source": "Method",
+    "expansion": "Midnight",
+    "journalId": null
+  },
+  {
+    "name": "The Darkway",
+    "kind": "Delve",
+    "mapId": 2393,
+    "x": 39.31,
+    "y": 32.07,
+    "source": "Method",
+    "expansion": "Midnight",
+    "journalId": null
+  },
+  {
+    "name": "Sunkiller Sanctum",
+    "kind": "Delve",
+    "mapId": 2405,
+    "x": 54.78,
+    "y": 47.27,
+    "source": "Method",
+    "expansion": "Midnight",
+    "journalId": null
+  },
+  {
+    "name": "Atal'Aman",
+    "kind": "Delve",
+    "mapId": 2437,
+    "x": 63.78,
+    "y": 80.15,
+    "source": "Method",
+    "expansion": "Midnight",
+    "journalId": null
+  },
+  {
+    "name": "Parhelion Plaza",
+    "kind": "Delve",
+    "mapId": 2424,
+    "x": 47.74,
+    "y": 41.58,
+    "source": "Method",
+    "expansion": "Midnight",
+    "journalId": null
+  },
+  {
+    "name": "Collegiate Calamity",
+    "kind": "Delve",
+    "mapId": 2393,
+    "x": 40.76,
+    "y": 54.06,
+    "source": "Method",
+    "expansion": "Midnight",
+    "journalId": null
+  },
+  {
+    "name": "Torment's Rise",
+    "kind": "Delve",
+    "mapId": 2405,
+    "x": 61.17,
+    "y": 71.37,
+    "source": "Icy Veins",
+    "expansion": "Midnight",
+    "journalId": null
+  },
+  {
+    "name": "Delve Passage (2255)",
+    "kind": "Delve",
+    "mapId": 2255,
+    "x": 54.91,
+    "y": 72.31,
+    "source": "MapNotes_DelvesPassage",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Delve Passage (2255)",
+    "kind": "Delve",
+    "mapId": 2255,
+    "x": 51.85,
+    "y": 88.22,
+    "source": "MapNotes_DelvesPassage",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Delve Passage (2255)",
+    "kind": "Delve",
+    "mapId": 2255,
+    "x": 32.75,
+    "y": 76.83,
+    "source": "MapNotes_DelvesPassage",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Delve Passage (2255)",
+    "kind": "Delve",
+    "mapId": 2255,
+    "x": 45.73,
+    "y": 22.53,
+    "source": "MapNotes_DelvesPassage",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Delve Passage (2213)",
+    "kind": "Delve",
+    "mapId": 2213,
+    "x": 10.02,
+    "y": 33.83,
+    "source": "MapNotes_DelvesPassage",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Delve Passage (2213)",
+    "kind": "Delve",
+    "mapId": 2213,
+    "x": 56.57,
+    "y": 63.5,
+    "source": "MapNotes_DelvesPassage",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Delve Passage (2213)",
+    "kind": "Delve",
+    "mapId": 2213,
+    "x": 67.27,
+    "y": 21.22,
+    "source": "MapNotes_DelvesPassage",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Delve Passage (2216)",
+    "kind": "Delve",
+    "mapId": 2216,
+    "x": 67.27,
+    "y": 21.22,
+    "source": "MapNotes_DelvesPassage",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Delve Passage (2215)",
+    "kind": "Delve",
+    "mapId": 2215,
+    "x": 70.64,
+    "y": 30.95,
+    "source": "MapNotes_DelvesPassage",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Delve Passage (2215)",
+    "kind": "Delve",
+    "mapId": 2215,
+    "x": 66.71,
+    "y": 61.7,
+    "source": "MapNotes_DelvesPassage",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Delve Passage (2215)",
+    "kind": "Delve",
+    "mapId": 2215,
+    "x": 50.71,
+    "y": 50.5,
+    "source": "MapNotes_DelvesPassage",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Delve Passage (2215)",
+    "kind": "Delve",
+    "mapId": 2215,
+    "x": 35.32,
+    "y": 45.93,
+    "source": "MapNotes_DelvesPassage",
+    "expansion": "The War Within",
+    "journalId": null
+  },
+  {
+    "name": "Delve Passage (2214)",
+    "kind": "Delve",
+    "mapId": 2214,
+    "x": 46.11,
+    "y": 47.91,
+    "source": "MapNotes_DelvesPassage",
+    "expansion": "The War Within",
+    "journalId": null
+  }
+]

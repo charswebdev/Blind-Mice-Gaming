@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WoW loads Bindings.xml from this folder; do not list it in the .toc. -->
+<Bindings>
+    <Binding name="COOLDOWNASSIST_OPENSETTINGS" description="Open Cooldown Assist settings." category="Cooldown Assist">
+        CooldownAssist_OpenSettingsBinding();
+    </Binding>
+    <Binding name="COOLDOWNASSIST_STOPSPEAK" description="Stop Cooldown Assist text to speech." category="Cooldown Assist">
+        CooldownAssist_StopSpeakBinding();
+    </Binding>
+    <Binding name="COOLDOWNASSIST_CHECKREADY" description="Read currently ready tracked cooldowns." category="Cooldown Assist">
+        CooldownAssist_CheckReadyBinding();
+    </Binding>
+    <Binding name="COOLDOWNASSIST_TESTSPEECH" description="Test Cooldown Assist text to speech." category="Cooldown Assist">
+        CooldownAssist_TestSpeechBinding();
+    </Binding>
+</Bindings>
