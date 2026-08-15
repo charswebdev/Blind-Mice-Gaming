@@ -9,6 +9,7 @@ import shutil
 import sys
 import tempfile
 import threading
+import webbrowser
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -21,6 +22,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 APP_NAME = "Blind Mice Gaming Updater"
+APP_VERSION = "1.1.0"
 BG = "#000000"
 FG = "#FFFFFF"
 YELLOW = "#FFE600"
@@ -29,6 +31,7 @@ RED = "#FF4D4D"
 PANEL = "#111111"
 BTN = "#1A1A1A"
 MUTED = "#CCCCCC"
+ROYAL = "#0B1F5C"
 
 IS_FROZEN = getattr(sys, "frozen", False)
 HERE = Path(sys._MEIPASS) if IS_FROZEN else Path(__file__).resolve().parent
@@ -89,7 +92,7 @@ FLAVOR_DEFS = [
     },
     {
         "id": "anniversary",
-        "name": "Classic Anniversary",
+        "name": "Classic (Anniversary)",
         "folders": ("_anniversary_",),
         "match": lambda n: 20000 <= n < 30000,
     },
@@ -101,7 +104,7 @@ FLAVOR_DEFS = [
     },
     {
         "id": "era",
-        "name": "Classic Era",
+        "name": "Classic (Vanilla)",
         "folders": ("_classic_era_",),
         "match": lambda n: 10000 <= n < 20000,
     },
@@ -224,8 +227,10 @@ class UpdaterApp:
         self.toc_cache: dict[str, dict] = {}
         self.flavor_clients: list[dict] = []
         self.notify_names: list[str] = []
+        self.updater_update = False
+        self.updater_latest = APP_VERSION
 
-        root.title(APP_NAME)
+        root.title(f"{APP_NAME} {APP_VERSION}")
         root.configure(bg=BG)
         root.minsize(1040, 760)
         root.geometry("1180x880")
@@ -242,13 +247,29 @@ class UpdaterApp:
             return LOCAL_SOURCE
         return None
 
+    def catalog_toc(self, addon: dict) -> dict:
+        interfaces = []
+        for number in addon.get("interfaces") or []:
+            try:
+                interfaces.append(int(number))
+            except (TypeError, ValueError):
+                continue
+        return {
+            "version": addon.get("version"),
+            "interfaces": interfaces,
+            "saved": list(addon.get("saved") or []),
+        }
+
     def addon_toc(self, addon: dict) -> dict:
         addon_id = addon["id"]
         if addon_id in self.toc_cache:
             return self.toc_cache[addon_id]
+        info = self.catalog_toc(addon)
         source = self.source_dir()
-        folder = (source / addon["folders"][0]) if source else None
-        info = read_toc(folder) if folder else {"version": None, "interfaces": [], "saved": []}
+        if source:
+            parsed = read_toc(source / addon["folders"][0])
+            if parsed.get("interfaces"):
+                info = parsed
         self.toc_cache[addon_id] = info
         return info
 
@@ -277,7 +298,7 @@ class UpdaterApp:
             for folder in flavor["folders"]:
                 client = root / folder
                 addons = client / "Interface" / "AddOns"
-                if client.is_dir() and addons.exists():
+                if client.is_dir():
                     found.append(
                         {
                             **flavor,
@@ -291,22 +312,22 @@ class UpdaterApp:
         return found
 
     def _build(self) -> None:
-        header = tk.Frame(self.root, bg=BG, padx=24, pady=14)
+        header = tk.Frame(self.root, bg=BG, padx=20, pady=8)
         header.pack(fill="x")
 
         if LOGO_PATH.is_file():
             image = Image.open(LOGO_PATH).convert("RGBA")
-            image.thumbnail((720, 140), Image.Resampling.LANCZOS)
+            image.thumbnail((520, 96), Image.Resampling.LANCZOS)
             self.logo_photo = ImageTk.PhotoImage(image)
             tk.Label(header, image=self.logo_photo, bg=BG).pack(anchor="w")
         else:
-            tk.Label(header, text="BLIND MICE GAMING", bg=BG, fg=YELLOW, font=self._font(30)).pack(anchor="w")
+            tk.Label(header, text="BLIND MICE GAMING", bg=BG, fg=YELLOW, font=self._font(22)).pack(anchor="w")
 
-        tk.Label(header, text="ADDON UPDATER", bg=BG, fg=FG, font=self._font(20)).pack(anchor="w", pady=(6, 0))
+        tk.Label(header, text="ADDON UPDATER", bg=BG, fg=FG, font=self._font(15)).pack(anchor="w", pady=(4, 0))
 
-        path_row = tk.Frame(self.root, bg=BG, padx=24)
-        path_row.pack(fill="x", pady=6)
-        tk.Label(path_row, text="World of Warcraft folder", bg=BG, fg=YELLOW, font=self._font(16)).pack(anchor="w")
+        path_row = tk.Frame(self.root, bg=BG, padx=20)
+        path_row.pack(fill="x", pady=4)
+        tk.Label(path_row, text="World of Warcraft folder", bg=BG, fg=YELLOW, font=self._font(13)).pack(anchor="w")
 
         entry_row = tk.Frame(path_row, bg=BG)
         entry_row.pack(fill="x", pady=6)
@@ -317,31 +338,32 @@ class UpdaterApp:
             bg=PANEL,
             fg=FG,
             insertbackground=FG,
-            font=self._font(15, bold=False),
+            font=self._font(12, bold=False),
             relief="flat",
         )
-        self.path_entry.pack(side="left", fill="x", expand=True, ipady=10, padx=(0, 8))
+        self.path_entry.pack(side="left", fill="x", expand=True, ipady=6, padx=(0, 8))
         self._button(entry_row, "Browse", self.browse_folder).pack(side="left")
 
-        actions = tk.Frame(self.root, bg=BG, padx=24, pady=10)
+        actions = tk.Frame(self.root, bg=BG, padx=20, pady=6)
         actions.pack(fill="x")
         self._button(actions, "Check for updates", self.check_updates).pack(side="left", padx=(0, 8))
         self._button(actions, "Update all", self.update_all).pack(side="left", padx=(0, 8))
+        self.get_updater_btn = self._button(actions, "Get updater update", self.download_updater)
         if not IS_FROZEN:
             self._button(actions, "Install from this PC", self.install_all_local).pack(side="left")
 
         self.banner = tk.Label(
             self.root,
             text="",
-            bg=YELLOW,
-            fg=BG,
-            font=self._font(16),
+            bg=ROYAL,
+            fg=YELLOW,
+            font=self._font(12),
             anchor="w",
-            padx=24,
-            pady=10,
+            padx=20,
+            pady=8,
         )
 
-        list_wrap = tk.Frame(self.root, bg=BG, padx=24)
+        list_wrap = tk.Frame(self.root, bg=BG, padx=20)
         list_wrap.pack(fill="both", expand=True)
         self.canvas = tk.Canvas(list_wrap, bg=BG, highlightthickness=0)
         scroll = tk.Scrollbar(list_wrap, command=self.canvas.yview)
@@ -362,12 +384,12 @@ class UpdaterApp:
         self.status = tk.Label(
             self.root,
             text="Ready. Addons are grouped by the WoW versions installed on this PC.",
-            bg=YELLOW,
-            fg=BG,
-            font=self._font(15),
+            bg=ROYAL,
+            fg=YELLOW,
+            font=self._font(12),
             anchor="w",
-            padx=24,
-            pady=12,
+            padx=20,
+            pady=8,
         )
         self.status.pack(fill="x", side="bottom")
 
@@ -382,10 +404,10 @@ class UpdaterApp:
             fg=YELLOW,
             activebackground=YELLOW,
             activeforeground=BG,
-            font=self._font(14),
+            font=self._font(11),
             relief="flat",
-            padx=14,
-            pady=8,
+            padx=10,
+            pady=5,
             cursor="hand2",
             highlightthickness=2,
             highlightbackground=YELLOW,
@@ -404,31 +426,31 @@ class UpdaterApp:
                 text="No WoW game versions were found in that folder. Browse to the World of Warcraft directory that contains _retail_ or _classic_.",
                 bg=BG,
                 fg=YELLOW,
-                font=self._font(16),
+                font=self._font(13),
                 wraplength=960,
                 justify="left",
-            ).pack(anchor="w", pady=16)
+            ).pack(anchor="w", pady=10)
             return
 
         for flavor in self.flavor_clients:
             addons = [addon for addon in self.catalog.get("addons", []) if self.addon_supports(addon, flavor)]
-            header = tk.Frame(self.list_frame, bg=BG, pady=10)
+            header = tk.Frame(self.list_frame, bg=BG, pady=6)
             header.pack(fill="x")
-            tk.Label(header, text=flavor["name"].upper(), bg=BG, fg=YELLOW, font=self._font(20)).pack(anchor="w")
+            tk.Label(header, text=flavor["name"].upper(), bg=BG, fg=YELLOW, font=self._font(15)).pack(anchor="w")
             tk.Label(
                 header,
                 text=str(flavor["addons_dir"]),
                 bg=BG,
                 fg=MUTED,
-                font=self._font(12, bold=False),
-            ).pack(anchor="w", pady=(2, 6))
+                font=self._font(10, bold=False),
+            ).pack(anchor="w", pady=(1, 4))
             if not addons:
                 tk.Label(
                     header,
                     text="No Blind Mice Gaming addons target this game version.",
                     bg=BG,
                     fg=MUTED,
-                    font=self._font(14, bold=False),
+                    font=self._font(11, bold=False),
                 ).pack(anchor="w")
                 continue
             flavor_actions = tk.Frame(header, bg=BG)
@@ -449,14 +471,14 @@ class UpdaterApp:
 
     def _addon_row(self, addon: dict, flavor: dict) -> None:
         key = f"{flavor['id']}:{addon['id']}"
-        frame = tk.Frame(self.list_frame, bg=PANEL, padx=16, pady=12)
-        frame.pack(fill="x", pady=6)
+        frame = tk.Frame(self.list_frame, bg=PANEL, padx=12, pady=8)
+        frame.pack(fill="x", pady=4)
 
         left = tk.Frame(frame, bg=PANEL)
         left.pack(side="left", fill="x", expand=True)
-        tk.Label(left, text=addon["name"], bg=PANEL, fg=FG, font=self._font(18)).pack(anchor="w")
-        meta = tk.Label(left, text="Checking local files…", bg=PANEL, fg=MUTED, font=self._font(14, bold=False), justify="left")
-        meta.pack(anchor="w", pady=4)
+        tk.Label(left, text=addon["name"], bg=PANEL, fg=FG, font=self._font(14)).pack(anchor="w")
+        meta = tk.Label(left, text="Checking local files…", bg=PANEL, fg=MUTED, font=self._font(11, bold=False), justify="left")
+        meta.pack(anchor="w", pady=2)
 
         buttons = tk.Frame(frame, bg=PANEL)
         buttons.pack(side="right", padx=(12, 0))
@@ -477,19 +499,28 @@ class UpdaterApp:
         }
 
     def set_status(self, text: str, color: str = YELLOW) -> None:
-        self.status.configure(text=text, bg=color, fg=BG if color != PANEL else FG)
+        self.status.configure(text=text, bg=ROYAL, fg=YELLOW)
 
     def set_banner(self, names: list[str]) -> None:
         self.notify_names = names
-        if not names:
-            self.banner.pack_forget()
-            return
+        parts = []
+        if self.updater_update:
+            parts.append(
+                f"BMG Updater {self.updater_latest} is available. You have {APP_VERSION}. Use Get updater update."
+            )
+            self.get_updater_btn.pack(side="left", padx=(0, 8))
+        else:
+            self.get_updater_btn.pack_forget()
         unique = []
         for name in names:
             if name not in unique:
                 unique.append(name)
-        label = ", ".join(unique)
-        self.banner.configure(text=f"Updates available: {label}. Use Update on those rows, or Update all.")
+        if unique:
+            parts.append(f"Addon updates available: {', '.join(unique)}. Use Update on those rows, or Update all.")
+        if not parts:
+            self.banner.pack_forget()
+            return
+        self.banner.configure(text=" ".join(parts))
         if not self.banner.winfo_ismapped():
             self.banner.pack(fill="x", side="bottom", before=self.status)
 
@@ -613,6 +644,21 @@ class UpdaterApp:
         self.set_status("Checking GitHub for addon versions…")
         self._check_updates(show_errors=True)
 
+    def download_updater(self) -> None:
+        repo = self.catalog.get("repo") or "charswebdev/Blind-Mice-Gaming"
+        url = self.catalog.get("setupUrl") or f"https://github.com/{repo}/releases/latest"
+        webbrowser.open(url)
+
+    def apply_remote_catalog(self, remote: dict) -> None:
+        if remote.get("addons"):
+            self.catalog["addons"] = remote["addons"]
+            self.toc_cache.clear()
+        if remote.get("setupUrl"):
+            self.catalog["setupUrl"] = remote["setupUrl"]
+        latest = remote.get("updaterVersion")
+        self.updater_latest = latest or APP_VERSION
+        self.updater_update = is_newer(latest, APP_VERSION)
+
     def _check_updates(self, show_errors: bool) -> None:
         def work():
             token = ""
@@ -620,6 +666,14 @@ class UpdaterApp:
             branch = self.catalog.get("branch", "main")
             if not repo:
                 raise RuntimeError("catalog.json is missing the GitHub repo.")
+            catalog_url = f"https://raw.githubusercontent.com/{repo}/{branch}/updater/catalog.json"
+            try:
+                raw, _modified = http_get(catalog_url, token)
+                remote_catalog = json.loads(raw.decode("utf-8"))
+                self.apply_remote_catalog(remote_catalog)
+            except (HTTPError, URLError, json.JSONDecodeError):
+                if show_errors:
+                    raise
             for addon in self.catalog.get("addons", []):
                 folder = addon["folders"][0]
                 url = f"https://raw.githubusercontent.com/{repo}/{branch}/{folder}/{folder}.toc"
@@ -647,8 +701,14 @@ class UpdaterApp:
 
         def after():
             self.busy = False
+            self.rebuild_list()
             self.refresh_local()
-            if self.notify_names:
+            if self.updater_update:
+                self.set_status(
+                    f"BMG Updater {self.updater_latest} is available. You have {APP_VERSION}.",
+                    YELLOW,
+                )
+            elif self.notify_names:
                 self.set_status(f"Updates available for {len(self.notify_names)} install(s).", YELLOW)
             else:
                 self.set_status("Version check finished. No updates found.", GREEN)

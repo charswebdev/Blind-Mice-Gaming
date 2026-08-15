@@ -1,11 +1,16 @@
 {
   "repo": "charswebdev/Blind-Mice-Gaming",
   "branch": "main",
+  "updaterVersion": "1.1.0",
+  "setupUrl": "https://github.com/charswebdev/Blind-Mice-Gaming/releases/latest",
   "addons": [
     {
       "id": "AccessibilityHelper",
       "name": "Accessibility Helper",
-      "folders": ["AccessibilityHelper"]
+      "folders": ["AccessibilityHelper"],
+      "version": "3.0.0",
+      "interfaces": [120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508],
+      "saved": ["AccessibilityHelperDB"]
     },
     {
       "id": "AllQuest",
@@ -24,32 +29,50 @@
         "AllQuest_Data_TWW",
         "AllQuest_Data_WoD",
         "AllQuest_Data_Wrath"
-      ]
+      ],
+      "version": "1.0.0",
+      "interfaces": [120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508],
+      "saved": ["AllQuestDB", "AllQuestCharDB"]
     },
     {
       "id": "CooldownAssist",
       "name": "Cooldown Assist",
-      "folders": ["CooldownAssist"]
+      "folders": ["CooldownAssist"],
+      "version": "1.1.0",
+      "interfaces": [120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508],
+      "saved": ["CooldownAssistDB"]
     },
     {
       "id": "Exploration",
       "name": "Exploration",
-      "folders": ["Exploration"]
+      "folders": ["Exploration"],
+      "version": "2.0.0",
+      "interfaces": [120100],
+      "saved": ["ExplorationDB"]
     },
     {
       "id": "FPSDiag",
       "name": "FPSDiag",
-      "folders": ["FPSDiag"]
+      "folders": ["FPSDiag"],
+      "version": "0.2.0",
+      "interfaces": [110007, 111000, 111500, 111700, 120000, 120001, 120005, 120100],
+      "saved": ["FPSDiagDB"]
     },
     {
       "id": "lpl",
       "name": "Light Paws Loadouts",
-      "folders": ["lpl"]
+      "folders": ["lpl"],
+      "version": "1.0.0",
+      "interfaces": [120100, 120007, 120001],
+      "saved": ["LPLDB"]
     },
     {
       "id": "wowgps",
       "name": "WowGPS",
-      "folders": ["wowgps"]
+      "folders": ["wowgps"],
+      "version": "0.4.3",
+      "interfaces": [120100, 120007, 120005, 120001, 50504, 50503, 40402, 30405, 20506, 20505, 11509, 11508],
+      "saved": ["WowGPSDB"]
     }
   ]
 }
