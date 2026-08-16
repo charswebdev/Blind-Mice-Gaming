@@ -286,7 +286,7 @@ local function AddCriteria(rows)
             end
             AddRow(rows, {
                 kind = "objective",
-                title = "  " .. criteriaString .. extra,
+                title = criteriaString,
                 finished = completed and true or false,
                 numFulfilled = quantity,
                 numNeeded = totalQuantity,
@@ -436,9 +436,10 @@ local function GetRows()
                 if type(sp) == "table" and type(sp.spellID) == "number" and IsShownState(sp.shownState) then
                     local kind, sname, tip = ClassifyDelveSpell(sp)
                     local prefix = ""
-                    if kind == "nemesis" then
+                    local lower = string.lower(sname or "")
+                    if kind == "nemesis" and not lower:find("nemesis", 1, true) then
                         prefix = "Nemesis  "
-                    elseif kind == "bountiful" then
+                    elseif kind == "bountiful" and not lower:find("bountiful", 1, true) then
                         prefix = "Bountiful  "
                     end
                     AddRow(rows, {

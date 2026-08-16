@@ -12,7 +12,7 @@ local DB = AQ.DB
 local defaults = {
     trackerEnabled = true,
     trackerLocked = false,
-    trackerWidth = 320,
+    trackerWidth = 400,
     trackerMaxHeight = 520,
     trackerHeight = nil,
     trackerScale = 1,
@@ -256,6 +256,10 @@ local function EnsureRoot()
         if type(name) == "string" and type(prof) == "table" then
             any = true
             CopyDefaults(defaults, prof)
+            if prof.trackerWidth == 320 and not prof.trackerWideObjectives then
+                prof.trackerWidth = 400
+                prof.trackerWideObjectives = true
+            end
         end
     end
     if not any then

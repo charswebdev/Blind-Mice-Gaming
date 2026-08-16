@@ -597,18 +597,19 @@ local function Layout()
         elseif data.kind == "objective" then
             indent = 28
         end
-        local h = 16
+        local wrap = data.kind == "header" or data.kind == "quest" or data.kind == "objective"
+        local h = 18
         if data.kind == "objective" then
-            h = 14
-        elseif data.kind == "header" then
             h = 18
+        elseif data.kind == "header" then
+            h = 20
         elseif data.kind == "timer" then
             h = 26
         end
         if isSectionHeader and i > 1 then
-            y = y + 6
+            y = y + 10
         elseif isSubHeader then
-            y = y + 2
+            y = y + 8
         end
         row:SetHeight(h)
         row:ClearAllPoints()
@@ -665,7 +666,7 @@ local function Layout()
             if shown then
                 row.Icon:ClearAllPoints()
                 row.Icon:SetSize(14, 14)
-                row.Icon:SetPoint("LEFT", 4 + indent, 0)
+                row.Icon:SetPoint("LEFT", 4 + indent, wrap and 2 or 0)
                 row.Icon:Show()
                 iconW = 18
             end
@@ -701,6 +702,8 @@ local function Layout()
         end
         if data.kind == "objective" then
             title = title:gsub("^%s+", ""):gsub(" %(complete%)$", "")
+            title = title:gsub("%s*%d+%s*/%s*%d+%s*$", "")
+            title = title:gsub("^%d+%s*/%s*%d+%s+", "")
             if not data.clickComplete then
                 title = "-  " .. title
             end
@@ -711,10 +714,11 @@ local function Layout()
             fs = data.fontSize or 13
         end
         AQ.Widgets.SetTrackerFont(row.Text, fs)
-        row.Text:SetWordWrap(false)
+        row.Text:SetWordWrap(wrap)
         if row.Text.SetMaxLines then
-            row.Text:SetMaxLines(1)
+            row.Text:SetMaxLines(wrap and 2 or 1)
         end
+        row.Text:SetJustifyV(wrap and "TOP" or "MIDDLE")
 
         local hasItem = data.itemIndex and showItems
         local itemW = hasItem and 16 or 0
@@ -735,14 +739,25 @@ local function Layout()
         elseif st == "LOCKED" then
             statusLabel = "Locked"
             statusCol = th.tag
+        elseif type(data.numNeeded) == "number" and data.numNeeded > 0 then
+            statusLabel = string.format("%d/%d", tonumber(data.numFulfilled) or 0, data.numNeeded)
+            if data.finished or data.clickComplete then
+                statusCol = th.complete
+            elseif AQ.Theme.ObjectiveProgressColor then
+                statusCol = AQ.Theme.ObjectiveProgressColor(data)
+            else
+                statusCol = th.objective
+            end
         end
         local statusW = statusLabel and 64 or 0
         if data.kind == "timer" then
             statusW = 56
+        elseif statusLabel and string.match(statusLabel, "^%d+/%d+$") then
+            statusW = 44
         end
         row.Status:ClearAllPoints()
         row.Text:ClearAllPoints()
-        local textY = (data.kind == "timer") and 4 or 0
+        local textY = (data.kind == "timer") and 4 or (wrap and -1 or 0)
         row.Text:SetPoint("LEFT", 4 + indent + iconW, textY)
         row.Text:SetPoint("RIGHT", -(6 + statusW + itemW + extraW), textY)
         if statusLabel then
@@ -751,6 +766,7 @@ local function Layout()
             row.Status:SetPoint("RIGHT", -2 - itemW - extraW, textY)
             row.Status:SetTextColor(statusCol[1], statusCol[2], statusCol[3], 1)
             AQ.Widgets.SetTrackerFont(row.Status, 11)
+            row.Status:SetJustifyV(wrap and "TOP" or "MIDDLE")
             row.Status:SetWordWrap(false)
             if row.Status.SetMaxLines then
                 row.Status:SetMaxLines(1)
@@ -814,7 +830,25 @@ local function Layout()
         elseif row.ItemTag then
             row.ItemTag:Hide()
         end
+        if wrap then
+            local sh = row.Text.GetStringHeight and row.Text:GetStringHeight()
+            if type(sh) == "number" and sh > h then
+                local cap = AQ.Theme.FontSize(fs) * 2 + 8
+                if sh > cap then
+                    sh = cap
+                end
+                h = math.floor(sh + 8)
+                row:SetHeight(h)
+            end
+        end
         y = y + h
+        if isSubHeader then
+            y = y + 6
+        elseif data.kind == "objective" then
+            y = y + 5
+        elseif data.kind == "quest" or data.kind == "timer" then
+            y = y + 3
+        end
         count = i
     end
     for i = count + 1, #rows do
