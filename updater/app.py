@@ -7,9 +7,9 @@ import os
 import re
 import shutil
 import sys
+import subprocess
 import tempfile
 import threading
-import webbrowser
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -22,7 +22,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 APP_NAME = "Blind Mice Gaming Updater"
-APP_VERSION = "1.1.3"
+APP_VERSION = "1.1.4"
 BG = "#000000"
 FG = "#FFFFFF"
 YELLOW = "#FFE600"
@@ -775,10 +775,69 @@ class UpdaterApp:
         self.set_status("Checking GitHub for addon versions…")
         self._check_updates(show_errors=True)
 
-    def download_updater(self) -> None:
+    def setup_download_url(self) -> str:
+        url = (self.catalog.get("setupUrl") or "").strip()
+        if url.lower().endswith(".exe"):
+            return url
         repo = self.catalog.get("repo") or "charswebdev/Blind-Mice-Gaming"
-        url = self.catalog.get("setupUrl") or f"https://github.com/{repo}/releases/latest"
-        webbrowser.open(url)
+        return f"https://github.com/{repo}/releases/latest/download/BMG-Updater-Setup.exe"
+
+    def download_updater(self) -> None:
+        if self.busy:
+            return
+        url = self.setup_download_url()
+        dest = Path(tempfile.gettempdir()) / "BMG-Updater-Setup.exe"
+        self.set_status("Downloading BMG Updater…")
+        self.report_progress(0, "Downloading BMG Updater…")
+        self.busy = True
+
+        def work():
+            assumed = 25 * 1024 * 1024
+
+            def on_download(read, total):
+                nonlocal assumed
+                if total:
+                    frac = read / total
+                else:
+                    assumed = max(assumed, read / 0.85, 8 * 1024 * 1024)
+                    frac = min(0.99, read / assumed)
+                self.report_progress(frac * 100, "Downloading BMG Updater…")
+
+            http_download(url, dest, on_progress=on_download)
+            if not dest.is_file() or dest.stat().st_size < 10000:
+                raise RuntimeError("The updater download failed. Check your internet connection and try again.")
+            with dest.open("rb") as handle:
+                if handle.read(2) != b"MZ":
+                    raise RuntimeError("The updater download failed. Check your internet connection and try again.")
+
+        def runner():
+            try:
+                work()
+                self.root.after(0, lambda: self._launch_updater_setup(dest))
+            except Exception as exc:
+                self.root.after(0, lambda: self.finish(str(exc), RED))
+
+        threading.Thread(target=runner, daemon=True).start()
+
+    def _launch_updater_setup(self, dest: Path) -> None:
+        self._progress_pending = (100, "Starting updater install…")
+        self._apply_progress(100, "Starting updater install…")
+        self.set_status("Starting updater install…")
+        try:
+            subprocess.Popen(
+                [
+                    str(dest),
+                    "/SILENT",
+                    "/NORESTART",
+                    "/FORCECLOSEAPPLICATIONS",
+                    "/SUPPRESSMSGBOXES",
+                ],
+                close_fds=True,
+            )
+        except OSError as exc:
+            self.finish(f"Could not start the updater installer: {exc}", RED)
+            return
+        self.root.destroy()
 
     def apply_remote_catalog(self, remote: dict) -> None:
         if remote.get("addons"):

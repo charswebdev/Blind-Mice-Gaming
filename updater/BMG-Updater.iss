@@ -1,5 +1,5 @@
 #define MyAppName "Blind Mice Gaming Updater"
-#define MyAppVersion "1.1.3"
+#define MyAppVersion "1.1.4"
 #define MyAppPublisher "Blind Mice Gaming"
 #define MyAppURL "https://github.com/charswebdev/Blind-Mice-Gaming"
 #define MyAppExeName "BMG-Updater.exe"
@@ -75,7 +75,7 @@ Root: HKLM; Subkey: "Software\Classes\*\shell\UninstallBMGUpdater"; ValueType: s
 Root: HKLM; Subkey: "Software\Classes\*\shell\UninstallBMGUpdater\command"; ValueType: string; ValueName: ""; ValueData: """{uninstallexe}"""
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "Launch Blind Mice Gaming Updater"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "Launch Blind Mice Gaming Updater"; Flags: nowait postinstall
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{localappdata}\BlindMiceUpdater"
