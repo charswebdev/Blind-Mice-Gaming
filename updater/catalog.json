@@ -1,8 +1,8 @@
 {
   "repo": "charswebdev/Blind-Mice-Gaming",
   "branch": "main",
-  "updaterVersion": "1.1.2",
-  "setupUrl": "https://github.com/charswebdev/Blind-Mice-Gaming/releases/latest",
+  "updaterVersion": "1.1.4",
+  "setupUrl": "https://github.com/charswebdev/Blind-Mice-Gaming/releases/latest/download/BMG-Updater-Setup-1.1.4.exe",
   "addons": [
     {
       "id": "AccessibilityHelper",

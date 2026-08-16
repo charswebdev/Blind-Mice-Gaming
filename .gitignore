@@ -5,6 +5,18 @@ Thumbs.db
 .cursor/
 __pycache__/
 *.pyc
+
+# Author tools and Python stay on this PC
+**/tools/
+**/*.py
+Exploration/.py
+Exploration/REGRESSION.md
+AllQuest/Media/Review/
+
+# Updater source stays local; players only need catalog.json
+updater/*
+!updater/catalog.json
+updater/logo-previews/
 updater/build/
 updater/dist/
 updater/launch-error.txt
