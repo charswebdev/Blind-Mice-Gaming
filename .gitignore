@@ -11,6 +11,7 @@ __pycache__/
 **/*.py
 Exploration/.py
 Exploration/REGRESSION.md
+AllQuest/Media/Review/
 
 # Updater source stays local; players only need catalog.json
 updater/*
