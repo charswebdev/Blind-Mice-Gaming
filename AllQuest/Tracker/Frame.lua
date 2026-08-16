@@ -613,7 +613,10 @@ local function Layout()
         local th = TrackerTheme()
         local showBg = false
         local col = th.focus
-        if i == focused then
+        if data.kind == "header" then
+            showBg = true
+            col = th.section or th.focus
+        elseif i == focused then
             showBg = true
             col = th.focus
         end
