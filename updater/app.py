@@ -9,6 +9,7 @@ import shutil
 import sys
 import tempfile
 import threading
+import time
 import webbrowser
 from datetime import datetime
 from email.utils import parsedate_to_datetime
@@ -22,7 +23,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 APP_NAME = "Blind Mice Gaming Updater"
-APP_VERSION = "1.1.1"
+APP_VERSION = "1.1.2"
 BG = "#000000"
 FG = "#FFFFFF"
 YELLOW = "#FFE600"
@@ -203,12 +204,16 @@ def wow_root_from_legacy(path: Path) -> Path:
     return path
 
 
-def http_get(url: str, token: str = "") -> tuple[bytes, datetime | None]:
+def http_headers(token: str = "") -> dict[str, str]:
     headers = {"User-Agent": "BMG-Updater/1.0"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
         headers["Accept"] = "application/vnd.github+json"
-    with urlopen(Request(url, headers=headers), timeout=60) as resp:
+    return headers
+
+
+def http_get(url: str, token: str = "") -> tuple[bytes, datetime | None]:
+    with urlopen(Request(url, headers=http_headers(token)), timeout=60) as resp:
         modified = None
         raw = resp.headers.get("Last-Modified")
         if raw:
@@ -217,6 +222,36 @@ def http_get(url: str, token: str = "") -> tuple[bytes, datetime | None]:
             except (TypeError, ValueError):
                 modified = None
         return resp.read(), modified
+
+
+def http_download(url: str, dest: Path, token: str = "", on_progress=None) -> None:
+    with urlopen(Request(url, headers=http_headers(token)), timeout=120) as resp:
+        total = int(resp.headers.get("Content-Length") or 0)
+        read = 0
+        with dest.open("wb") as handle:
+            while True:
+                chunk = resp.read(64 * 1024)
+                if not chunk:
+                    break
+                handle.write(chunk)
+                read += len(chunk)
+                if on_progress:
+                    on_progress(read / total if total else None)
+
+
+def list_copy_files(root: Path) -> list[Path]:
+    files: list[Path] = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        ignored = COPY_IGNORE(dirpath, dirnames + filenames)
+        dirnames[:] = [name for name in dirnames if name not in ignored]
+        for name in filenames:
+            if name not in ignored:
+                files.append(Path(dirpath) / name)
+    return files
+
+
+def list_tree_files(root: Path) -> list[Path]:
+    return [path for path in root.rglob("*") if path.is_file()]
 
 
 class UpdaterApp:
@@ -232,6 +267,9 @@ class UpdaterApp:
         self.notify_names: list[str] = []
         self.updater_update = False
         self.updater_latest = APP_VERSION
+        self._progress_value = 0
+        self._progress_text = ""
+        self._last_progress_ts = 0.0
 
         root.title(f"{APP_NAME} {APP_VERSION}")
         root.configure(bg=BG)
@@ -395,8 +433,75 @@ class UpdaterApp:
             pady=8,
         )
         self.status.pack(fill="x", side="bottom")
+        self._build_progress()
 
         self.rebuild_list()
+
+    def _build_progress(self) -> None:
+        self.progress_frame = tk.Frame(self.root, bg=BG, padx=20, pady=8)
+        self.progress_label = tk.Label(
+            self.progress_frame,
+            text="",
+            bg=BG,
+            fg=YELLOW,
+            font=self._font(12),
+            anchor="w",
+        )
+        self.progress_label.pack(fill="x")
+
+        row = tk.Frame(self.progress_frame, bg=BG)
+        row.pack(fill="x", pady=(6, 0))
+        self.progress_canvas = tk.Canvas(
+            row,
+            height=24,
+            bg=PANEL,
+            highlightthickness=2,
+            highlightbackground=YELLOW,
+            highlightcolor=YELLOW,
+        )
+        self.progress_canvas.pack(side="left", fill="x", expand=True)
+        self.progress_rect = self.progress_canvas.create_rectangle(0, 0, 0, 24, fill=YELLOW, outline="")
+        self.progress_canvas.bind("<Configure>", lambda _e: self._draw_progress())
+
+        self.progress_pct = tk.Label(
+            row,
+            text="0%",
+            bg=BG,
+            fg=YELLOW,
+            font=self._font(16),
+            width=5,
+            anchor="e",
+        )
+        self.progress_pct.pack(side="left", padx=(12, 0))
+
+    def _draw_progress(self) -> None:
+        width = max(self.progress_canvas.winfo_width(), 1)
+        height = max(self.progress_canvas.winfo_height(), 1)
+        fill = int(width * self._progress_value / 100)
+        self.progress_canvas.coords(self.progress_rect, 0, 0, fill, height)
+
+    def report_progress(self, percent: float, text: str) -> None:
+        pct = int(max(0, min(100, percent)))
+        now = time.monotonic()
+        force = pct in (0, 100) or text != self._progress_text
+        if not force and now - self._last_progress_ts < 0.08:
+            return
+        self._last_progress_ts = now
+        self._progress_text = text
+        self.root.after(0, lambda p=pct, t=text: self._apply_progress(p, t))
+
+    def _apply_progress(self, percent: int, text: str) -> None:
+        self._progress_value = percent
+        self.progress_label.configure(text=text)
+        self.progress_pct.configure(text=f"{percent}%")
+        if not self.progress_frame.winfo_ismapped():
+            self.progress_frame.pack(fill="x", side="bottom", before=self.status)
+        self._draw_progress()
+
+    def hide_progress(self) -> None:
+        self._progress_value = 0
+        self._progress_text = ""
+        self.progress_frame.pack_forget()
 
     def _button(self, parent, text, command, width: int | None = None) -> tk.Button:
         return tk.Button(
@@ -632,6 +737,11 @@ class UpdaterApp:
 
     def finish(self, message: str, color: str) -> None:
         self.busy = False
+        if color == GREEN:
+            self._apply_progress(100, message)
+            self.root.after(500, self.hide_progress)
+        else:
+            self.hide_progress()
         self.refresh_local()
         self.set_status(message, color)
 
@@ -776,45 +886,90 @@ class UpdaterApp:
         if not self.browse_ok():
             return
         self.set_status(f"Installing {label}…")
+        self.report_progress(0, f"Installing {label}…")
 
         def work():
             source = self.source_dir() if local_only else None
-            extracted = None
             tmp_dir = None
+            copy_start = 0.0
             if source is None:
                 repo = self.catalog.get("repo") or ""
                 branch = self.catalog.get("branch", "main")
                 url = f"https://api.github.com/repos/{repo}/zipball/{branch}"
-                data, _modified = http_get(url)
                 tmp_dir = tempfile.TemporaryDirectory()
                 zip_path = Path(tmp_dir.name) / "addons.zip"
-                zip_path.write_bytes(data)
+                self.report_progress(0, "Downloading addons from GitHub…")
+
+                def on_download(frac):
+                    if frac is None:
+                        return
+                    self.report_progress(frac * 45, "Downloading addons from GitHub…")
+
+                http_download(url, zip_path, on_progress=on_download)
+                self.report_progress(45, "Extracting download…")
                 with zipfile.ZipFile(zip_path) as zf:
+                    members = zf.infolist()
+                    total_members = max(len(members), 1)
                     root_name = zf.namelist()[0].split("/")[0]
-                    zf.extractall(tmp_dir.name)
-                extracted = Path(tmp_dir.name) / root_name
-                source = extracted
+                    for index, member in enumerate(members, 1):
+                        zf.extract(member, tmp_dir.name)
+                        self.report_progress(
+                            45 + (15 * index / total_members),
+                            "Extracting download…",
+                        )
+                source = Path(tmp_dir.name) / root_name
+                copy_start = 60.0
             try:
-                for addon, flavor in jobs:
-                    self._copy_folders(source, addon["folders"], flavor["addons_dir"])
+                job_count = max(len(jobs), 1)
+                for index, (addon, flavor) in enumerate(jobs):
+                    job_lo = copy_start + (100 - copy_start) * index / job_count
+                    job_hi = copy_start + (100 - copy_start) * (index + 1) / job_count
+                    name = addon["name"]
+                    self.report_progress(job_lo, f"Installing {name} for {flavor['name']}…")
+                    self._copy_folders(
+                        source,
+                        addon["folders"],
+                        flavor["addons_dir"],
+                        on_progress=lambda frac, n=name, lo=job_lo, hi=job_hi: self.report_progress(
+                            lo + (hi - lo) * frac,
+                            f"Installing {n}…",
+                        ),
+                    )
+                self.report_progress(100, f"Installed {label}.")
             finally:
                 if tmp_dir is not None:
                     tmp_dir.cleanup()
 
         self.run_bg(work, f"Installed {label}.")
 
-    def _copy_folders(self, source: Path, folders, dest: Path) -> None:
+    def _copy_folders(self, source: Path, folders, dest: Path, on_progress=None) -> None:
         dest.mkdir(parents=True, exist_ok=True)
         missing = []
-        for folder in folders:
+        present = [folder for folder in folders if (source / folder).is_dir()]
+        files: list[tuple[Path, Path]] = []
+        for folder in present:
             src = source / folder
-            if not src.is_dir():
+            target = dest / folder
+            for path in list_copy_files(src):
+                files.append((path, target / path.relative_to(src)))
+        for folder in folders:
+            if folder not in present:
                 missing.append(folder)
-                continue
+
+        total = max(len(files), 1)
+        done = 0
+        for folder in present:
             target = dest / folder
             if target.exists():
                 shutil.rmtree(target)
-            shutil.copytree(src, target, ignore=COPY_IGNORE)
+        for src_file, dest_file in files:
+            dest_file.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src_file, dest_file)
+            done += 1
+            if on_progress:
+                on_progress(done / total)
+        if on_progress:
+            on_progress(1)
         if missing and len(missing) == len(list(folders)):
             raise FileNotFoundError("Addon folders were not in the download: " + ", ".join(missing))
 
@@ -830,14 +985,32 @@ class UpdaterApp:
         ):
             return
         dest = flavor["addons_dir"]
-        removed = 0
-        for folder in addon["folders"]:
-            target = dest / folder
-            if target.exists():
-                shutil.rmtree(target)
-                removed += 1
-        self.refresh_local()
-        self.set_status(f"Uninstalled {addon['name']} from {flavor['name']} ({removed} folder(s)).", GREEN)
+        name = addon["name"]
+        flavor_name = flavor["name"]
+        self.set_status(f"Uninstalling {name} from {flavor_name}…")
+        self.report_progress(0, f"Uninstalling {name} from {flavor_name}…")
+
+        def work():
+            targets = [dest / folder for folder in addon["folders"] if (dest / folder).exists()]
+            files = []
+            for target in targets:
+                files.extend(list_tree_files(target))
+            total = max(len(files), 1)
+            for index, path in enumerate(files, 1):
+                try:
+                    path.unlink()
+                except OSError:
+                    pass
+                self.report_progress(
+                    90 * index / total,
+                    f"Uninstalling {name} from {flavor_name}…",
+                )
+            for target in targets:
+                if target.exists():
+                    shutil.rmtree(target)
+            self.report_progress(100, f"Uninstalled {name} from {flavor_name}.")
+
+        self.run_bg(work, f"Uninstalled {name} from {flavor_name}.")
 
     def delete_saved_variables(self, addon: dict, flavor: dict) -> None:
         names = self.installed_info(addon, flavor)["saved"] or self.addon_toc(addon).get("saved") or []

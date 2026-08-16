@@ -1,5 +1,5 @@
 #define MyAppName "Blind Mice Gaming Updater"
-#define MyAppVersion "1.1.1"
+#define MyAppVersion "1.1.2"
 #define MyAppPublisher "Blind Mice Gaming"
 #define MyAppURL "https://github.com/charswebdev/Blind-Mice-Gaming"
 #define MyAppExeName "BMG-Updater.exe"
