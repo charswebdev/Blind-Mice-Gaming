@@ -9,7 +9,6 @@ import shutil
 import sys
 import tempfile
 import threading
-import time
 import webbrowser
 from datetime import datetime
 from email.utils import parsedate_to_datetime
@@ -23,7 +22,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 APP_NAME = "Blind Mice Gaming Updater"
-APP_VERSION = "1.1.2"
+APP_VERSION = "1.1.3"
 BG = "#000000"
 FG = "#FFFFFF"
 YELLOW = "#FFE600"
@@ -230,13 +229,13 @@ def http_download(url: str, dest: Path, token: str = "", on_progress=None) -> No
         read = 0
         with dest.open("wb") as handle:
             while True:
-                chunk = resp.read(64 * 1024)
+                chunk = resp.read(16 * 1024)
                 if not chunk:
                     break
                 handle.write(chunk)
                 read += len(chunk)
                 if on_progress:
-                    on_progress(read / total if total else None)
+                    on_progress(read, total)
 
 
 def list_copy_files(root: Path) -> list[Path]:
@@ -268,8 +267,9 @@ class UpdaterApp:
         self.updater_update = False
         self.updater_latest = APP_VERSION
         self._progress_value = 0
+        self._progress_target = 0
         self._progress_text = ""
-        self._last_progress_ts = 0.0
+        self._progress_pending: tuple[int, str] | None = None
 
         root.title(f"{APP_NAME} {APP_VERSION}")
         root.configure(bg=BG)
@@ -473,34 +473,51 @@ class UpdaterApp:
             anchor="e",
         )
         self.progress_pct.pack(side="left", padx=(12, 0))
+        self.root.after(40, self._pump_progress)
 
     def _draw_progress(self) -> None:
         width = max(self.progress_canvas.winfo_width(), 1)
         height = max(self.progress_canvas.winfo_height(), 1)
         fill = int(width * self._progress_value / 100)
         self.progress_canvas.coords(self.progress_rect, 0, 0, fill, height)
+        self.progress_canvas.itemconfigure(self.progress_rect, fill=YELLOW)
 
     def report_progress(self, percent: float, text: str) -> None:
         pct = int(max(0, min(100, percent)))
-        now = time.monotonic()
-        force = pct in (0, 100) or text != self._progress_text
-        if not force and now - self._last_progress_ts < 0.08:
-            return
-        self._last_progress_ts = now
-        self._progress_text = text
-        self.root.after(0, lambda p=pct, t=text: self._apply_progress(p, t))
+        self._progress_pending = (pct, text)
+
+    def _pump_progress(self) -> None:
+        pending = self._progress_pending
+        if pending is not None:
+            target, text = pending
+            self._progress_target = target
+            shown = self.progress_frame.winfo_ismapped()
+            if not shown:
+                self._apply_progress(min(self._progress_value, target), text)
+            elif self._progress_value < target:
+                self._apply_progress(self._progress_value + 1, text)
+            elif self._progress_value > target:
+                self._apply_progress(target, text)
+            elif text != self._progress_text:
+                self._apply_progress(self._progress_value, text)
+        self.root.after(40, self._pump_progress)
 
     def _apply_progress(self, percent: int, text: str) -> None:
         self._progress_value = percent
+        self._progress_text = text
         self.progress_label.configure(text=text)
         self.progress_pct.configure(text=f"{percent}%")
         if not self.progress_frame.winfo_ismapped():
             self.progress_frame.pack(fill="x", side="bottom", before=self.status)
+        self.progress_frame.update_idletasks()
         self._draw_progress()
+        self.progress_canvas.update_idletasks()
 
     def hide_progress(self) -> None:
         self._progress_value = 0
+        self._progress_target = 0
         self._progress_text = ""
+        self._progress_pending = None
         self.progress_frame.pack_forget()
 
     def _button(self, parent, text, command, width: int | None = None) -> tk.Button:
@@ -738,6 +755,7 @@ class UpdaterApp:
     def finish(self, message: str, color: str) -> None:
         self.busy = False
         if color == GREEN:
+            self._progress_pending = (100, message)
             self._apply_progress(100, message)
             self.root.after(500, self.hide_progress)
         else:
@@ -895,14 +913,19 @@ class UpdaterApp:
             if source is None:
                 repo = self.catalog.get("repo") or ""
                 branch = self.catalog.get("branch", "main")
-                url = f"https://api.github.com/repos/{repo}/zipball/{branch}"
+                url = f"https://github.com/{repo}/archive/refs/heads/{branch}.zip"
                 tmp_dir = tempfile.TemporaryDirectory()
                 zip_path = Path(tmp_dir.name) / "addons.zip"
                 self.report_progress(0, "Downloading addons from GitHub…")
+                assumed = 20 * 1024 * 1024
 
-                def on_download(frac):
-                    if frac is None:
-                        return
+                def on_download(read, total):
+                    nonlocal assumed
+                    if total:
+                        frac = read / total
+                    else:
+                        assumed = max(assumed, read / 0.85, 8 * 1024 * 1024)
+                        frac = min(0.99, read / assumed)
                     self.report_progress(frac * 45, "Downloading addons from GitHub…")
 
                 http_download(url, zip_path, on_progress=on_download)
