@@ -585,8 +585,12 @@ local function Layout()
         row:Show()
         row.index = i
         row.data = data
+        local isSectionHeader = data.kind == "header" and type(data.id) == "string" and string.sub(data.id, 1, 8) == "section:"
+        local isSubHeader = data.kind == "header" and not isSectionHeader
         local indent = 2
-        if data.kind == "header" then
+        if isSubHeader then
+            indent = data.indent or 14
+        elseif data.kind == "header" then
             indent = 2
         elseif data.kind == "quest" or data.kind == "timer" then
             indent = 16
@@ -601,8 +605,10 @@ local function Layout()
         elseif data.kind == "timer" then
             h = 26
         end
-        if data.kind == "header" and i > 1 then
+        if isSectionHeader and i > 1 then
             y = y + 6
+        elseif isSubHeader then
+            y = y + 2
         end
         row:SetHeight(h)
         row:ClearAllPoints()
@@ -613,12 +619,24 @@ local function Layout()
         local th = TrackerTheme()
         local showBg = false
         local col = th.focus
-        if data.kind == "header" then
+        if isSectionHeader then
             showBg = true
             col = th.section or th.focus
+        elseif isSubHeader then
+            showBg = true
+            col = th.subheader or th.section or th.focus
         elseif i == focused then
             showBg = true
             col = th.focus
+        end
+        if row.Bg then
+            row.Bg:ClearAllPoints()
+            if isSubHeader then
+                row.Bg:SetPoint("TOPLEFT", 12, 0)
+                row.Bg:SetPoint("BOTTOMRIGHT", 0, 0)
+            else
+                row.Bg:SetAllPoints()
+            end
         end
         row._showBg = showBg
         row._bg = col

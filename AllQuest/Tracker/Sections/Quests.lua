@@ -128,7 +128,8 @@ local function GetRows()
             title = zone,
             speech = "Zone " .. zone,
             fontSize = 12,
-            indent = 4,
+            indent = 14,
+            subheader = true,
         }
         local list = byZone[zone]
         for i = 1, #list do

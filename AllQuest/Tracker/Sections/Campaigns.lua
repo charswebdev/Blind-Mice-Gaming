@@ -44,6 +44,8 @@ local function GetRows()
             title = name,
             speech = "Campaign " .. name,
             fontSize = 12,
+            indent = 14,
+            subheader = true,
         }
         local list = byCampaign[campaignID]
         for q = 1, #list do
