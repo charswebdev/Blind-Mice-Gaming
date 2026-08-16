@@ -775,18 +775,22 @@ class UpdaterApp:
         self.set_status("Checking GitHub for addon versions…")
         self._check_updates(show_errors=True)
 
+    def setup_filename(self) -> str:
+        version = self.catalog.get("updaterVersion") or self.updater_latest or APP_VERSION
+        return f"BMG-Updater-Setup-{version}.exe"
+
     def setup_download_url(self) -> str:
         url = (self.catalog.get("setupUrl") or "").strip()
         if url.lower().endswith(".exe"):
             return url
         repo = self.catalog.get("repo") or "charswebdev/Blind-Mice-Gaming"
-        return f"https://github.com/{repo}/releases/latest/download/BMG-Updater-Setup.exe"
+        return f"https://github.com/{repo}/releases/latest/download/{self.setup_filename()}"
 
     def download_updater(self) -> None:
         if self.busy:
             return
         url = self.setup_download_url()
-        dest = Path(tempfile.gettempdir()) / "BMG-Updater-Setup.exe"
+        dest = Path(tempfile.gettempdir()) / self.setup_filename()
         self.set_status("Downloading BMG Updater…")
         self.report_progress(0, "Downloading BMG Updater…")
         self.busy = True

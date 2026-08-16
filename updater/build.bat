@@ -22,7 +22,7 @@ if errorlevel 1 goto :fail
 
 echo.
 echo App:       dist\BMG-Updater.exe
-echo Installer: dist\BMG-Updater-Setup.exe
+echo Installer: dist\BMG-Updater-Setup-*.exe
 goto :end
 
 :fail
