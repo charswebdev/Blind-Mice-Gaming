@@ -1,0 +1,11 @@
+RewriteEngine On
+RewriteBase /lptm/
+
+<Files "config.php">
+    Require all denied
+</Files>
+<Files "config.example.php">
+    Require all denied
+</Files>
+
+RewriteRule ^(retail|classic|classic-era|anniversary)/?$ community.php?flavor=$1 [L,QSA]
