@@ -1067,7 +1067,7 @@ local function BuildGeneralPanel(parent)
     y = MakeCheckbox(child, "Announce buff faded", "announceBuffFaded", y)
     y = MakeCheckbox(child, "Echo announcements to chat", "chatEcho", y)
     y = MakeCheckbox(child, "Show minimap button", "minimapButtonEnabled", y)
-    y = MakeHint(child, "Combat CDs under 45s announce in combat. Longer CDs such as Avenging Wrath also announce when they ready between pulls. Teleports, hearth, and toys announce anytime.", y)
+    y = MakeHint(child, "Combat CDs under 45s announce in combat. Longer CDs such as Avenging Wrath also announce when they ready between pulls. Teleports, hearth, and toys announce anytime. The addon only watches a spell or item after you actually use it — not everything on your bars or in the spellbook.", y)
 
     y = y - 4
     y = MakeSection(child, "Spellbook & General", y)
@@ -1079,7 +1079,7 @@ local function BuildGeneralPanel(parent)
     y = MakeCheckbox(child, "Include teleport items and spells", "includeTeleportItems", y)
     y = MakeCheckbox(child, "Include toys", "includeToys", y)
     y = MakeCheckbox(child, "Toys: favorites only", "toysFavoritesOnly", y)
-    y = MakeHint(child, "Toys tab lists owned toys that are not already under Teleport (or other tabs). Favorites-only shrinks that list.", y)
+    y = MakeHint(child, "These options only apply after you use something. Unchecking a type means that type is not watched even when used. Toys: favorites-only ignores non-favorite toys when you use them.", y)
 
     y = y - 4
     y = MakeSection(child, "Equipped items & consumables", y)
@@ -1087,7 +1087,7 @@ local function BuildGeneralPanel(parent)
     y = MakeCheckbox(child, "Include other on-use gear", "includeOnUseGear", y)
     y = MakeCheckbox(child, "Include bag consumables", "includeCombatPotions", y)
     y = MakeCheckbox(child, "Include healthstones", "includeHealthstones", y)
-    y = MakeHint(child, "Items tab: equipped on-use gear plus potions, flasks/phials, elixirs, food, bandages, and healthstones in bags (5s+ CDs).", y)
+    y = MakeHint(child, "Items tab lists equipped on-use gear and bag consumables only after you use that specific item (not every potion sharing the cooldown).", y)
 
     y = y - 4
     y = MakeSection(child, "Categories", y)
@@ -1212,14 +1212,15 @@ local function BuildCooldownsPanel(parent)
 
     local scanBtn = MakeThemeButton(parent, "Rescan", 100, 26, function()
         local added = 0
-        if CA.Spells and CA.Spells.RebuildDiscovery then
-            added = CA.Spells.RebuildDiscovery() or 0
-        elseif CA.Spells and CA.Spells.ScanAll then
+        if CA.Spells and CA.Spells.ScanAll then
             added = CA.Spells.ScanAll({ heavy = true }) or 0
+            if CA.Spells.RefreshPending then
+                CA.Spells.RefreshPending()
+            end
         end
         Settings.RefreshTrackers()
         if CA.Speech and CA.Speech.Say then
-            CA.Speech.Say("Discovery scan complete. " .. tostring(added) .. " tracked.", CA.Speech.PRIORITY_LOW)
+            CA.Speech.Say("Refreshed watched cooldowns. " .. tostring(added) .. " tracked.", CA.Speech.PRIORITY_LOW)
         end
     end)
     scanBtn:SetPoint("TOPRIGHT", -16, -12)
@@ -1272,7 +1273,7 @@ local function BuildCooldownsPanel(parent)
     local hint = FontString(parent, 12, COL_HINT[1], COL_HINT[2], COL_HINT[3], "OUTLINE")
     hint:SetPoint("TOPLEFT", 16, y)
     hint:SetWidth(400)
-    hint:SetText("Only All shows every group. Other filters are exclusive. Hover for tooltips.")
+    hint:SetText("Only spells and items you have used appear here. Filters are exclusive except All. Hover for tooltips.")
     y = y - 24
 
     trackerScroll = CreateFrame("ScrollFrame", FRAME_NAME .. "TrackerScroll", parent, "UIPanelScrollFrameTemplate")
@@ -1436,7 +1437,7 @@ end
 
 local function Build()
     -- Rebuild if an older frame without Profiles tab exists.
-    if built and frame and frame._caUI == 21 then
+    if built and frame and frame._caUI == 22 then
         return frame
     end
     if frame then
@@ -1471,7 +1472,7 @@ local function Build()
     frame:Hide()
     frame._caHasTabs = true
     frame._caHasProfiles = true
-    frame._caUI = 21
+    frame._caUI = 22
     ApplyBlackBackdrop(frame)
     local alreadySpecial = false
     for i = 1, #UISpecialFrames do

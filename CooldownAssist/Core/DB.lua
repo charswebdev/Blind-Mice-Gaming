@@ -51,6 +51,10 @@ local defaults = {
     -- [key] = true means opted out; missing means tracked (default everything on)
     disabledTrackers = {},
 
+    -- Per-character keys for spells/items that have actually been used.
+    -- [charKey] = { [trackerKey] = true }
+    usedTrackersByCharacter = {},
+
     -- Tracking profiles (account-wide)
     profiles = {},
     nextProfileId = 1,
@@ -89,6 +93,9 @@ function DB.Merge()
     end
     if type(CooldownAssistDB.disabledTrackers) ~= "table" then
         CooldownAssistDB.disabledTrackers = {}
+    end
+    if type(CooldownAssistDB.usedTrackersByCharacter) ~= "table" then
+        CooldownAssistDB.usedTrackersByCharacter = {}
     end
     if type(CooldownAssistDB.profiles) ~= "table" then
         CooldownAssistDB.profiles = {}
@@ -193,4 +200,48 @@ end
 function DB.IsTrackerDisabled(key)
     local disabled = DB.Get().disabledTrackers
     return type(disabled) == "table" and disabled[key] == true
+end
+
+function DB.CharacterKey()
+    local name = UnitName and UnitName("player")
+    if type(name) ~= "string" or name == "" then
+        return nil
+    end
+    local realm = GetRealmName and GetRealmName() or ""
+    return name .. "-" .. tostring(realm)
+end
+
+function DB.GetUsedSet()
+    local sv = DB.Get()
+    if type(sv.usedTrackersByCharacter) ~= "table" then
+        sv.usedTrackersByCharacter = {}
+    end
+    local charKey = DB.CharacterKey()
+    if not charKey then
+        return {}
+    end
+    if type(sv.usedTrackersByCharacter[charKey]) ~= "table" then
+        sv.usedTrackersByCharacter[charKey] = {}
+    end
+    return sv.usedTrackersByCharacter[charKey]
+end
+
+function DB.MarkUsed(trackerKey)
+    if type(trackerKey) ~= "string" or trackerKey == "" then
+        return
+    end
+    local set = DB.GetUsedSet()
+    set[trackerKey] = true
+end
+
+function DB.ClearUsed()
+    local sv = DB.Get()
+    if type(sv.usedTrackersByCharacter) ~= "table" then
+        sv.usedTrackersByCharacter = {}
+        return
+    end
+    local charKey = DB.CharacterKey()
+    if charKey then
+        sv.usedTrackersByCharacter[charKey] = {}
+    end
 end

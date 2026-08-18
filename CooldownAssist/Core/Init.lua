@@ -117,7 +117,7 @@ local function HandleSlash(msg)
             if CA.Spells.RefreshPending then
                 CA.Spells.RefreshPending()
             end
-            Print("Scanned bars + spellbook. New spells: " .. tostring(added) .. ".")
+            Print("Refreshed watched cooldowns: " .. tostring(added) .. ".")
             if CA.Settings and CA.Settings.RefreshTrackers then
                 CA.Settings.RefreshTrackers()
             end
@@ -128,9 +128,9 @@ local function HandleSlash(msg)
     if lower == "rebuild" then
         if CA.Spells and CA.Spells.RebuildDiscovery then
             local added = CA.Spells.RebuildDiscovery()
-            Print("Rebuilt discovery. Spells found: " .. tostring(added) .. ".")
+            Print("Forgot used cooldowns. Use abilities again to watch them. Restored: " .. tostring(added) .. ".")
             if CA.Speech and CA.Speech.Say then
-                CA.Speech.Say("Discovery rebuilt.", CA.Speech.PRIORITY_LOW)
+                CA.Speech.Say("Watched cooldowns cleared.", CA.Speech.PRIORITY_LOW)
             end
         end
         return

@@ -1,6 +1,6 @@
 --[[
-  Cooldown Assist — spell discovery + readiness tracking (Phase 2)
-  Bars + spellbook discovery, categories, spec rebuild.
+  Cooldown Assist — spell readiness tracking
+  Watches a spell only after a successful cast. Spellbook map is for classification.
   Secret-safe: branch on NeverSecret booleans; only use duration when readable.
   Lua 5.1 only.
 ]]
@@ -598,6 +598,158 @@ local function AddSpell(spellID, source, skillLineName, categoryOverride)
     return true
 end
 
+local function IncludeAllowsSpell(spellID, source)
+    local sv = CA.DB and CA.DB.Get and CA.DB.Get() or {}
+    if type(source) == "string" and source:find("^pet:") then
+        return sv.includePetAbilities ~= false
+    end
+    local spellName = GetSpellName(spellID)
+    local cat = "utility"
+    if CA.Categories and CA.Categories.ClassifySpell then
+        cat = CA.Categories.ClassifySpell(spellID, source, nil, spellName) or "utility"
+    end
+    local meta = CA.Categories and CA.Categories.LookupSpellBook and CA.Categories.LookupSpellBook(spellID)
+    local lineKind = meta and meta.lineKind or nil
+    if lineKind == "pet" then
+        return sv.includePetAbilities ~= false
+    end
+    if lineKind == "racial"
+        or (CA.Racials and CA.Racials.IsRacialSpellID and CA.Racials.IsRacialSpellID(spellID))
+    then
+        return sv.includeSpellbookRacials ~= false
+    end
+    if cat == "general" or lineKind == "general" then
+        if CA.Categories and CA.Categories.IsTeleportName and CA.Categories.IsTeleportName(spellName) then
+            return sv.includeTeleportItems ~= false or sv.includeSpellbookGeneral ~= false
+        end
+        return sv.includeSpellbookGeneral ~= false
+    end
+    -- Class / spec combat CDs and other class utilities.
+    return sv.includeSpellbookAbilities ~= false
+end
+
+local function SpellHasWatchableCooldown(spellID)
+    local minSec = MinCooldownSec()
+    local base = GetBaseCooldownSec(spellID)
+    if type(base) == "number" and base >= minSec then
+        return true
+    end
+    local cd = GetCooldownState(spellID)
+    if not cd then
+        return false
+    end
+    return ShouldTrackDuration(spellID, cd.duration, cd.isOnGCD)
+end
+
+--- Begin watching a spell only after a successful cast (not because it is on a bar).
+function Spells.WatchFromCast(spellID, source)
+    spellID = NormalizeSpellID(spellID)
+    if not spellID or IsPassive(spellID) then
+        return
+    end
+    source = source or "used"
+
+    local function afterCast()
+        local id = NormalizeSpellID(spellID)
+        if not id or IsPassive(id) then
+            return
+        end
+        local key = TrackerKey(id)
+        local entry = tracked[key]
+        if entry then
+            Spells.EvaluateSpell(id, false)
+            NoteCastStarted(id)
+            return
+        end
+        if not SpellHasWatchableCooldown(id) then
+            return
+        end
+        if not IncludeAllowsSpell(id, source) then
+            return
+        end
+        AddSpell(id, source)
+        if CA.DB and CA.DB.MarkUsed then
+            CA.DB.MarkUsed(key)
+        end
+        Spells.EvaluateSpell(id, false)
+        NoteCastStarted(id)
+        MaybeRefreshTrackers()
+    end
+
+    if C_Timer and C_Timer.After then
+        C_Timer.After(0.15, afterCast)
+        C_Timer.After(1.8, function()
+            local id = NormalizeSpellID(spellID)
+            if not id then
+                return
+            end
+            local entry = tracked[TrackerKey(id)]
+            if entry and entry.pending then
+                return
+            end
+            afterCast()
+        end)
+    else
+        afterCast()
+    end
+end
+
+function Spells.RestoreUsed()
+    if not (CA.DB and CA.DB.GetUsedSet) then
+        return 0
+    end
+    local set = CA.DB.GetUsedSet()
+    local added = 0
+    for key in pairs(set) do
+        if type(key) == "string" then
+            local id = key:match("^spell:(%d+)$")
+            id = id and tonumber(id)
+            if id then
+                local source = "used"
+                if not IncludeAllowsSpell(id, source) then
+                    -- skip
+                elseif AddSpell(id, source) then
+                    added = added + 1
+                end
+            end
+        end
+    end
+    return added
+end
+
+local function RemoveTrackedSpell(entry)
+    if not entry or not entry.key then
+        return
+    end
+    if entry.pending then
+        SetPending(entry, false)
+    end
+    tracked[entry.key] = nil
+end
+
+local function PruneSpellsByIncludes()
+    local drop = {}
+    for _, entry in pairs(tracked) do
+        local source = "used"
+        if entry.lineKind == "pet" then
+            source = "pet:cast"
+        elseif type(entry.sources) == "table" then
+            for src in pairs(entry.sources) do
+                if type(src) == "string" and src:find("^pet:") then
+                    source = "pet:cast"
+                    break
+                end
+            end
+        end
+        if not IncludeAllowsSpell(entry.spellID, source) then
+            drop[#drop + 1] = entry
+        end
+    end
+    for i = 1, #drop do
+        RemoveTrackedSpell(drop[i])
+    end
+end
+
 local function AddFlyout(flyoutID, source, skillLineName, categoryOverride)
     if type(flyoutID) ~= "number" or not GetFlyoutInfo or not GetFlyoutSlotInfo then
         return 0
@@ -966,32 +1118,27 @@ function Spells.ScanRacialSpells()
     return added
 end
 
---- opts.heavy = include toy-box / bag item discovery (expensive).
+--- Rebuild spellbook metadata and restore spells/items this character has used.
+--- Does not watch unused bar / spellbook / toy-box entries.
 function Spells.ScanAll(opts)
     opts = opts or {}
-    local heavy = opts.heavy == true
     local now = (GetTime and GetTime()) or 0
     if CA.Categories and CA.Categories.RebuildSpellBookMap then
-        if heavy or (now - lastMapRebuild) >= MAP_REBUILD_SEC then
-            CA.Categories.RebuildSpellBookMap()
-            lastMapRebuild = now
-            for _, entry in pairs(tracked) do
-                entry.group = nil
-            end
+        CA.Categories.RebuildSpellBookMap()
+        lastMapRebuild = now
+        for _, entry in pairs(tracked) do
+            entry.group = nil
         end
     end
-    -- Spellbook first so bar spells inherit correct combat/utility classification.
-    local b = Spells.ScanSpellbook()
-    local r = Spells.ScanRacialSpells()
-    local a = Spells.ScanBars()
-    local p = Spells.ScanPetAbilities()
-    local t = Spells.ScanTeleportSpells()
+    PruneSpellsByIncludes()
+    local a = Spells.RestoreUsed()
     local c = 0
-    if CA.Items and CA.Items.ScanAll then
-        -- Light rescans skip toy-box refilter (major FPS hitch).
-        c = CA.Items.ScanAll({ heavy = heavy }) or 0
+    if CA.Items and CA.Items.RestoreUsed then
+        c = CA.Items.RestoreUsed() or 0
+    elseif CA.Items and CA.Items.ScanAll then
+        c = CA.Items.ScanAll(opts) or 0
     end
-    return (a or 0) + (b or 0) + (r or 0) + (p or 0) + (t or 0) + c
+    return (a or 0) + (c or 0)
 end
 
 function Spells.ClearDiscovery()
@@ -1014,6 +1161,9 @@ function Spells.ClearDiscovery()
 end
 
 function Spells.RebuildDiscovery()
+    if CA.DB and CA.DB.ClearUsed then
+        CA.DB.ClearUsed()
+    end
     Spells.ClearDiscovery()
     local added = Spells.ScanAll({ heavy = true })
     Spells.RefreshPending()
@@ -1047,7 +1197,7 @@ local function RunRescanNow()
     MaybeRefreshTrackers()
 end
 
---- Debounced discovery. heavy=true scans toys/bags; default light is bars/spellbook only.
+--- Debounced restore + spellbook map rebuild. heavy is ignored (no toy-box walk).
 function Spells.RequestRescan(heavy)
     if heavy then
         rescanHeavy = true
@@ -1285,10 +1435,10 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         if unit == nil or unit == "player" then
             if C_Timer and C_Timer.After then
                 C_Timer.After(0.75, function()
-                    Spells.RebuildDiscovery()
+                    Spells.RequestRescan(false)
                 end)
             else
-                Spells.RebuildDiscovery()
+                Spells.RequestRescan(false)
             end
         end
         return
@@ -1297,7 +1447,6 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
     if event == "UNIT_PET" then
         local unit = ...
         if unit == "player" then
-            -- Pet swap: light rescan only (bars + pet book), not full toy-box.
             Spells.RequestRescan(false)
         end
         return
@@ -1311,68 +1460,17 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
     if event == "SPELLS_CHANGED"
         or event == "UPDATE_SHAPESHIFT_FORM" or event == "UPDATE_SHAPESHIFT_FORMS"
     then
-        -- Spellbook changed: light discovery (no toy-box refilter).
+        -- Spellbook metadata only; do not add unused spells.
         Spells.RequestRescan(false)
         return
     end
 
-    if event == "ACTIONBAR_SLOT_CHANGED" then
-        local slot = ...
-        if type(slot) == "number" and slot > 0 then
-            if not dirtySlots[slot] then
-                dirtySlots[slot] = true
-                dirtySlotCount = dirtySlotCount + 1
-            end
-            if not slotFlushPending then
-                slotFlushPending = true
-                local delay = (InCombatLockdown and InCombatLockdown()) and 1.5 or 0.4
-                if C_Timer and C_Timer.After then
-                    C_Timer.After(delay, function()
-                        slotFlushPending = false
-                        if dirtySlotCount > 16 then
-                            wipe(dirtySlots)
-                            dirtySlotCount = 0
-                            Spells.ScanBars()
-                        else
-                            for s in pairs(dirtySlots) do
-                                ScanOneBarSlot(s)
-                            end
-                            wipe(dirtySlots)
-                            dirtySlotCount = 0
-                        end
-                        MaybeRefreshTrackers()
-                    end)
-                else
-                    slotFlushPending = false
-                    ScanOneBarSlot(slot)
-                end
-            end
-        end
-        return
-    end
-
-    if event == "ACTIONBAR_PAGE_CHANGED"
+    if event == "ACTIONBAR_SLOT_CHANGED"
+        or event == "ACTIONBAR_PAGE_CHANGED"
         or event == "UPDATE_BONUS_ACTIONBAR" or event == "UPDATE_VEHICLE_ACTIONBAR"
         or event == "UPDATE_OVERRIDE_ACTIONBAR" or event == "PET_BAR_UPDATE"
     then
-        -- Bar noise only: scan bars/pet, skip spellbook rebuild + toys.
-        if barRescanPending then
-            return
-        end
-        barRescanPending = true
-        local delay = (InCombatLockdown and InCombatLockdown()) and 1.5 or 0.5
-        if C_Timer and C_Timer.After then
-            C_Timer.After(delay, function()
-                barRescanPending = false
-                Spells.ScanBars()
-                Spells.ScanPetAbilities()
-                MaybeRefreshTrackers()
-            end)
-        else
-            barRescanPending = false
-            Spells.ScanBars()
-            Spells.ScanPetAbilities()
-        end
+        -- Bars are "available to cast," not used. Do not start watching from bar contents.
         return
     end
 
@@ -1383,27 +1481,16 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
 
     if event == "UNIT_SPELLCAST_SUCCEEDED" then
         local unitTarget, _, spellID = ...
-        if (unitTarget == "player" or unitTarget == "pet") and CanUseNumber(spellID) then
-            -- Cooldown APIs lag the cast. Do not RefreshAll here (every GCD would hitch).
-            if C_Timer and C_Timer.After then
-                C_Timer.After(0.15, function()
-                    pcall(Spells.EvaluateSpell, spellID, false)
-                    pcall(NoteCastStarted, spellID)
-                end)
-                C_Timer.After(1.8, function()
-                    local id = NormalizeSpellID(spellID)
-                    local entry = id and tracked[TrackerKey(id)]
-                    if entry and not entry.pending then
-                        pcall(Spells.EvaluateSpell, spellID, false)
-                        pcall(NoteCastStarted, spellID)
-                    end
-                end)
-            else
-                pcall(Spells.EvaluateSpell, spellID, false)
-                pcall(NoteCastStarted, spellID)
+        if unitTarget == "player" or unitTarget == "pet" then
+            local fromItem = false
+            if unitTarget == "player" and CA.Items and CA.Items.OnPlayerCastSucceeded then
+                local ok, handled = pcall(CA.Items.OnPlayerCastSucceeded, spellID)
+                fromItem = ok and handled and true or false
             end
-        elseif unitTarget == "player" or unitTarget == "pet" then
-            ThrottledRefreshPending()
+            if (not fromItem) and CanUseNumber(spellID) then
+                local src = (unitTarget == "pet") and "pet:cast" or "used"
+                pcall(Spells.WatchFromCast, spellID, src)
+            end
         end
         return
     end
