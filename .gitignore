@@ -13,6 +13,9 @@ Exploration/.py
 Exploration/REGRESSION.md
 AllQuest/Media/Review/
 
+# Cursor workspace for the planner — players do not install this
+Light Paws Talent Loadout/
+
 # Updater source stays local; players only need catalog.json
 updater/*
 !updater/catalog.json
@@ -20,3 +23,11 @@ updater/logo-previews/
 updater/build/
 updater/dist/
 updater/launch-error.txt
+
+# Talent Manager source, assets, data, and build stay local.
+# Installed copies only fetch catalog.json and community-builds.json.
+talent-manager/*
+!talent-manager/catalog.json
+!talent-manager/community-builds.json
+**/community-token.txt
+**/.env
