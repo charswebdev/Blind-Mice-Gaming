@@ -25,6 +25,8 @@ local toyCacheAt = 0
 local scanQueued = false
 local toyHarvestGen = 0
 local toyHarvest = nil
+local lastItemUseID = nil
+local lastItemUseAt = 0
 
 local function CanUseNumber(v)
     if CA.Compat and CA.Compat.CanUseNumber then
@@ -1229,19 +1231,222 @@ function Items.ScanEquipped()
     return added
 end
 
---- opts.heavy = start chunked toy harvest. Light = hearth + teleports + gear + consumables.
-function Items.ScanAll(opts)
-    opts = opts or {}
-    local heavy = opts.heavy == true
-    local a = Items.ScanHearthstone()
-    -- Curated teleports / bags / equipped only. Toy-box walk is async.
-    local c = Items.ScanTeleports({})
-    local d = Items.ScanEquipped()
-    local e = Items.ScanConsumables()
-    if heavy then
-        Items.RequestToyHarvest(true)
+local function EquippedSlotForItem(itemID)
+    if type(itemID) ~= "number" or not GetInventoryItemID then
+        return nil
     end
-    return (a or 0) + (c or 0) + (d or 0) + (e or 0)
+    for slot = 1, 19 do
+        local id = SafeCall(GetInventoryItemID, "player", slot)
+        if type(id) == "number" and id == itemID then
+            return slot
+        end
+    end
+    return nil
+end
+
+--- source string if this used item is allowed by settings, else nil.
+local function ResolveUsedItemSource(itemID)
+    local sv = CA.DB and CA.DB.Get and CA.DB.Get() or {}
+    local name = GetItemName(itemID)
+    local isToy = PlayerHasToy and SafeCall(PlayerHasToy, itemID) and true or false
+    local isHearth = CA.Categories and CA.Categories.IsHearthstoneName and CA.Categories.IsHearthstoneName(name)
+    local isTeleport = ItemLooksLikeTeleport(itemID, name)
+
+    if isToy then
+        if isHearth then
+            if sv.includeHearthstone == false then
+                return nil
+            end
+            return "hearth:" .. tostring(itemID), "general"
+        end
+        if isTeleport then
+            if sv.includeTeleportItems == false then
+                return nil
+            end
+            return "teleport:" .. tostring(itemID), "general"
+        end
+        if sv.includeToys == false then
+            return nil
+        end
+        if sv.toysFavoritesOnly == true and C_ToyBox and C_ToyBox.GetIsFavorite
+            and not SafeCall(C_ToyBox.GetIsFavorite, itemID)
+        then
+            return nil
+        end
+        return "toy:" .. tostring(itemID), "general"
+    end
+
+    if isHearth then
+        if sv.includeHearthstone == false then
+            return nil
+        end
+        return "hearth:" .. tostring(itemID), "general"
+    end
+    if isTeleport then
+        if sv.includeTeleportItems == false then
+            return nil
+        end
+        return "teleport:" .. tostring(itemID), "general"
+    end
+
+    local slot = EquippedSlotForItem(itemID)
+    local itemCat = (CA.Categories and CA.Categories.ITEM) or "item"
+    if slot == 13 or slot == 14 then
+        if sv.includeTrinkets == false then
+            return nil
+        end
+        return "trinket:" .. tostring(itemID), itemCat
+    end
+    if slot then
+        if sv.includeOnUseGear == false then
+            return nil
+        end
+        return "gear:" .. tostring(slot) .. ":" .. tostring(itemID), itemCat
+    end
+
+    local ctype = ClassifyConsumable(itemID, name)
+    if ctype == "healthstone" then
+        if sv.includeHealthstones == false then
+            return nil
+        end
+        return "consumable:" .. tostring(itemID), itemCat, ctype
+    end
+    if ctype then
+        if sv.includeCombatPotions == false then
+            return nil
+        end
+        return "consumable:" .. tostring(itemID), itemCat, ctype
+    end
+
+    return "item:" .. tostring(itemID), "general", nil
+end
+
+--- Watch this item only after it was used (or restore a previously used one).
+function Items.WatchFromUse(itemID, isRestore)
+    if type(itemID) ~= "number" or itemID <= 0 then
+        return false
+    end
+    if not CanUseNumber(itemID) then
+        return false
+    end
+    if trackedByItemID[itemID] then
+        if not isRestore then
+            Items.Evaluate(itemID)
+        end
+        return false
+    end
+    local source, category, ctype = ResolveUsedItemSource(itemID)
+    if not source then
+        return false
+    end
+    if not isRestore then
+        local cd = GetItemCooldownState(itemID)
+        local minSec = MinCooldownSec()
+        if cd then
+            if type(cd.duration) == "number" and cd.duration > 0 and cd.duration < minSec then
+                return false
+            end
+            if not cd.isActive then
+                return false
+            end
+        else
+            return false
+        end
+    end
+    local name = GetItemName(itemID)
+    if not AddItem(itemID, source, category, name) then
+        return false
+    end
+    local entry = trackedByItemID[itemID]
+    if entry then
+        local spellName, spellID = GetItemSpellName(itemID)
+        entry.useSpellID = spellID
+        if ctype then
+            entry.kind = "consumable"
+            entry.consumableType = ctype
+            if type(spellName) == "string" and spellName ~= "" and (not entry.name or entry.name:find("^Item ")) then
+                entry.name = name
+            end
+        end
+        if CA.DB and CA.DB.MarkUsed then
+            CA.DB.MarkUsed(entry.key)
+        end
+    end
+    if not isRestore then
+        Items.Evaluate(itemID)
+        if CA.Settings and CA.Settings.IsShown and CA.Settings.IsShown() and CA.Settings.RefreshTrackers then
+            CA.Settings.RefreshTrackers()
+        end
+    end
+    return true
+end
+
+function Items.NoteAttemptedUse(itemID)
+    if type(itemID) ~= "number" or itemID <= 0 or not CanUseNumber(itemID) then
+        return
+    end
+    lastItemUseID = itemID
+    lastItemUseAt = (GetTime and GetTime()) or 0
+    if C_Timer and C_Timer.After then
+        local captured = itemID
+        C_Timer.After(0.2, function()
+            if lastItemUseID == captured then
+                Items.WatchFromUse(captured, false)
+            end
+        end)
+    end
+end
+
+function Items.OnPlayerCastSucceeded(spellID)
+    local now = (GetTime and GetTime()) or 0
+    if lastItemUseID and (now - lastItemUseAt) <= 1.5 then
+        local itemID = lastItemUseID
+        lastItemUseID = nil
+        Items.WatchFromUse(itemID, false)
+        return true
+    end
+    -- Item spells: if a tracked item's use spell matches, evaluate it.
+    if type(spellID) == "number" then
+        for _, entry in pairs(tracked) do
+            if entry.useSpellID == spellID then
+                Items.Evaluate(entry.itemID)
+                return true
+            end
+        end
+    end
+    return false
+end
+
+function Items.RestoreUsed()
+    if not (CA.DB and CA.DB.GetUsedSet) then
+        return 0
+    end
+    local drop = {}
+    for _, entry in pairs(tracked) do
+        if not ResolveUsedItemSource(entry.itemID) then
+            drop[#drop + 1] = entry
+        end
+    end
+    for i = 1, #drop do
+        RemoveTrackedEntry(drop[i])
+    end
+    local set = CA.DB.GetUsedSet()
+    local added = 0
+    for key in pairs(set) do
+        if type(key) == "string" and not key:find("^spell:", 1, true) then
+            local id = key:match(":(%d+)$")
+            id = id and tonumber(id)
+            if id and Items.WatchFromUse(id, true) then
+                added = added + 1
+            end
+        end
+    end
+    return added
+end
+
+--- Restore previously used items only. Does not scan unused toys / bags / gear.
+function Items.ScanAll(opts)
+    return Items.RestoreUsed() or 0
 end
 
 function Items.ClearDiscovery()
@@ -1368,7 +1573,7 @@ local function RefreshSettingsTrackersIfShown()
 end
 
 eventFrame:SetScript("OnEvent", function(_, event, ...)
-    -- Login / world enter discovery is owned by Spells.RequestRescan(true) to avoid double scans.
+    -- Login / world enter restore is owned by Spells.RequestRescan.
     if event == "PLAYER_EQUIPMENT_CHANGED" then
         if equipScanPending then
             return
@@ -1378,13 +1583,11 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         if C_Timer and C_Timer.After then
             C_Timer.After(delay, function()
                 equipScanPending = false
-                Items.ScanEquipped()
                 Items.RefreshPending()
-                RefreshSettingsTrackersIfShown()
             end)
         else
             equipScanPending = false
-            Items.ScanEquipped()
+            Items.RefreshPending()
         end
         return
     end
@@ -1398,43 +1601,29 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         if C_Timer and C_Timer.After then
             C_Timer.After(delay, function()
                 consumableScanPending = false
-                Items.ScanConsumables()
+                local drop = {}
+                for _, entry in pairs(tracked) do
+                    if entry.kind == "consumable" and GetOwnedBagCount(entry.itemID) <= 0 then
+                        drop[#drop + 1] = entry
+                    end
+                end
+                for i = 1, #drop do
+                    RemoveTrackedEntry(drop[i])
+                end
                 Items.RefreshPending()
-                RefreshSettingsTrackersIfShown()
             end)
         else
             consumableScanPending = false
-            Items.ScanConsumables()
         end
         return
     end
 
     if event == "TOYS_UPDATED" or event == "HEARTHSTONE_BOUND" then
         InvalidateToyCache()
-        if InCombatLockdown and InCombatLockdown() then
-            if CA.Spells and CA.Spells.RequestRescan then
-                CA.Spells.RequestRescan(true)
-            end
-            return
-        end
-        if scanQueued then
-            return
-        end
-        scanQueued = true
-        if C_Timer and C_Timer.After then
-            C_Timer.After(1.0, function()
-                scanQueued = false
-                Items.ScanHearthstone()
-                Items.RequestToyHarvest(true)
-            end)
-        else
-            scanQueued = false
-            Items.RequestToyHarvest(true)
-        end
         return
     end
     if event == "BAG_UPDATE_COOLDOWN" then
-        -- Potions / gear CDs. Do not walk the whole toy box every pulse.
+        -- Only re-check items already watched, plus equipped slots that just went on CD.
         local now = (GetTime and GetTime()) or 0
         if (now - lastBagRefresh) < BAG_REFRESH_THROTTLE then
             return
@@ -1446,5 +1635,71 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         else
             Items.RefreshActive()
         end
+        if GetInventoryItemID then
+            local minSec = MinCooldownSec()
+            for slot = 1, 19 do
+                local id = SafeCall(GetInventoryItemID, "player", slot)
+                if type(id) == "number" and id > 0 and not trackedByItemID[id] then
+                    local cd = GetItemCooldownState(id)
+                    if cd and cd.isActive then
+                        if type(cd.duration) ~= "number" or cd.duration >= minSec then
+                            Items.WatchFromUse(id, false)
+                        end
+                    end
+                end
+            end
+        end
     end
 end)
+
+local function HookUse(name, fn)
+    if type(_G[name]) == "function" then
+        pcall(hooksecurefunc, name, fn)
+    end
+end
+
+local function OnItemUseAttempt(itemID)
+    if Items.NoteAttemptedUse then
+        Items.NoteAttemptedUse(itemID)
+    end
+end
+
+HookUse("UseToy", OnItemUseAttempt)
+HookUse("UseInventoryItem", function(slot)
+    if type(slot) == "number" and GetInventoryItemID then
+        OnItemUseAttempt(SafeCall(GetInventoryItemID, "player", slot))
+    end
+end)
+HookUse("UseContainerItem", function(bag, slot)
+    local id
+    if C_Container and C_Container.GetContainerItemID then
+        id = SafeCall(C_Container.GetContainerItemID, bag, slot)
+    elseif GetContainerItemID then
+        id = SafeCall(GetContainerItemID, bag, slot)
+    end
+    OnItemUseAttempt(id)
+end)
+HookUse("UseAction", function(slot)
+    if type(slot) ~= "number" or not GetActionInfo then
+        return
+    end
+    local actionType, id = SafeCall(GetActionInfo, slot)
+    if actionType == "item" then
+        OnItemUseAttempt(id)
+    elseif actionType == "macro" and GetMacroItem then
+        local _, link = SafeCall(GetMacroItem, id)
+        if type(link) == "string" then
+            local itemID = tonumber(link:match("item:(%d+)"))
+            OnItemUseAttempt(itemID)
+        end
+    end
+end)
+if C_Container and C_Container.UseContainerItem then
+    pcall(hooksecurefunc, C_Container, "UseContainerItem", function(bag, slot)
+        local id = C_Container.GetContainerItemID and SafeCall(C_Container.GetContainerItemID, bag, slot)
+        OnItemUseAttempt(id)
+    end)
+end
+if C_ToyBox and C_ToyBox.UseToy then
+    pcall(hooksecurefunc, C_ToyBox, "UseToy", OnItemUseAttempt)
+end
