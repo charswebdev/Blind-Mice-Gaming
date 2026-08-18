@@ -1,8 +1,8 @@
 {
   "repo": "charswebdev/Blind-Mice-Gaming",
   "branch": "main",
-  "appVersion": "1.0.0",
-  "setupUrl": "https://github.com/charswebdev/Blind-Mice-Gaming/releases/download/lptm-1.0.0/LPTM-Setup-1.0.0.exe",
+  "appVersion": "1.0.1",
+  "setupUrl": "https://github.com/charswebdev/Blind-Mice-Gaming/releases/download/lptm-1.0.1/LPTM-Setup-1.0.1.exe",
   "dataPackVersion": "12.1",
   "communityPath": "talent-manager/community-builds.json"
 }
