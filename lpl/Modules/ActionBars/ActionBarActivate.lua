@@ -153,7 +153,8 @@ local function NormalizeUtilitySpellID(spellID)
     if UTILITY_SPELL_IDS[base] then
         return base
     end
-    return base
+    -- Talent replacements (e.g. Blessing of Spellwarding) must keep their live id.
+    return spellID
 end
 
 local function CanPickupSpellByID(spellID)
@@ -584,7 +585,7 @@ local function CompareSlot(slot, tbl)
     end
 
     -- Prefer the authoritative spell id when GetActionInfo is incomplete.
-    if (not actionType or actionType == "spell") and C_ActionBar and C_ActionBar.GetSpell then
+    if (not actionType or not id) and C_ActionBar and C_ActionBar.GetSpell then
         local barSpell = C_ActionBar.GetSpell(slot)
         if barSpell and barSpell > 0 then
             actionType = "spell"
@@ -594,7 +595,7 @@ local function CompareSlot(slot, tbl)
     end
 
     if actionType == "spell" and id then
-        id = NormalizeUtilitySpellID(id) or FindBaseSpellByID(id)
+        id = LPL.ActionBarCodec:ResolveStoredSpellID(id, slot)
     end
 
     if tbl == nil or tbl.type == nil then
@@ -615,7 +616,7 @@ local function CompareSlot(slot, tbl)
 
     local targetId = tbl.id
     if tbl.type == "spell" and targetId then
-        targetId = NormalizeUtilitySpellID(targetId) or FindBaseSpellByID(targetId)
+        targetId = LPL.ActionBarCodec:ResolveStoredSpellID(targetId)
     end
 
     if tbl.type == "spell" and actionType == "spell" then
@@ -743,7 +744,7 @@ end
 
 local function PickupSpellFromBook(spellID, subType, test)
     local rawID = tonumber(spellID)
-    local storedID = NormalizeUtilitySpellID(spellID) or FindBaseSpellByID(spellID) or spellID
+    local storedID = NormalizeUtilitySpellID(spellID) or spellID
     if IsSkyridingSpellID(rawID) then
         local base = FindBaseSpellByID(rawID) or rawID
         spellID = SKYRIDING_SPELL_IDS[base] and base or rawID
@@ -901,13 +902,14 @@ local function PickupActionTable(tbl, test, activating)
             end
         elseif tbl.type == "spell" then
             local rawID = tonumber(tbl.id)
+            local pickupID = rawID
             if IsSkyridingSpellID(rawID) then
                 local base = FindBaseSpellByID(rawID) or rawID
-                tbl.id = SKYRIDING_SPELL_IDS[base] and base or rawID
+                pickupID = SKYRIDING_SPELL_IDS[base] and base or rawID
             else
-                tbl.id = NormalizeUtilitySpellID(tbl.id) or FindBaseSpellByID(tbl.id) or tbl.id
+                pickupID = NormalizeUtilitySpellID(tbl.id) or rawID
             end
-            if PickupSpellFromBook(tbl.id, tbl.subType, test) then
+            if PickupSpellFromBook(pickupID, tbl.subType, test) then
                 success = true
             else
                 success, msg = false, "Spell not found."
