@@ -2,6 +2,7 @@ local addonName, LPL = ...
 
 LPL.ActionBarCursor = {
     pending = nil,
+    wowCursorPickup = false,
 }
 
 local codec = LPL.ActionBarCodec
@@ -65,6 +66,7 @@ end
 
 function LPL.ActionBarCursor:Clear()
     self.pending = nil
+    self.wowCursorPickup = false
     self:HidePickupVisual()
     if ClearCursor then
         ClearCursor()
@@ -94,6 +96,20 @@ function LPL.ActionBarCursor:PickupFromDraft(draftSet, slotID, isPet)
         sourceIsPet = isPet,
     }
     codec:ClearSlotAction(draftSet, slotID, isPet)
+
+    -- Put the action on the real cursor so it can be dropped on Blizzard bars.
+    -- If that succeeds, do not keep an LPL-only pending pickup: the game cursor
+    -- is what both LPL slots and live bars will receive.
+    if LPL.ActionBarActivate and LPL.ActionBarActivate.PickupAction then
+        LPL.ActionBarActivate:PickupAction(action)
+        if GetCursorInfo and GetCursorInfo() then
+            self.pending = nil
+            self.wowCursorPickup = false
+            self:HidePickupVisual()
+            return true
+        end
+    end
+
     self:ShowPickupVisual(self.pending.action)
     return true
 end
@@ -108,7 +124,11 @@ function LPL.ActionBarCursor:PlaceOnSlot(draftSet, slotID, isPet)
         sourceSlot = self.pending.sourceSlot
         sourceIsPet = self.pending.sourceIsPet
         self.pending = nil
+        self.wowCursorPickup = false
         self:HidePickupVisual()
+        if ClearCursor then
+            ClearCursor()
+        end
     else
         if isPet then
             newAction = codec:BuildPetActionTableFromCursor()
