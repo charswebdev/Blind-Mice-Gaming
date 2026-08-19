@@ -178,11 +178,328 @@ local function PreferDisplayedOverrideSpellID(slot, spellID)
 end
 
 function LPL.ActionBarCodec:ResolveStoredSpellID(spellID, slot)
+    if slot and C_ActionBar and C_ActionBar.GetSpell then
+        local barSpell = tonumber(C_ActionBar.GetSpell(slot))
+        if barSpell and barSpell > 0 and IsUtilityStoreSpellID(barSpell) then
+            spellID = barSpell
+        end
+    end
     spellID = NormalizeCapturedSpellID(spellID)
     if slot then
         spellID = PreferDisplayedOverrideSpellID(slot, spellID)
     end
     return spellID
+end
+
+local function IsSpellBookBank(value)
+    if value == "spell" or value == "pet" or value == "professions" then
+        return true
+    end
+    local banks = Enum and Enum.SpellBookSpellBank
+    if banks then
+        return value == banks.Player or value == banks.Pet
+    end
+    return type(value) == "number" and value >= 0 and value <= 2
+end
+
+local function SpellIDFromBookItem(index, bank)
+    index = tonumber(index)
+    if not index or index < 1 then
+        return nil
+    end
+    if C_SpellBook and C_SpellBook.GetSpellBookItemInfo then
+        local resolvedBank = bank
+        local banks = Enum and Enum.SpellBookSpellBank
+        if banks then
+            if bank == "pet" then
+                resolvedBank = banks.Pet
+            elseif bank == "spell" or bank == "professions" or bank == nil then
+                resolvedBank = banks.Player
+            end
+        end
+        local ok, info = pcall(C_SpellBook.GetSpellBookItemInfo, index, resolvedBank)
+        if ok and type(info) == "table" then
+            return tonumber(info.spellID) or tonumber(info.actionID)
+        end
+    end
+    if GetSpellBookItemInfo then
+        local bookType = (bank == "pet") and "pet" or "spell"
+        local skillType, id = GetSpellBookItemInfo(index, bookType)
+        if (skillType == "SPELL" or skillType == "PETACTION") and tonumber(id) then
+            return tonumber(id)
+        end
+    end
+    return nil
+end
+
+-- GetCursorInfo("spell") is: spellIndex, bookType, spellID, baseSpellID.
+-- Using the first number as a spell id maps General-tab slots onto unrelated
+-- spells (e.g. book index 53 -> Backstab).
+local function ResolveCursorSpell()
+    local cursorType, a2, a3, a4, a5 = GetCursorInfo()
+    if cursorType ~= "spell" then
+        return nil
+    end
+
+    local spellID
+    if type(a4) == "number" and a4 > 0 then
+        spellID = a4
+    elseif IsSpellBookBank(a3) then
+        spellID = SpellIDFromBookItem(a2, a3) or tonumber(a2)
+    else
+        spellID = tonumber(a2)
+    end
+
+    local subType = "spell"
+    if a3 == "pet" or (Enum and Enum.SpellBookSpellBank and a3 == Enum.SpellBookSpellBank.Pet) then
+        subType = "pet"
+    end
+
+    return spellID, subType, tonumber(a5)
+end
+
+local function IsQuestionMarkIcon(icon)
+    if icon == nil or icon == false or icon == 0 then
+        return true
+    end
+    if icon == DEFAULT_ICON then
+        return true
+    end
+    if type(icon) == "string" then
+        local lower = icon:lower()
+        if lower == "" or lower:find("inv_misc_questionmark", 1, true) then
+            return true
+        end
+    end
+    return false
+end
+
+local function PreferResolvedIcon(preferred, fallback)
+    if preferred and not IsQuestionMarkIcon(preferred) then
+        return preferred
+    end
+    if fallback and not IsQuestionMarkIcon(fallback) then
+        return fallback
+    end
+    return preferred or fallback
+end
+
+local function GetItemIconSafe(item)
+    if item == nil or item == "" then
+        return nil
+    end
+    if C_Item and C_Item.GetItemIconByID then
+        local ok, icon = pcall(C_Item.GetItemIconByID, item)
+        if ok and icon and icon ~= 0 then
+            return icon
+        end
+    end
+    if GetItemIcon then
+        local icon = GetItemIcon(item)
+        if icon and icon ~= 0 then
+            return icon
+        end
+    end
+    if GetItemInfoInstant then
+        local icon = select(5, GetItemInfoInstant(item))
+        if icon and icon ~= 0 then
+            return icon
+        end
+    end
+    return nil
+end
+
+local function ParseSecureToken(text)
+    text = Trim(text)
+    if text == "" then
+        return ""
+    end
+    text = text:gsub("%-%-.*$", "")
+    text = Trim(text)
+    if text ~= "" and SecureCmdOptionParse then
+        local ok, parsed = pcall(SecureCmdOptionParse, text)
+        if ok and type(parsed) == "string" then
+            text = Trim(parsed)
+        end
+    end
+    return text
+end
+
+local function FirstMacroActionToken(body)
+    if type(body) ~= "string" or body == "" then
+        return nil
+    end
+
+    local tooltip = body:match("^%s*#showtooltip%s*([^\r\n]*)")
+        or body:match("^%s*#show%s*([^\r\n]*)")
+    tooltip = ParseSecureToken(tooltip or "")
+    if tooltip ~= "" then
+        local first = Trim((tooltip:match("^([^,;]+)") or tooltip))
+        if first ~= "" then
+            return first
+        end
+    end
+
+    for line in body:gmatch("([^\r\n]+)") do
+        local cmd, rest = Trim(line):match("^/(%w+)%s*(.*)$")
+        if cmd then
+            cmd = cmd:lower()
+            rest = ParseSecureToken(rest or "")
+            if cmd == "castsequence" or cmd == "castrandom" or cmd == "userandom" then
+                rest = Trim(rest:gsub("[Rr]eset=[^%s]+%s*", ""))
+            end
+            if (cmd == "cast" or cmd == "use" or cmd == "spell"
+                or cmd == "castsequence" or cmd == "castrandom" or cmd == "userandom")
+                and rest ~= "" then
+                local first = Trim((rest:match("^([^,;]+)") or rest))
+                if first ~= "" then
+                    return first
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local function IconFromActionToken(token)
+    token = Trim(token)
+    if token == "" then
+        return nil
+    end
+
+    local itemID = token:match("^[Ii]tem:(%d+)")
+    if itemID then
+        return GetItemIconSafe(tonumber(itemID))
+    end
+
+    if token:match("^%d+$") then
+        local _, spellIcon = GetSpellNameAndIcon(tonumber(token))
+        if spellIcon and not IsQuestionMarkIcon(spellIcon) then
+            return spellIcon
+        end
+        return GetItemIconSafe(tonumber(token))
+    end
+
+    if C_Spell and C_Spell.GetSpellInfo then
+        local ok, info = pcall(C_Spell.GetSpellInfo, token)
+        if ok and type(info) == "table" then
+            local spellIcon = info.iconID or info.originalIconID
+            if spellIcon and not IsQuestionMarkIcon(spellIcon) then
+                return spellIcon
+            end
+        end
+    end
+    if GetSpellInfo then
+        local nameOrInfo, _, legacyIcon = GetSpellInfo(token)
+        if type(nameOrInfo) == "table" then
+            local spellIcon = nameOrInfo.iconID or nameOrInfo.originalIconID
+            if spellIcon and not IsQuestionMarkIcon(spellIcon) then
+                return spellIcon
+            end
+        elseif legacyIcon and not IsQuestionMarkIcon(legacyIcon) then
+            return legacyIcon
+        end
+    end
+
+    return GetItemIconSafe(token)
+end
+
+local function MacroIndexExists(id)
+    if id == nil or id == false or id == 0 or id == "" then
+        return false
+    end
+    if not GetMacroInfo then
+        return false
+    end
+    local name = GetMacroInfo(id)
+    return type(name) == "string" and name ~= ""
+end
+
+-- GetCursorInfo("macro") is normally the global slot, but extra returns and
+-- names show up the same way spell-book indexes did on the General tab.
+local function ResolveCursorMacroID()
+    local cursorType, a2, a3, a4, a5 = GetCursorInfo()
+    if cursorType ~= "macro" then
+        return nil
+    end
+
+    local candidates = { a2, a3, a4, a5 }
+    for _, cand in ipairs(candidates) do
+        if MacroIndexExists(cand) then
+            return cand
+        end
+    end
+
+    if type(a2) == "string" and a2 ~= "" and GetMacroIndexByName then
+        local index = GetMacroIndexByName(a2)
+        if index and index > 0 then
+            return index
+        end
+    end
+
+    return a2
+end
+
+-- Blizzard bars show GetActionTexture / GetMacroSpell, not the saved macro
+-- icon. Macros that keep the default question mark (#showtooltip) would
+-- otherwise be stored and drawn as INV_Misc_QuestionMark.
+local function ResolveMacroVisual(id, slot)
+    local name, icon, body
+    if id ~= nil and GetMacroInfo then
+        name, icon, body = GetMacroInfo(id)
+    end
+    body = Trim(body or (id ~= nil and GetMacroBody and GetMacroBody(id)) or "")
+
+    local displayIcon = icon
+    if slot and GetActionTexture then
+        displayIcon = PreferResolvedIcon(GetActionTexture(slot), displayIcon)
+    end
+
+    if id ~= nil and GetMacroSpell then
+        local spellID = tonumber(GetMacroSpell(id))
+        if spellID and spellID > 0 then
+            local _, spellIcon = GetSpellNameAndIcon(spellID)
+            displayIcon = PreferResolvedIcon(spellIcon, displayIcon)
+        end
+    end
+
+    if IsQuestionMarkIcon(displayIcon) and id ~= nil and GetMacroItem then
+        local itemName, itemLink = GetMacroItem(id)
+        displayIcon = PreferResolvedIcon(GetItemIconSafe(itemLink or itemName), displayIcon)
+    end
+
+    if IsQuestionMarkIcon(displayIcon) then
+        displayIcon = PreferResolvedIcon(IconFromActionToken(FirstMacroActionToken(body)), displayIcon)
+    end
+
+    return name, displayIcon, body
+end
+
+local function BuildMacroAction(id, slot)
+    if id == nil or id == false or id == 0 then
+        return nil
+    end
+
+    local name, icon, body = ResolveMacroVisual(id, slot)
+    if (not name or name == "") and body == "" then
+        return nil
+    end
+
+    local numericID = tonumber(id)
+    if not numericID and type(id) == "string" and GetMacroIndexByName then
+        numericID = GetMacroIndexByName(id)
+        if numericID == 0 then
+            numericID = nil
+        end
+    end
+
+    return {
+        type = "macro",
+        id = numericID or id,
+        icon = icon,
+        name = name,
+        macroText = body,
+    }
 end
 
 local function CopyAction(action)
@@ -279,20 +596,24 @@ function LPL.ActionBarCodec:GetActionInfoFromSlot(slot)
     end
 
     local actionType, id, subType = GetActionInfo(slot)
-    if not actionType then
-        -- Some utility buttons still expose a spell id via C_ActionBar.
-        if C_ActionBar and C_ActionBar.GetSpell then
-            local barSpell = C_ActionBar.GetSpell(slot)
-            if barSpell and barSpell > 0 then
+    -- General-tab utilities (Switch Flight Style, Warband Bank Distance Inhibitor)
+    -- are more reliably identified by C_ActionBar.GetSpell than GetActionInfo.
+    if C_ActionBar and C_ActionBar.GetSpell then
+        local barSpell = tonumber(C_ActionBar.GetSpell(slot))
+        if barSpell and barSpell > 0 then
+            if not actionType then
                 actionType = "spell"
                 id = barSpell
                 subType = "spell"
-            else
-                return nil
+            elseif actionType == "spell" and IsUtilityStoreSpellID(barSpell) then
+                id = barSpell
+                subType = subType or "spell"
             end
-        else
+        elseif not actionType then
             return nil
         end
+    elseif not actionType then
+        return nil
     end
 
     if subType == "assistedcombat" then
@@ -306,15 +627,7 @@ function LPL.ActionBarCodec:GetActionInfoFromSlot(slot)
         id = self:ResolveStoredSpellID(id, slot)
         subType = subType or "spell"
     elseif actionType == "macro" and id and id ~= 0 then
-        local macroText = Trim(GetMacroBody and GetMacroBody(id) or "")
-        local name, icon = GetMacroInfo and GetMacroInfo(id)
-        return {
-            type = "macro",
-            id = id,
-            icon = icon,
-            name = name,
-            macroText = macroText,
-        }
+        return BuildMacroAction(id, slot)
     elseif actionType == "macro" and (not id or id == 0) then
         return nil
     end
@@ -471,9 +784,18 @@ function LPL.ActionBarCodec:BuildActionTableFromCursor()
             name = name,
         }
     elseif cursorType == "spell" then
-        local rawId, subType = a2, a3 or "spell"
+        local rawId, subType, baseSpellID = ResolveCursorSpell()
+        if not rawId then
+            return nil
+        end
         local dragName, dragIcon = GetSpellNameAndIcon(rawId)
         local id = NormalizeCapturedSpellID(rawId) or rawId
+        if baseSpellID then
+            local baseNorm = NormalizeCapturedSpellID(baseSpellID)
+            if baseNorm and IsUtilityStoreSpellID(baseNorm) then
+                id = baseNorm
+            end
+        end
         if id == SWITCH_FLIGHT_STYLE or id == WARBAND_DISTANCE_INHIBITOR or id == TELEPORT_HOME then
             subType = "spell"
         end
@@ -481,7 +803,7 @@ function LPL.ActionBarCodec:BuildActionTableFromCursor()
         return {
             type = "spell",
             id = id,
-            subType = subType,
+            subType = subType or "spell",
             icon = icon or dragIcon,
             name = name or dragName,
         }
@@ -494,10 +816,7 @@ function LPL.ActionBarCodec:BuildActionTableFromCursor()
         end
         return { type = "equipmentset", id = id, icon = icon, name = name }
     elseif cursorType == "macro" then
-        local id = a2
-        local macroText = Trim(GetMacroBody and GetMacroBody(id) or "")
-        local name, icon = GetMacroInfo and GetMacroInfo(id)
-        return { type = "macro", id = id, icon = icon, name = name, macroText = macroText }
+        return BuildMacroAction(ResolveCursorMacroID() or a2)
     elseif cursorType == "flyout" then
         return { type = "flyout", id = a2, icon = a3 }
     elseif cursorType == "item" then
@@ -680,11 +999,27 @@ function LPL.ActionBarCodec:ResolveActionDisplay(action, ignored)
         icon = spellIcon or icon
     elseif action.type == "macro" then
         local index = FindMacroIndexByText(action.macroText)
-        if index and GetMacroInfo then
-            name, icon = GetMacroInfo(index)
-        elseif not ignored then
-            errorText = "Macro missing"
+        if not index and action.name and GetMacroIndexByName then
+            local byName = GetMacroIndexByName(action.name)
+            if byName and byName > 0 then
+                index = byName
+            end
+        end
+        if not index and action.id and MacroIndexExists(action.id) then
+            index = action.id
+        end
+        if index then
+            local liveName, liveIcon = ResolveMacroVisual(index)
+            name = liveName or name or action.name or "Macro"
+            icon = PreferResolvedIcon(liveIcon, icon)
+        else
             name = name or action.name or "Macro"
+            if IsQuestionMarkIcon(icon) then
+                icon = PreferResolvedIcon(IconFromActionToken(FirstMacroActionToken(action.macroText)), icon)
+            end
+            if not ignored then
+                errorText = "Macro missing"
+            end
         end
     elseif action.type == "summonmount" then
         if action.id == 0xFFFFFFF then

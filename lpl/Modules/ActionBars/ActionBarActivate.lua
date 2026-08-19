@@ -251,6 +251,19 @@ local function GetMacroByText(macroText)
     return nil
 end
 
+local function MacroCreateIcon(icon)
+    if icon == nil or icon == false or icon == 0 or icon == 134400 then
+        return "INV_MISC_QUESTIONMARK"
+    end
+    if type(icon) == "string" then
+        local lower = icon:lower()
+        if lower == "" or lower:find("inv_misc_questionmark", 1, true) then
+            return "INV_MISC_QUESTIONMARK"
+        end
+    end
+    return icon
+end
+
 local function CreateMissingMacro(tbl)
     local macroText = Trim(tbl.macroText)
     if macroText == "" then
@@ -260,13 +273,14 @@ local function CreateMissingMacro(tbl)
     if not CreateMacro then
         return nil
     end
+    local icon = MacroCreateIcon(tbl.icon)
     local numGlobal = GetNumMacros and select(1, GetNumMacros()) or 0
     if numGlobal < (MAX_ACCOUNT_MACROS or 120) then
-        return CreateMacro(name, "INV_Misc_QuestionMark", macroText, false)
+        return CreateMacro(name, icon, macroText, false)
     end
     local _, numChar = GetNumMacros()
     if numChar < (MAX_CHARACTER_MACROS or 12) then
-        return CreateMacro(name, "INV_Misc_QuestionMark", macroText, true)
+        return CreateMacro(name, icon, macroText, true)
     end
     return nil
 end

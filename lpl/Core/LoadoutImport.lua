@@ -26,38 +26,40 @@ function LPL.LoadoutImport:BuildImportPreview(rawSource, importName)
     local loadoutPath = LPL.BuildStore:FormatLoadoutPath({ name = rawSource.name, specID = rawSource.specID }, importName)
 
     local talentText = LPL.TalentShare:EncodeShareTable(rawSource)
-    local parseOk, talentData, parseErr = LPL.TalentShare:ParseImportString(talentText or "")
-    if not parseOk or not talentData then
-        return nil, parseErr or "Loadout has no importable talent data."
+    local parseOk, talentData = LPL.TalentShare:ParseImportString(talentText or "")
+    if not parseOk then
+        talentData = nil
     end
 
     local sections = {}
     local existingBuild = LPL.BuildStore:FindByLoadoutPath(loadoutPath)
 
-    sections[#sections + 1] = {
-        id = "talents",
-        label = "Talents",
-        path = loadoutPath,
-        available = true,
-        exists = existingBuild ~= nil,
-        checkboxLabel = existingBuild
-            and string.format('Use existing Talents set "%s"', loadoutPath)
-            or string.format('Add Talents set "%s"', loadoutPath),
-        defaultChecked = true,
-    }
-
-    if talentData.subTreeID or FirstLoadoutSegment(rawSource, "herotalents") then
+    if talentData then
         sections[#sections + 1] = {
-            id = "hero",
-            label = "Hero Talents",
+            id = "talents",
+            label = "Talents",
             path = loadoutPath,
             available = true,
-            exists = existingBuild ~= nil and existingBuild.subTreeID == talentData.subTreeID,
+            exists = existingBuild ~= nil,
             checkboxLabel = existingBuild
-                and string.format('Use existing Hero Talents set "%s"', loadoutPath)
-                or string.format('Add Hero Talents set "%s"', loadoutPath),
+                and string.format('Use existing Talents set "%s"', loadoutPath)
+                or string.format('Add Talents set "%s"', loadoutPath),
             defaultChecked = true,
         }
+
+        if talentData.subTreeID or FirstLoadoutSegment(rawSource, "herotalents") then
+            sections[#sections + 1] = {
+                id = "hero",
+                label = "Hero Talents",
+                path = loadoutPath,
+                available = true,
+                exists = existingBuild ~= nil and existingBuild.subTreeID == talentData.subTreeID,
+                checkboxLabel = existingBuild
+                    and string.format('Use existing Hero Talents set "%s"', loadoutPath)
+                    or string.format('Add Hero Talents set "%s"', loadoutPath),
+                defaultChecked = true,
+            }
+        end
     end
 
     if FirstLoadoutSegment(rawSource, "actionbars") then
@@ -71,6 +73,21 @@ function LPL.LoadoutImport:BuildImportPreview(rawSource, importName)
             checkboxLabel = existingActionBar
                 and string.format('Use existing Action Bars set "%s"', loadoutPath)
                 or string.format('Add Action Bars set "%s"', loadoutPath),
+            defaultChecked = true,
+        }
+    end
+
+    if FirstLoadoutSegment(rawSource, "keybinds") then
+        local existingKeybind = LPL.KeybindStore and LPL.KeybindStore:FindByName(loadoutPath)
+        sections[#sections + 1] = {
+            id = "keybinds",
+            label = "Keybinding Profiles",
+            path = loadoutPath,
+            available = true,
+            exists = existingKeybind ~= nil,
+            checkboxLabel = existingKeybind
+                and string.format('Use existing keybinding profile "%s"', loadoutPath)
+                or string.format('Add keybinding profile "%s"', loadoutPath),
             defaultChecked = true,
         }
     end
@@ -150,7 +167,12 @@ function LPL.LoadoutImport:BuildImportPreview(rawSource, importName)
         }
     end
 
+    if #sections == 0 then
+        return nil, "Loadout has no importable data."
+    end
+
     local existingActionBar = LPL.ActionBarStore and LPL.ActionBarStore:FindByName(loadoutPath)
+    local existingKeybind = LPL.KeybindStore and LPL.KeybindStore:FindByName(loadoutPath)
     local existingEquipment = LPL.EquipmentStore and LPL.EquipmentStore:FindByName(loadoutPath)
     local existingPvp = LPL.PvpTalentStore and LPL.PvpTalentStore:FindByName(loadoutPath)
     local existingCdm = LPL.CooldownManagerStore and LPL.CooldownManagerStore:FindByName(loadoutPath)
@@ -164,6 +186,7 @@ function LPL.LoadoutImport:BuildImportPreview(rawSource, importName)
         buildName = importName,
         existingBuildID = existingBuild and existingBuild.id or nil,
         existingActionBarID = existingActionBar and existingActionBar.id or nil,
+        existingKeybindID = existingKeybind and existingKeybind.id or nil,
         existingEquipmentID = existingEquipment and existingEquipment.id or nil,
         existingPvpTalentID = existingPvp and existingPvp.id or nil,
         existingCooldownManagerID = existingCdm and existingCdm.id or nil,

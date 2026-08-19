@@ -40,6 +40,7 @@ function LPL.SetListView:Create(parent, config)
     local bottomInset = config.bottomInset or 0
     local groupBySpec = config.groupBySpec ~= false
     local groupByHero = config.groupByHero ~= false
+    local flatList = config.flatList == true
 
     local frame = CreateFrame("Frame", nil, parent)
     frame:SetPoint("TOPLEFT", parent, "TOPLEFT", 12, -8)
@@ -92,6 +93,7 @@ function LPL.SetListView:Create(parent, config)
     frame.config = config
     frame.groupBySpec = groupBySpec
     frame.groupByHero = groupByHero
+    frame.flatList = flatList
     frame.scroll = scroll
     frame.scrollChild = scrollChild
     frame.header = header
@@ -297,6 +299,7 @@ function LPL.SetListView:Create(parent, config)
             isActive = config.isActive,
             groupBySpec = self.groupBySpec,
             groupByHero = self.groupByHero,
+            flatList = self.flatList,
         })
         self.collapsedStorage = storage
 

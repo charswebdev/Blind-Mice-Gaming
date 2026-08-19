@@ -126,6 +126,7 @@ function LPL.ImportConfirmDialog:EnsureFrame()
                 talents = false,
                 hero = false,
                 actionBars = false,
+                keybinds = false,
                 equipment = false,
                 pvpTalents = false,
                 cooldownManager = false,
@@ -141,6 +142,8 @@ function LPL.ImportConfirmDialog:EnsureFrame()
                         options.hero = row:IsIncluded()
                     elseif sectionId == "actionBars" then
                         options.actionBars = row:IsIncluded()
+                    elseif sectionId == "keybinds" then
+                        options.keybinds = row:IsIncluded()
                     elseif sectionId == "equipment" then
                         options.equipment = row:IsIncluded()
                     elseif sectionId == "pvpTalents" then
@@ -155,6 +158,7 @@ function LPL.ImportConfirmDialog:EnsureFrame()
                 end
             end
             if not options.talents and not options.hero and not options.actionBars
+                and not options.keybinds
                 and not options.equipment and not options.pvpTalents
                 and not options.cooldownManager and not options.editMode
                 and not options.addonSets then

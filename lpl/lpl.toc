@@ -113,6 +113,14 @@ Modules\VaultImportChooser.lua
 Modules\Talents.lua
 Modules\ImportExport.lua
 Modules\ActionBars.lua
+Modules\Keybinds\KeybindCodec.lua
+Modules\Keybinds\KeybindStore.lua
+Modules\Keybinds\KeybindShare.lua
+Modules\Keybinds\KeybindActivate.lua
+Modules\Keybinds\KeybindActive.lua
+Modules\Keybinds\KeybindSetList.lua
+Modules\Keybinds\KeybindEditor.lua
+Modules\Keybinds.lua
 Modules\Equipment.lua
 Modules\PvpTalents.lua
 Modules\CooldownManager.lua

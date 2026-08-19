@@ -49,6 +49,20 @@ local SEGMENTS = {
         end,
     },
     {
+        field = "keybindSetIDs",
+        singular = "keybindSetID",
+        label = "Keybinding Profiles",
+        getAll = function()
+            return LPL.KeybindStore and LPL.KeybindStore:GetAll() or {}
+        end,
+        get = function(id)
+            return LPL.KeybindStore and LPL.KeybindStore:Get(id)
+        end,
+        getSummary = function(record)
+            return LPL.KeybindStore and LPL.KeybindStore:GetSummaryLine(record) or ""
+        end,
+    },
+    {
         field = "equipmentSetIDs",
         singular = "equipmentSetID",
         label = "Equipment",

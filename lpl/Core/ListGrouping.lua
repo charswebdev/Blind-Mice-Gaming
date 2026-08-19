@@ -314,8 +314,25 @@ function LPL.ListGrouping:BuildDisplayList(items, options)
     local listKey = options.listKey or "default"
     local groupBySpec = options.groupBySpec ~= false
     local groupByHero = options.groupByHero == true
-
     local storage = self:GetCollapsedStorage(listKey)
+
+    if options.flatList then
+        local list = {}
+        for _, item in ipairs(items or {}) do
+            list[#list + 1] = item
+        end
+        SortItems(list, getName, isActive)
+        local entries = {}
+        for _, item in ipairs(list) do
+            entries[#entries + 1] = {
+                type = "item",
+                item = item,
+                depth = 0,
+            }
+        end
+        return entries, storage
+    end
+
     local playerClassID = LPL.Character and LPL.Character:GetClassID()
     local playerSpecID = LPL.Character and LPL.Character:GetSpecID()
 

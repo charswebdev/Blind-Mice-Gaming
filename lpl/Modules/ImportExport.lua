@@ -145,6 +145,9 @@ function ImportExportModule.create(parent)
         if importKind == "actionbars" then
             return "Imported Action Bar Set"
         end
+        if importKind == "keybinds" then
+            return "Imported Keybinding Profile"
+        end
         if importKind == "pvptalents" then
             return "Imported PvP Set"
         end
@@ -175,6 +178,9 @@ function ImportExportModule.create(parent)
         end
         if importKind == "actionbars" then
             return LPL.ActionBarStore:NormalizeSetName(name, DefaultImportName(importKind))
+        end
+        if importKind == "keybinds" then
+            return LPL.KeybindStore:NormalizeSetName(name, DefaultImportName(importKind))
         end
         if importKind == "pvptalents" then
             return LPL.PvpTalentStore:NormalizeSetName(name, DefaultImportName(importKind))
@@ -252,6 +258,9 @@ function ImportExportModule.create(parent)
             if rawSource.type == "actionbars" or rawSource.type == "lplactionbars" then
                 return "actionbars"
             end
+            if rawSource.type == "keybinds" then
+                return "keybinds"
+            end
             if rawSource.type == "pvptalents" then
                 return "pvptalents"
             end
@@ -287,6 +296,9 @@ function ImportExportModule.create(parent)
         end
         if LPL.ActionBarShare:ValidateImportString(text) then
             return "actionbars"
+        end
+        if LPL.KeybindShare and LPL.KeybindShare:ValidateImportString(text) then
+            return "keybinds"
         end
         if LPL.TalentShare:ValidateImportString(text) then
             return "talents"
@@ -344,6 +356,9 @@ function ImportExportModule.create(parent)
         if importKind == "actionbars" then
             return LPL.ActionBarShare:ParseImportString(text)
         end
+        if importKind == "keybinds" then
+            return LPL.KeybindShare:ParseImportString(text)
+        end
         return LPL.TalentShare:ParseImportString(text)
     end
 
@@ -379,6 +394,9 @@ function ImportExportModule.create(parent)
         if importKind == "actionbars" then
             return LPL.ActionBarShare:ValidateImportString(text)
         end
+        if importKind == "keybinds" then
+            return LPL.KeybindShare:ValidateImportString(text)
+        end
         if importKind == "talents" then
             return LPL.TalentShare:ValidateImportString(text)
         end
@@ -389,7 +407,8 @@ function ImportExportModule.create(parent)
         local _, addonSetErr = LPL.AddonSetShare and LPL.AddonSetShare:ValidateImportString(text)
         local _, talentErr = LPL.TalentShare:ValidateImportString(text)
         local _, actionBarErr = LPL.ActionBarShare:ValidateImportString(text)
-        return false, equipmentErr or pvpErr or cdmErr or editErr or addonSetErr or talentErr or actionBarErr or "Invalid share string."
+        local _, keybindErr = LPL.KeybindShare and LPL.KeybindShare:ValidateImportString(text)
+        return false, equipmentErr or pvpErr or cdmErr or editErr or addonSetErr or talentErr or actionBarErr or keybindErr or "Invalid share string."
     end
 
     local function BuildImportPreview(text, importName, importKind)
@@ -417,6 +436,9 @@ function ImportExportModule.create(parent)
         end
         if importKind == "actionbars" then
             return LPL.ActionBarShare:BuildImportPreviewFromText(text, importName)
+        end
+        if importKind == "keybinds" then
+            return LPL.KeybindShare:BuildImportPreviewFromText(text, importName)
         end
         return LPL.TalentShare:BuildImportPreviewFromText(text, importName)
     end
@@ -584,6 +606,7 @@ function ImportExportModule.create(parent)
                 if currentName == ""
                     or currentName == "Imported Build"
                     or currentName == "Imported Action Bar Set"
+                    or currentName == "Imported Keybinding Profile"
                     or currentName == "Imported Equipment Set"
                     or currentName == "Imported PvP Set"
                     or currentName == "Imported Edit Mode Layout"
@@ -745,6 +768,7 @@ function ImportExportModule.create(parent)
 
         LPL.ImportConfirmDialog:Show(preview, function(options)
             options.existingActionBarID = preview.existingActionBarID
+            options.existingKeybindID = preview.existingKeybindID
             options.existingEquipmentID = preview.existingEquipmentID
             options.existingPvpTalentID = preview.existingPvpTalentID
             options.existingCooldownManagerID = preview.existingCooldownManagerID
@@ -757,6 +781,7 @@ function ImportExportModule.create(parent)
                 local build
                 local err
                 local actionBarSet
+                local keybindSet
                 local equipmentSet
                 local pvpSet
                 local cdmSet
@@ -764,6 +789,7 @@ function ImportExportModule.create(parent)
                 local addonSet
                 local talentBuildIDs = {}
                 local actionBarSetIDs = {}
+                local keybindSetIDs = {}
                 local equipmentSetIDs = {}
                 local pvpTalentSetIDs = {}
                 local cooldownManagerSetIDs = {}
@@ -784,7 +810,7 @@ function ImportExportModule.create(parent)
 
                 if options.talents or options.hero then
                     build, err = LPL.TalentShare:ImportString(text, importName, options)
-                    if not build and not options.actionBars and not options.equipment
+                    if not build and not options.actionBars and not options.keybinds and not options.equipment
                         and not options.pvpTalents and not options.cooldownManager and not options.editMode
                         and not options.addonSets then
                         SetError(err or "Import failed.")
@@ -827,6 +853,19 @@ function ImportExportModule.create(parent)
                         actionBarSet = set
                         CollectIDs(actionBarSetIDs, set, all)
                         print(string.format("|cff33cc33LPL:|r Imported action bar set \"%s\".", set.name or path))
+                    end
+                end
+
+                if options.keybinds then
+                    local set, kbErr, all = LPL.KeybindShare:ApplyLoadoutSegments(rawSource, path, options)
+                    if not set and kbErr and not build and not actionBarSet then
+                        SetError(kbErr)
+                        return
+                    end
+                    if set then
+                        keybindSet = set
+                        CollectIDs(keybindSetIDs, set, all)
+                        print(string.format("|cff33cc33LPL:|r Imported keybinding profile \"%s\".", set.name or path))
                     end
                 end
 
@@ -897,13 +936,15 @@ function ImportExportModule.create(parent)
 
                 if LPL.LoadoutStore then
                     local loadoutName = importName or path or "Imported Loadout"
-                    if build or actionBarSet or equipmentSet or pvpSet or cdmSet or editModeSet or addonSet
+                    if build or actionBarSet or keybindSet or equipmentSet or pvpSet or cdmSet or editModeSet or addonSet
                         or #talentBuildIDs > 0 or #actionBarSetIDs > 0 then
                         SaveLinkedLoadout(loadoutName, {
                             talentBuildIDs = talentBuildIDs,
                             talentBuildID = talentBuildIDs[1],
                             actionBarSetIDs = actionBarSetIDs,
                             actionBarSetID = actionBarSetIDs[1],
+                            keybindSetIDs = keybindSetIDs,
+                            keybindSetID = keybindSetIDs[1],
                             equipmentSetIDs = equipmentSetIDs,
                             equipmentSetID = equipmentSetIDs[1],
                             pvpTalentSetIDs = pvpTalentSetIDs,
@@ -946,6 +987,20 @@ function ImportExportModule.create(parent)
                 SaveLinkedLoadout(importName, {
                     actionBarSetIDs = { set.id },
                     actionBarSetID = set.id,
+                })
+                return
+            end
+
+            if preview.importKind == "keybinds" then
+                local set, err = LPL.KeybindShare:ImportString(text, importName, options)
+                if not set then
+                    SetError(err or "Import failed.")
+                    return
+                end
+                print(string.format("|cff33cc33LPL:|r Imported keybinding profile \"%s\".", set.name or importName))
+                SaveLinkedLoadout(importName, {
+                    keybindSetIDs = { set.id },
+                    keybindSetID = set.id,
                 })
                 return
             end
