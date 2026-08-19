@@ -147,6 +147,79 @@ function Theme.ObjectiveProgressColor(data)
     return { 1 - float / 2, 1, 0, 1 }
 end
 
+local function ObjectiveTypeIsBar(t)
+    if t == "progressbar" or t == "progressBar" or t == "percentage" or t == "bar" then
+        return true
+    end
+    local E = Enum and Enum.QuestObjectiveType
+    if E and E.ProgressBar and t == E.ProgressBar then
+        return true
+    end
+    return false
+end
+
+function Theme.IsPercentObjective(data)
+    if type(data) ~= "table" then
+        return false
+    end
+    if data.isWeightedProgress then
+        return true
+    end
+    if ObjectiveTypeIsBar(data.objType or data.type) then
+        return true
+    end
+    local qs = data.quantityString
+    if type(qs) == "string" and qs:find("%%", 1, true) then
+        return true
+    end
+    local title = data.title
+    if type(title) == "string" and title:find("%d+%s*%%") then
+        return true
+    end
+    return tonumber(data.numNeeded) == 100 and type(data.numFulfilled) == "number"
+end
+
+function Theme.ObjectivePercent(data)
+    if type(data) ~= "table" then
+        return 0
+    end
+    if data.finished or data.clickComplete then
+        return 1
+    end
+    local fulfilled = tonumber(data.numFulfilled)
+    local needed = tonumber(data.numNeeded)
+    if data.isWeightedProgress and type(fulfilled) == "number" then
+        if type(needed) == "number" and needed > 0 and fulfilled > 100 then
+            if fulfilled / needed > 1 then
+                return 1
+            end
+            if fulfilled / needed < 0 then
+                return 0
+            end
+            return fulfilled / needed
+        end
+        local pct = fulfilled / 100
+        if pct < 0 then
+            return 0
+        end
+        if pct > 1 then
+            return 1
+        end
+        return pct
+    end
+    if type(fulfilled) == "number" and type(needed) == "number" and needed > 0 then
+        local pct = fulfilled / needed
+        if pct < 0 then
+            return 0
+        end
+        if pct > 1 then
+            return 1
+        end
+        return pct
+    end
+    return 0
+end
+
 function Theme.QuestDifficultyColor(level)
     if type(level) ~= "number" then
         return Theme.Tracker and Theme.Tracker.title or Theme.text
