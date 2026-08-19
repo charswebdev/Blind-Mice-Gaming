@@ -81,8 +81,7 @@ local function RefreshEditor(frame)
 end
 
 local function UpdateListViewLayout(frame, hasSets)
-    local bottomInset = hasSets and LPL.TalentActionBar.LIST_HEIGHT or 0
-    frame.listView:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, bottomInset)
+    frame.listView:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, LPL.TalentActionBar.LIST_HEIGHT)
 end
 
 local function UpdateEditorViewLayout(frame)

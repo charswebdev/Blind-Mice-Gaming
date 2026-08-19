@@ -2,7 +2,7 @@ local addonName, LPL = ...
 
 LPL.Theme = {
     colors = {
-        bgPrimary = { 0.06, 0.06, 0.08, 0.98 },
+        bgPrimary = { 0.00, 0.00, 0.00, 1.00 },
         bgSidebar = { 0.10, 0.10, 0.12, 1.00 },
         bgElevated = { 0.14, 0.14, 0.17, 1.00 },
         bgButton = { 0.18, 0.18, 0.22, 1.00 },
@@ -231,22 +231,33 @@ function LPL.Theme:EnsureBackdrop(frame)
 end
 
 function LPL.Theme:ApplyFlatBackground(frame, bgColorKey, borderColorKey)
-    if not frame.lplBackground then
-        frame.lplBackground = frame:CreateTexture(nil, "BACKGROUND", nil, -8)
-        frame.lplBackground:SetAllPoints()
-    end
+    -- Border sits behind a 1px-inset fill. A full-size BORDER-layer texture
+    -- would cover the fill and paint every panel grey.
     if not frame.lplBorder then
-        frame.lplBorder = frame:CreateTexture(nil, "BORDER", nil, -7)
-        frame.lplBorder:SetPoint("TOPLEFT", frame, "TOPLEFT", -1, 1)
-        frame.lplBorder:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 1, -1)
+        frame.lplBorder = frame:CreateTexture(nil, "BACKGROUND", nil, -8)
+    end
+    frame.lplBorder:ClearAllPoints()
+    frame.lplBorder:SetAllPoints(frame)
+    if frame.lplBorder.SetDrawLayer then
+        frame.lplBorder:SetDrawLayer("BACKGROUND", -8)
+    end
+
+    if not frame.lplBackground then
+        frame.lplBackground = frame:CreateTexture(nil, "BACKGROUND", nil, -7)
+    end
+    frame.lplBackground:ClearAllPoints()
+    frame.lplBackground:SetPoint("TOPLEFT", frame, "TOPLEFT", 1, -1)
+    frame.lplBackground:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -1, 1)
+    if frame.lplBackground.SetDrawLayer then
+        frame.lplBackground:SetDrawLayer("BACKGROUND", -7)
     end
 
     local r, g, b, a = self:GetColor(bgColorKey or "bgPrimary")
     local br, bg, bb, ba = self:GetColor(borderColorKey or "border")
-    frame.lplBackground:SetColorTexture(r, g, b, a)
     frame.lplBorder:SetColorTexture(br, bg, bb, ba)
-    frame.lplBackground:Show()
+    frame.lplBackground:SetColorTexture(r, g, b, a)
     frame.lplBorder:Show()
+    frame.lplBackground:Show()
 end
 
 function LPL.Theme:ClearFlatBackground(frame)

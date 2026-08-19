@@ -250,7 +250,7 @@ function LPL.TalentActionBar:Create(parent, handlers, options)
     end
 
     function bar:LayoutListButtons()
-        if self.mode ~= "list" or self.listEmpty then
+        if self.mode ~= "list" then
             return
         end
 
@@ -434,9 +434,10 @@ function LPL.TalentActionBar:Create(parent, handlers, options)
             SetButtonEnabled(deleteButton, self.treeCanDelete)
 
             self:LayoutTreeButtons()
-        elseif listEmpty then
-            self:Hide()
         else
+            self:ClearAllPoints()
+            self:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
+            self:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
             self:SetHeight(LPL.TalentActionBar.LIST_HEIGHT)
             self:Show()
             backButton:Hide()

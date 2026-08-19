@@ -265,10 +265,14 @@ function LPL.SetListView:Create(parent, config)
 
         local hasSourceItems = config.getItems and #(config.getItems() or {}) > 0
         if not hasSourceItems then
-            self.header:Hide()
-            self.hint:Hide()
-            self.chrome:Hide()
+            self.header:Show()
+            self.hint:Show()
+            self.chrome:Show()
             self.scroll:Hide()
+            self.emptyFilterLabel:SetText(config.emptyText or "No saved sets yet.")
+            self.emptyFilterLabel:Show()
+            self.emptyNewButton:ClearAllPoints()
+            self.emptyNewButton:SetPoint("TOP", self.emptyFilterLabel, "BOTTOM", 0, -16)
             self.emptyNewButton:Show()
             child:SetHeight(1)
             return
@@ -279,6 +283,7 @@ function LPL.SetListView:Create(parent, config)
         self.chrome:Show()
         self.emptyNewButton:Hide()
         self.emptyFilterLabel:Hide()
+        self.emptyFilterLabel:SetText(config.emptyFilterText or "No sets match your search or filters.")
 
         if #items == 0 then
             self.scroll:Hide()

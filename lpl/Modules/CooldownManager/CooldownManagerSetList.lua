@@ -10,6 +10,7 @@ function LPL.CooldownManagerSetList:Create(parent, bottomInset)
         title = "Saved Cooldown Manager Sets",
         hint = "Universal by default | Use Limits to group by class, spec, or character | Green dot = active on your character | Double-click to edit.",
         emptyFilterText = "No Cooldown Manager sets match your search or filters.",
+        emptyText = "No Cooldown Manager sets yet.",
         emptyButtonLabel = "New Cooldown Manager Set",
         emptyButtonWidth = 220,
         getItems = function()
