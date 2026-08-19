@@ -598,6 +598,7 @@ local function Layout()
             indent = 28
         end
         local wrap = data.kind == "header" or data.kind == "quest" or data.kind == "objective"
+        local isPercent = data.kind == "objective" and AQ.Theme.IsPercentObjective and AQ.Theme.IsPercentObjective(data)
         local h = 18
         if data.kind == "objective" then
             h = 18
@@ -739,7 +740,7 @@ local function Layout()
         elseif st == "LOCKED" then
             statusLabel = "Locked"
             statusCol = th.tag
-        elseif type(data.numNeeded) == "number" and data.numNeeded > 0 then
+        elseif not isPercent and type(data.numNeeded) == "number" and data.numNeeded > 0 then
             statusLabel = string.format("%d/%d", tonumber(data.numFulfilled) or 0, data.numNeeded)
             if data.finished or data.clickComplete then
                 statusCol = th.complete
@@ -749,32 +750,45 @@ local function Layout()
                 statusCol = th.objective
             end
         end
-        local statusW = statusLabel and 64 or 0
-        if data.kind == "timer" then
-            statusW = 56
-        elseif statusLabel and string.match(statusLabel, "^%d+/%d+$") then
-            statusW = 44
-        end
         row.Status:ClearAllPoints()
         row.Text:ClearAllPoints()
-        local textY = (data.kind == "timer") and 4 or (wrap and -1 or 0)
-        row.Text:SetPoint("LEFT", 4 + indent + iconW, textY)
-        row.Text:SetPoint("RIGHT", -(6 + statusW + itemW + extraW), textY)
+        local statusW = 0
         if statusLabel then
             row.Status:SetText(statusLabel)
-            row.Status:SetWidth(statusW)
-            row.Status:SetPoint("RIGHT", -2 - itemW - extraW, textY)
             row.Status:SetTextColor(statusCol[1], statusCol[2], statusCol[3], 1)
             AQ.Widgets.SetTrackerFont(row.Status, 11)
+            row.Status:SetJustifyH("RIGHT")
             row.Status:SetJustifyV(wrap and "TOP" or "MIDDLE")
             row.Status:SetWordWrap(false)
+            if row.Status.SetNonSpaceWrap then
+                row.Status:SetNonSpaceWrap(false)
+            end
             if row.Status.SetMaxLines then
                 row.Status:SetMaxLines(1)
             end
             row.Status:Show()
+            local sw = row.Status.GetStringWidth and row.Status:GetStringWidth()
+            if type(sw) ~= "number" or sw < 8 then
+                sw = string.len(statusLabel) * 8
+            end
+            statusW = math.ceil(sw + 6)
+            if data.kind == "timer" and statusW < 56 then
+                statusW = 56
+            end
         else
             row.Status:SetText("")
             row.Status:Hide()
+        end
+        local textY = (data.kind == "timer") and 4 or -2
+        if wrap or isPercent then
+            row.Text:SetPoint("TOPLEFT", 4 + indent + iconW, textY)
+            row.Text:SetPoint("TOPRIGHT", -(10 + statusW + itemW + extraW), textY)
+        else
+            row.Text:SetPoint("LEFT", 4 + indent + iconW, textY)
+            row.Text:SetPoint("RIGHT", -(10 + statusW + itemW + extraW), textY)
+        end
+        if statusLabel then
+            row.Status:SetPoint("TOPRIGHT", -6 - itemW - extraW, textY)
         end
         if data.kind == "header" then
             local a = th.header
@@ -837,9 +851,51 @@ local function Layout()
                 if sh > cap then
                     sh = cap
                 end
-                h = math.floor(sh + 8)
+                h = math.floor(sh + 6)
                 row:SetHeight(h)
             end
+        end
+        if isPercent then
+            local pct = 0
+            if AQ.Theme.ObjectivePercent then
+                pct = AQ.Theme.ObjectivePercent(data)
+            end
+            local pctLabel = string.format("%d%%", math.floor(pct * 100 + 0.5))
+            local barCol = th.header
+            if AQ.Theme.ObjectiveProgressColor then
+                barCol = AQ.Theme.ObjectiveProgressColor(data)
+            end
+            local textH = row.Text.GetStringHeight and row.Text:GetStringHeight() or 14
+            if type(textH) ~= "number" or textH < 12 then
+                textH = 14
+            end
+            h = math.floor(textH + 20)
+            row:SetHeight(h)
+            row.Status:SetText(pctLabel)
+            row.Status:SetTextColor(barCol[1], barCol[2], barCol[3], 1)
+            AQ.Widgets.SetTrackerFont(row.Status, 11)
+            row.Status:SetJustifyH("RIGHT")
+            row.Status:SetJustifyV("MIDDLE")
+            row.Status:SetWordWrap(false)
+            if row.Status.SetMaxLines then
+                row.Status:SetMaxLines(1)
+            end
+            row.Status:ClearAllPoints()
+            row.Status:SetPoint("TOPRIGHT", row.Text, "BOTTOMRIGHT", 0, -6)
+            row.Status:Show()
+            local sw = row.Status.GetStringWidth and row.Status:GetStringWidth() or 36
+            if type(sw) ~= "number" or sw < 8 then
+                sw = 36
+            end
+            local bar = EnsureBar(row)
+            bar:ClearAllPoints()
+            bar:SetHeight(7)
+            bar:SetPoint("TOPLEFT", row.Text, "BOTTOMLEFT", 0, -8)
+            bar:SetPoint("RIGHT", row.Status, "LEFT", -6, 0)
+            bar:SetMinMaxValues(0, 1)
+            bar:SetValue(pct)
+            bar:SetStatusBarColor(barCol[1], barCol[2], barCol[3], 0.95)
+            bar:Show()
         end
         y = y + h
         if isSubHeader then

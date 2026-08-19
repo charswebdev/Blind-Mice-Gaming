@@ -81,6 +81,7 @@ local function GetRows()
                     finished = obj.finished,
                     numFulfilled = obj.numFulfilled,
                     numNeeded = obj.numNeeded,
+                    objType = obj.type,
                     questID = quest.questID,
                     indent = 16,
                     speech = obj.text,

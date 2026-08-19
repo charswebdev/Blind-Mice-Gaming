@@ -30,7 +30,7 @@
         "AllQuest_Data_WoD",
         "AllQuest_Data_Wrath"
       ],
-      "version": "1.0.3",
+      "version": "1.0.5",
       "interfaces": [120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508],
       "saved": ["AllQuestDB", "AllQuestCharDB"]
     },

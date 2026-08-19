@@ -267,6 +267,7 @@ local function AddCriteria(rows)
     numCriteria = numCriteria or 0
     for i = 1, numCriteria do
         local criteriaString, completed, quantity, totalQuantity
+        local isWeightedProgress, quantityString, objType
         if C_ScenarioInfo and C_ScenarioInfo.GetCriteriaInfo then
             local info = AQ:SafeCall(C_ScenarioInfo.GetCriteriaInfo, i)
             if type(info) == "table" then
@@ -274,10 +275,18 @@ local function AddCriteria(rows)
                 completed = info.completed
                 quantity = info.quantity
                 totalQuantity = info.totalQuantity
+                isWeightedProgress = info.isWeightedProgress and true or false
+                quantityString = info.quantityString
+                objType = info.criteriaType
             end
         elseif C_Scenario.GetCriteriaInfo then
-            local a, _, c, d, e = AQ:SafeCall(C_Scenario.GetCriteriaInfo, i)
-            criteriaString, completed, quantity, totalQuantity = a, c, d, e
+            local a, b, c, d, e, _, _, h, _, _, _, _, m = AQ:SafeCall(C_Scenario.GetCriteriaInfo, i)
+            criteriaString, objType, completed, quantity, totalQuantity = a, b, c, d, e
+            quantityString = h
+            isWeightedProgress = m and true or false
+        end
+        if not isWeightedProgress and type(totalQuantity) == "number" and totalQuantity >= 100 then
+            isWeightedProgress = true
         end
         if type(criteriaString) == "string" then
             local extra = ""
@@ -290,6 +299,9 @@ local function AddCriteria(rows)
                 finished = completed and true or false,
                 numFulfilled = quantity,
                 numNeeded = totalQuantity,
+                isWeightedProgress = isWeightedProgress,
+                quantityString = quantityString,
+                objType = objType,
                 speech = criteriaString .. extra .. (completed and " complete" or ""),
             })
         end
