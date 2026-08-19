@@ -749,32 +749,40 @@ local function Layout()
                 statusCol = th.objective
             end
         end
-        local statusW = statusLabel and 64 or 0
-        if data.kind == "timer" then
-            statusW = 56
-        elseif statusLabel and string.match(statusLabel, "^%d+/%d+$") then
-            statusW = 44
-        end
         row.Status:ClearAllPoints()
         row.Text:ClearAllPoints()
-        local textY = (data.kind == "timer") and 4 or (wrap and -1 or 0)
-        row.Text:SetPoint("LEFT", 4 + indent + iconW, textY)
-        row.Text:SetPoint("RIGHT", -(6 + statusW + itemW + extraW), textY)
+        local statusW = 0
         if statusLabel then
             row.Status:SetText(statusLabel)
-            row.Status:SetWidth(statusW)
-            row.Status:SetPoint("RIGHT", -2 - itemW - extraW, textY)
             row.Status:SetTextColor(statusCol[1], statusCol[2], statusCol[3], 1)
             AQ.Widgets.SetTrackerFont(row.Status, 11)
+            row.Status:SetJustifyH("RIGHT")
             row.Status:SetJustifyV(wrap and "TOP" or "MIDDLE")
             row.Status:SetWordWrap(false)
+            if row.Status.SetNonSpaceWrap then
+                row.Status:SetNonSpaceWrap(false)
+            end
             if row.Status.SetMaxLines then
                 row.Status:SetMaxLines(1)
             end
             row.Status:Show()
+            local sw = row.Status.GetStringWidth and row.Status:GetStringWidth()
+            if type(sw) ~= "number" or sw < 8 then
+                sw = string.len(statusLabel) * 8
+            end
+            statusW = math.ceil(sw + 6)
+            if data.kind == "timer" and statusW < 56 then
+                statusW = 56
+            end
         else
             row.Status:SetText("")
             row.Status:Hide()
+        end
+        local textY = (data.kind == "timer") and 4 or (wrap and -1 or 0)
+        row.Text:SetPoint("LEFT", 4 + indent + iconW, textY)
+        row.Text:SetPoint("RIGHT", -(10 + statusW + itemW + extraW), textY)
+        if statusLabel then
+            row.Status:SetPoint("TOPRIGHT", -6 - itemW - extraW, textY)
         end
         if data.kind == "header" then
             local a = th.header
