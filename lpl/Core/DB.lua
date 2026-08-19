@@ -36,6 +36,10 @@ local DEFAULTS = {
         sets = {},
         nextSetId = 0,
     },
+    keybinds = {
+        sets = {},
+        nextSetId = 0,
+    },
     equipment = {
         sets = {},
         nextSetId = 0,
@@ -79,6 +83,7 @@ local DEFAULTS = {
     listFilters = {
         talents = {},
         actionbars = {},
+        keybinds = {},
         equipment = {},
         pvptalents = {},
         cooldownmanager = {},
@@ -92,6 +97,7 @@ local DEFAULTS = {
     listCollapsed = {
         talents = {},
         actionbars = {},
+        keybinds = {},
         equipment = {},
         pvptalents = {},
         cooldownmanager = {},
@@ -196,6 +202,19 @@ function LPL.DB:GetActionBars()
         MergeDefaults(self.data.actionBars, DEFAULTS.actionBars)
     end
     return self.data.actionBars
+end
+
+function LPL.DB:GetKeybinds()
+    self:SyncFromGlobal()
+    if not self.data then
+        self:Initialize()
+    end
+    if type(self.data.keybinds) ~= "table" then
+        self.data.keybinds = DeepCopy(DEFAULTS.keybinds)
+    else
+        MergeDefaults(self.data.keybinds, DEFAULTS.keybinds)
+    end
+    return self.data.keybinds
 end
 
 function LPL.DB:GetEquipment()

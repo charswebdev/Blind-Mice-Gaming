@@ -153,7 +153,8 @@ local function NormalizeUtilitySpellID(spellID)
     if UTILITY_SPELL_IDS[base] then
         return base
     end
-    return base
+    -- Talent replacements (e.g. Blessing of Spellwarding) must keep their live id.
+    return spellID
 end
 
 local function CanPickupSpellByID(spellID)
@@ -250,6 +251,19 @@ local function GetMacroByText(macroText)
     return nil
 end
 
+local function MacroCreateIcon(icon)
+    if icon == nil or icon == false or icon == 0 or icon == 134400 then
+        return "INV_MISC_QUESTIONMARK"
+    end
+    if type(icon) == "string" then
+        local lower = icon:lower()
+        if lower == "" or lower:find("inv_misc_questionmark", 1, true) then
+            return "INV_MISC_QUESTIONMARK"
+        end
+    end
+    return icon
+end
+
 local function CreateMissingMacro(tbl)
     local macroText = Trim(tbl.macroText)
     if macroText == "" then
@@ -259,13 +273,14 @@ local function CreateMissingMacro(tbl)
     if not CreateMacro then
         return nil
     end
+    local icon = MacroCreateIcon(tbl.icon)
     local numGlobal = GetNumMacros and select(1, GetNumMacros()) or 0
     if numGlobal < (MAX_ACCOUNT_MACROS or 120) then
-        return CreateMacro(name, "INV_Misc_QuestionMark", macroText, false)
+        return CreateMacro(name, icon, macroText, false)
     end
     local _, numChar = GetNumMacros()
     if numChar < (MAX_CHARACTER_MACROS or 12) then
-        return CreateMacro(name, "INV_Misc_QuestionMark", macroText, true)
+        return CreateMacro(name, icon, macroText, true)
     end
     return nil
 end
@@ -584,7 +599,7 @@ local function CompareSlot(slot, tbl)
     end
 
     -- Prefer the authoritative spell id when GetActionInfo is incomplete.
-    if (not actionType or actionType == "spell") and C_ActionBar and C_ActionBar.GetSpell then
+    if (not actionType or not id) and C_ActionBar and C_ActionBar.GetSpell then
         local barSpell = C_ActionBar.GetSpell(slot)
         if barSpell and barSpell > 0 then
             actionType = "spell"
@@ -594,7 +609,7 @@ local function CompareSlot(slot, tbl)
     end
 
     if actionType == "spell" and id then
-        id = NormalizeUtilitySpellID(id) or FindBaseSpellByID(id)
+        id = LPL.ActionBarCodec:ResolveStoredSpellID(id, slot)
     end
 
     if tbl == nil or tbl.type == nil then
@@ -615,7 +630,7 @@ local function CompareSlot(slot, tbl)
 
     local targetId = tbl.id
     if tbl.type == "spell" and targetId then
-        targetId = NormalizeUtilitySpellID(targetId) or FindBaseSpellByID(targetId)
+        targetId = LPL.ActionBarCodec:ResolveStoredSpellID(targetId)
     end
 
     if tbl.type == "spell" and actionType == "spell" then
@@ -743,7 +758,7 @@ end
 
 local function PickupSpellFromBook(spellID, subType, test)
     local rawID = tonumber(spellID)
-    local storedID = NormalizeUtilitySpellID(spellID) or FindBaseSpellByID(spellID) or spellID
+    local storedID = NormalizeUtilitySpellID(spellID) or spellID
     if IsSkyridingSpellID(rawID) then
         local base = FindBaseSpellByID(rawID) or rawID
         spellID = SKYRIDING_SPELL_IDS[base] and base or rawID
@@ -901,13 +916,14 @@ local function PickupActionTable(tbl, test, activating)
             end
         elseif tbl.type == "spell" then
             local rawID = tonumber(tbl.id)
+            local pickupID = rawID
             if IsSkyridingSpellID(rawID) then
                 local base = FindBaseSpellByID(rawID) or rawID
-                tbl.id = SKYRIDING_SPELL_IDS[base] and base or rawID
+                pickupID = SKYRIDING_SPELL_IDS[base] and base or rawID
             else
-                tbl.id = NormalizeUtilitySpellID(tbl.id) or FindBaseSpellByID(tbl.id) or tbl.id
+                pickupID = NormalizeUtilitySpellID(tbl.id) or rawID
             end
-            if PickupSpellFromBook(tbl.id, tbl.subType, test) then
+            if PickupSpellFromBook(pickupID, tbl.subType, test) then
                 success = true
             else
                 success, msg = false, "Spell not found."

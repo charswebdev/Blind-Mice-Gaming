@@ -100,17 +100,17 @@ function ImportExportModule.create(parent)
     subtitle:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -24, 0)
     subtitle:SetJustifyH("LEFT")
     subtitle:SetTextColor(LPL.Theme:GetColor("textSecondary"))
-    subtitle:SetText("Paste a BtWLoadouts, LightPawsLoadouts, or LPL share string. Full loadouts import all included segments.")
+    subtitle:SetText("Paste a BtWLoadouts, LightPawsLoadouts, or LPL share string. Import creates a loadout and links the imported sets.")
 
     local nameLabel = LPL:CreateLabel(frame, "small")
     nameLabel:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 24, 44)
     nameLabel:SetTextColor(LPL.Theme:GetColor("textLabel"))
-    nameLabel:SetText("Build name")
+    nameLabel:SetText("Loadout name")
 
     local nameBox = LPL:CreateEditBox(nil, frame, 280)
     nameBox:SetPoint("BOTTOMLEFT", nameLabel, "TOPLEFT", 0, -4)
     nameBox:SetHeight(28)
-    nameBox:SetText("Imported Build")
+    nameBox:SetText("Imported Loadout")
 
     local errorLabel = LPL:CreateLabel(frame, "small")
     errorLabel:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 24, 16)
@@ -122,7 +122,7 @@ function ImportExportModule.create(parent)
     local importButton = LPL:CreateButton(nil, frame)
     importButton:SetSize(120, 28)
     importButton:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -24, 16)
-    importButton:SetText("Import Build")
+    importButton:SetText("Import")
 
     local baseLevel = frame:GetFrameLevel() + 10
     local inputArea = CreateCodeInputArea(frame, baseLevel)
@@ -145,6 +145,9 @@ function ImportExportModule.create(parent)
         if importKind == "actionbars" then
             return "Imported Action Bar Set"
         end
+        if importKind == "keybinds" then
+            return "Imported Keybinding Profile"
+        end
         if importKind == "pvptalents" then
             return "Imported PvP Set"
         end
@@ -166,7 +169,7 @@ function ImportExportModule.create(parent)
         if importKind == "addonprofiles" or importKind == "vaultchooser" then
             return "Imported Addon Profile"
         end
-        return "Imported Build"
+        return "Imported Loadout"
     end
 
     local function NormalizeImportName(importKind, name)
@@ -175,6 +178,9 @@ function ImportExportModule.create(parent)
         end
         if importKind == "actionbars" then
             return LPL.ActionBarStore:NormalizeSetName(name, DefaultImportName(importKind))
+        end
+        if importKind == "keybinds" then
+            return LPL.KeybindStore:NormalizeSetName(name, DefaultImportName(importKind))
         end
         if importKind == "pvptalents" then
             return LPL.PvpTalentStore:NormalizeSetName(name, DefaultImportName(importKind))
@@ -252,6 +258,9 @@ function ImportExportModule.create(parent)
             if rawSource.type == "actionbars" or rawSource.type == "lplactionbars" then
                 return "actionbars"
             end
+            if rawSource.type == "keybinds" then
+                return "keybinds"
+            end
             if rawSource.type == "pvptalents" then
                 return "pvptalents"
             end
@@ -287,6 +296,9 @@ function ImportExportModule.create(parent)
         end
         if LPL.ActionBarShare:ValidateImportString(text) then
             return "actionbars"
+        end
+        if LPL.KeybindShare and LPL.KeybindShare:ValidateImportString(text) then
+            return "keybinds"
         end
         if LPL.TalentShare:ValidateImportString(text) then
             return "talents"
@@ -344,6 +356,9 @@ function ImportExportModule.create(parent)
         if importKind == "actionbars" then
             return LPL.ActionBarShare:ParseImportString(text)
         end
+        if importKind == "keybinds" then
+            return LPL.KeybindShare:ParseImportString(text)
+        end
         return LPL.TalentShare:ParseImportString(text)
     end
 
@@ -379,6 +394,9 @@ function ImportExportModule.create(parent)
         if importKind == "actionbars" then
             return LPL.ActionBarShare:ValidateImportString(text)
         end
+        if importKind == "keybinds" then
+            return LPL.KeybindShare:ValidateImportString(text)
+        end
         if importKind == "talents" then
             return LPL.TalentShare:ValidateImportString(text)
         end
@@ -389,7 +407,8 @@ function ImportExportModule.create(parent)
         local _, addonSetErr = LPL.AddonSetShare and LPL.AddonSetShare:ValidateImportString(text)
         local _, talentErr = LPL.TalentShare:ValidateImportString(text)
         local _, actionBarErr = LPL.ActionBarShare:ValidateImportString(text)
-        return false, equipmentErr or pvpErr or cdmErr or editErr or addonSetErr or talentErr or actionBarErr or "Invalid share string."
+        local _, keybindErr = LPL.KeybindShare and LPL.KeybindShare:ValidateImportString(text)
+        return false, equipmentErr or pvpErr or cdmErr or editErr or addonSetErr or talentErr or actionBarErr or keybindErr or "Invalid share string."
     end
 
     local function BuildImportPreview(text, importName, importKind)
@@ -418,6 +437,9 @@ function ImportExportModule.create(parent)
         if importKind == "actionbars" then
             return LPL.ActionBarShare:BuildImportPreviewFromText(text, importName)
         end
+        if importKind == "keybinds" then
+            return LPL.KeybindShare:BuildImportPreviewFromText(text, importName)
+        end
         return LPL.TalentShare:BuildImportPreviewFromText(text, importName)
     end
 
@@ -436,9 +458,9 @@ function ImportExportModule.create(parent)
             importButton:SetText("Import…")
             subtitle:SetText("Not a known LPL share string. Import will ask whether to save as a Macro or Addon Profile.")
         else
-            nameLabel:SetText("Build name")
-            importButton:SetText("Import Build")
-            subtitle:SetText("Paste a BtWLoadouts, LightPawsLoadouts, or LPL share string. Full loadouts import all included segments.")
+            nameLabel:SetText("Loadout name")
+            importButton:SetText("Import")
+            subtitle:SetText("Paste a BtWLoadouts, LightPawsLoadouts, or LPL share string. Import creates a loadout and links the imported sets.")
         end
     end
 
@@ -455,6 +477,50 @@ function ImportExportModule.create(parent)
         if module.instance.Refresh then
             module.instance:Refresh()
         end
+    end
+
+    local function SaveLinkedLoadout(loadoutName, segments)
+        if not LPL.LoadoutStore or type(segments) ~= "table" then
+            return nil
+        end
+
+        loadoutName = LPL.LoadoutStore:NormalizeSetName(loadoutName, "Imported Loadout")
+        local data = {
+            name = loadoutName,
+            restrictions = {},
+        }
+        local hasAny = false
+        local defs = LPL.LoadoutStore.SEGMENT_DEFS or {}
+        for _, def in ipairs(defs) do
+            local ids = segments[def.plural]
+            local singular = segments[def.singular]
+            if type(ids) == "table" and #ids > 0 then
+                data[def.plural] = ids
+                data[def.singular] = ids[1]
+                hasAny = true
+            elseif singular then
+                data[def.plural] = { tostring(singular) }
+                data[def.singular] = tostring(singular)
+                hasAny = true
+            end
+        end
+        if not hasAny then
+            return nil
+        end
+
+        local existing = LPL.LoadoutStore:FindByName(loadoutName)
+        local loadout = LPL.LoadoutStore:ApplyImport(data, loadoutName, {
+            loadout = true,
+            existingLoadoutID = existing and existing.id or nil,
+        })
+        if loadout then
+            print(string.format(
+                "|cff33cc33LPL:|r Saved loadout \"%s\" and linked imported sets.",
+                loadout.name or loadoutName
+            ))
+            NavigateToVaultModule("loadouts", loadout.id)
+        end
+        return loadout
     end
 
     local function CommitVaultImport(importKind, text, importName)
@@ -540,6 +606,7 @@ function ImportExportModule.create(parent)
                 if currentName == ""
                     or currentName == "Imported Build"
                     or currentName == "Imported Action Bar Set"
+                    or currentName == "Imported Keybinding Profile"
                     or currentName == "Imported Equipment Set"
                     or currentName == "Imported PvP Set"
                     or currentName == "Imported Edit Mode Layout"
@@ -603,7 +670,7 @@ function ImportExportModule.create(parent)
             importButton:SetText("Import Profile")
             nameBox:SetText("Imported Addon Profile")
         else
-            nameBox:SetText("Imported Build")
+            nameBox:SetText("Imported Loadout")
         end
         nameLabel:Show()
         nameBox:Show()
@@ -701,6 +768,7 @@ function ImportExportModule.create(parent)
 
         LPL.ImportConfirmDialog:Show(preview, function(options)
             options.existingActionBarID = preview.existingActionBarID
+            options.existingKeybindID = preview.existingKeybindID
             options.existingEquipmentID = preview.existingEquipmentID
             options.existingPvpTalentID = preview.existingPvpTalentID
             options.existingCooldownManagerID = preview.existingCooldownManagerID
@@ -713,6 +781,7 @@ function ImportExportModule.create(parent)
                 local build
                 local err
                 local actionBarSet
+                local keybindSet
                 local equipmentSet
                 local pvpSet
                 local cdmSet
@@ -720,6 +789,7 @@ function ImportExportModule.create(parent)
                 local addonSet
                 local talentBuildIDs = {}
                 local actionBarSetIDs = {}
+                local keybindSetIDs = {}
                 local equipmentSetIDs = {}
                 local pvpTalentSetIDs = {}
                 local cooldownManagerSetIDs = {}
@@ -740,7 +810,7 @@ function ImportExportModule.create(parent)
 
                 if options.talents or options.hero then
                     build, err = LPL.TalentShare:ImportString(text, importName, options)
-                    if not build and not options.actionBars and not options.equipment
+                    if not build and not options.actionBars and not options.keybinds and not options.equipment
                         and not options.pvpTalents and not options.cooldownManager and not options.editMode
                         and not options.addonSets then
                         SetError(err or "Import failed.")
@@ -783,6 +853,19 @@ function ImportExportModule.create(parent)
                         actionBarSet = set
                         CollectIDs(actionBarSetIDs, set, all)
                         print(string.format("|cff33cc33LPL:|r Imported action bar set \"%s\".", set.name or path))
+                    end
+                end
+
+                if options.keybinds then
+                    local set, kbErr, all = LPL.KeybindShare:ApplyLoadoutSegments(rawSource, path, options)
+                    if not set and kbErr and not build and not actionBarSet then
+                        SetError(kbErr)
+                        return
+                    end
+                    if set then
+                        keybindSet = set
+                        CollectIDs(keybindSetIDs, set, all)
+                        print(string.format("|cff33cc33LPL:|r Imported keybinding profile \"%s\".", set.name or path))
                     end
                 end
 
@@ -852,50 +935,30 @@ function ImportExportModule.create(parent)
                 end
 
                 if LPL.LoadoutStore then
-                    local loadoutName = path or importName or "Imported Loadout"
-                    local loadoutData = {
-                        name = loadoutName,
-                        talentBuildIDs = talentBuildIDs,
-                        talentBuildID = talentBuildIDs[1],
-                        actionBarSetIDs = actionBarSetIDs,
-                        actionBarSetID = actionBarSetIDs[1],
-                        equipmentSetIDs = equipmentSetIDs,
-                        equipmentSetID = equipmentSetIDs[1],
-                        pvpTalentSetIDs = pvpTalentSetIDs,
-                        pvpTalentSetID = pvpTalentSetIDs[1],
-                        cooldownManagerSetIDs = cooldownManagerSetIDs,
-                        cooldownManagerSetID = cooldownManagerSetIDs[1],
-                        editModeSetIDs = editModeSetIDs,
-                        editModeSetID = editModeSetIDs[1],
-                        addonSetIDs = addonSetIDs,
-                        addonSetID = addonSetIDs[1],
-                        restrictions = {},
-                    }
-                    if build or actionBarSet or equipmentSet or pvpSet or cdmSet or editModeSet or addonSet
+                    local loadoutName = importName or path or "Imported Loadout"
+                    if build or actionBarSet or keybindSet or equipmentSet or pvpSet or cdmSet or editModeSet or addonSet
                         or #talentBuildIDs > 0 or #actionBarSetIDs > 0 then
-                        local loadout = LPL.LoadoutStore:ApplyImport(loadoutData, loadoutName, {
-                            loadout = true,
-                            existingLoadoutID = preview.existingLoadoutID,
+                        SaveLinkedLoadout(loadoutName, {
+                            talentBuildIDs = talentBuildIDs,
+                            talentBuildID = talentBuildIDs[1],
+                            actionBarSetIDs = actionBarSetIDs,
+                            actionBarSetID = actionBarSetIDs[1],
+                            keybindSetIDs = keybindSetIDs,
+                            keybindSetID = keybindSetIDs[1],
+                            equipmentSetIDs = equipmentSetIDs,
+                            equipmentSetID = equipmentSetIDs[1],
+                            pvpTalentSetIDs = pvpTalentSetIDs,
+                            pvpTalentSetID = pvpTalentSetIDs[1],
+                            cooldownManagerSetIDs = cooldownManagerSetIDs,
+                            cooldownManagerSetID = cooldownManagerSetIDs[1],
+                            editModeSetIDs = editModeSetIDs,
+                            editModeSetID = editModeSetIDs[1],
+                            addonSetIDs = addonSetIDs,
+                            addonSetID = addonSetIDs[1],
                         })
-                        if loadout then
-                            print(string.format("|cff33cc33LPL:|r Saved loadout \"%s\" on the Loadouts tab.", loadout.name or loadoutName))
-                        end
+                    elseif LPL.Modules:Get("loadouts") then
+                        LPL.Modules:Activate("loadouts")
                     end
-                end
-
-                if build then
-                    print(string.format("|cff33cc33LPL:|r Imported loadout \"%s\".", build.name or importName))
-                    LPL.Modules:Activate("talents")
-                    local talentsModule = LPL.Modules:Get("talents")
-                    if talentsModule and talentsModule.instance then
-                        talentsModule.instance.selectedBuildID = build.id
-                        if talentsModule.instance.ShowList then
-                            talentsModule.instance:ShowList()
-                        end
-                        talentsModule.instance:Refresh()
-                    end
-                elseif LPL.Modules:Get("loadouts") then
-                    LPL.Modules:Activate("loadouts")
                 end
                 return
             end
@@ -907,15 +970,10 @@ function ImportExportModule.create(parent)
                     return
                 end
                 print(string.format("|cff33cc33LPL:|r Imported equipment set \"%s\".", set.name or importName))
-                LPL.Modules:Activate("equipment")
-                local equipmentModule = LPL.Modules:Get("equipment")
-                if equipmentModule and equipmentModule.instance then
-                    equipmentModule.instance.selectedSetID = set.id
-                    if equipmentModule.instance.ShowList then
-                        equipmentModule.instance:ShowList()
-                    end
-                    equipmentModule.instance:Refresh()
-                end
+                SaveLinkedLoadout(importName, {
+                    equipmentSetIDs = { set.id },
+                    equipmentSetID = set.id,
+                })
                 return
             end
 
@@ -926,15 +984,24 @@ function ImportExportModule.create(parent)
                     return
                 end
                 print(string.format("|cff33cc33LPL:|r Imported action bar set \"%s\".", set.name or importName))
-                LPL.Modules:Activate("actionbars")
-                local actionBarsModule = LPL.Modules:Get("actionbars")
-                if actionBarsModule and actionBarsModule.instance then
-                    actionBarsModule.instance.selectedSetID = set.id
-                    if actionBarsModule.instance.ShowList then
-                        actionBarsModule.instance:ShowList()
-                    end
-                    actionBarsModule.instance:Refresh()
+                SaveLinkedLoadout(importName, {
+                    actionBarSetIDs = { set.id },
+                    actionBarSetID = set.id,
+                })
+                return
+            end
+
+            if preview.importKind == "keybinds" then
+                local set, err = LPL.KeybindShare:ImportString(text, importName, options)
+                if not set then
+                    SetError(err or "Import failed.")
+                    return
                 end
+                print(string.format("|cff33cc33LPL:|r Imported keybinding profile \"%s\".", set.name or importName))
+                SaveLinkedLoadout(importName, {
+                    keybindSetIDs = { set.id },
+                    keybindSetID = set.id,
+                })
                 return
             end
 
@@ -945,6 +1012,10 @@ function ImportExportModule.create(parent)
                     return
                 end
                 print(string.format("|cff33cc33LPL:|r Imported PvP set \"%s\" (saved for PvP tab).", set.name or importName))
+                SaveLinkedLoadout(importName, {
+                    pvpTalentSetIDs = { set.id },
+                    pvpTalentSetID = set.id,
+                })
                 return
             end
 
@@ -955,15 +1026,10 @@ function ImportExportModule.create(parent)
                     return
                 end
                 print(string.format("|cff33cc33LPL:|r Imported Cooldown Manager set \"%s\" (saved for Cooldown Manager tab).", set.name or importName))
-                LPL.Modules:Activate("cooldownmanager")
-                local cdmModule = LPL.Modules:Get("cooldownmanager")
-                if cdmModule and cdmModule.instance then
-                    cdmModule.instance.selectedSetID = set.id
-                    if cdmModule.instance.ShowList then
-                        cdmModule.instance:ShowList()
-                    end
-                    cdmModule.instance:Refresh()
-                end
+                SaveLinkedLoadout(importName, {
+                    cooldownManagerSetIDs = { set.id },
+                    cooldownManagerSetID = set.id,
+                })
                 return
             end
 
@@ -974,6 +1040,10 @@ function ImportExportModule.create(parent)
                     return
                 end
                 print(string.format("|cff33cc33LPL:|r Imported Edit Mode layout \"%s\" (saved for Edit Mode tab).", set.name or importName))
+                SaveLinkedLoadout(importName, {
+                    editModeSetIDs = { set.id },
+                    editModeSetID = set.id,
+                })
                 return
             end
 
@@ -984,26 +1054,24 @@ function ImportExportModule.create(parent)
                     return
                 end
                 print(string.format("|cff33cc33LPL:|r Imported Addon Set \"%s\" (saved for Addon Sets tab).", set.name or importName))
-                LPL.Modules:Activate("addonsets")
-                local addonSetsModule = LPL.Modules:Get("addonsets")
-                if addonSetsModule and addonSetsModule.instance then
-                    local instance = addonSetsModule.instance
-                    instance.selectedSetIDs = { [tostring(set.id)] = true }
-                    instance.selectedSetID = tostring(set.id)
-                    if instance.ShowList then
-                        instance:ShowList()
-                    end
-                    instance:Refresh()
-                end
+                SaveLinkedLoadout(importName, {
+                    addonSetIDs = { set.id },
+                    addonSetID = set.id,
+                })
                 return
             end
 
             local build, err
+            local talentBuildIDs = {}
+            local actionBarSetIDs = {}
             if options.talents or options.hero then
                 build, err = LPL.TalentShare:ImportString(text, importName, options)
                 if not build and not options.actionBars then
                     SetError(err or "Import failed.")
                     return
+                end
+                if build and build.id then
+                    talentBuildIDs[#talentBuildIDs + 1] = build.id
                 end
             end
 
@@ -1015,32 +1083,46 @@ function ImportExportModule.create(parent)
                 end
                 if set then
                     print(string.format("|cff33cc33LPL:|r Imported action bar set \"%s\".", set.name or preview.loadoutPath))
+                    if set.id then
+                        actionBarSetIDs[#actionBarSetIDs + 1] = set.id
+                    end
                 end
             end
 
             if build then
                 print(string.format("|cff33cc33LPL:|r Imported build \"%s\".", build.name or importName))
-                LPL.Modules:Activate("talents")
-                local talentsModule = LPL.Modules:Get("talents")
-                if talentsModule and talentsModule.instance then
-                    talentsModule.instance.selectedBuildID = build.id
-                    if talentsModule.instance.ShowList then
-                        talentsModule.instance:ShowList()
+            end
+
+            local loadout = SaveLinkedLoadout(importName, {
+                talentBuildIDs = talentBuildIDs,
+                talentBuildID = talentBuildIDs[1],
+                actionBarSetIDs = actionBarSetIDs,
+                actionBarSetID = actionBarSetIDs[1],
+            })
+            if not loadout then
+                if build then
+                    LPL.Modules:Activate("talents")
+                    local talentsModule = LPL.Modules:Get("talents")
+                    if talentsModule and talentsModule.instance then
+                        talentsModule.instance.selectedBuildID = build.id
+                        if talentsModule.instance.ShowList then
+                            talentsModule.instance:ShowList()
+                        end
+                        talentsModule.instance:Refresh()
                     end
-                    talentsModule.instance:Refresh()
-                end
-            elseif options.actionBars then
-                LPL.Modules:Activate("actionbars")
-                local actionBarsModule = LPL.Modules:Get("actionbars")
-                if actionBarsModule and actionBarsModule.instance then
-                    local set = LPL.ActionBarStore:FindByName(preview.loadoutPath)
-                    if set then
-                        actionBarsModule.instance.selectedSetID = set.id
+                elseif options.actionBars then
+                    LPL.Modules:Activate("actionbars")
+                    local actionBarsModule = LPL.Modules:Get("actionbars")
+                    if actionBarsModule and actionBarsModule.instance then
+                        local set = LPL.ActionBarStore:FindByName(preview.loadoutPath)
+                        if set then
+                            actionBarsModule.instance.selectedSetID = set.id
+                        end
+                        if actionBarsModule.instance.ShowList then
+                            actionBarsModule.instance:ShowList()
+                        end
+                        actionBarsModule.instance:Refresh()
                     end
-                    if actionBarsModule.instance.ShowList then
-                        actionBarsModule.instance:ShowList()
-                    end
-                    actionBarsModule.instance:Refresh()
                 end
             end
         end)

@@ -33,6 +33,9 @@ function LPL.LoadoutShare:CountSegmentsInPayload(payload)
     if type(payload.actionbars) == "table" and #payload.actionbars > 0 then
         count = count + 1
     end
+    if type(payload.keybinds) == "table" and #payload.keybinds > 0 then
+        count = count + 1
+    end
     if type(payload.equipment) == "table" and #payload.equipment > 0 then
         count = count + 1
     end
@@ -109,6 +112,18 @@ function LPL.LoadoutShare:BuildExportPayload(set, name)
             local actionBar = LPL.ActionBarStore:Get(setID)
             if actionBar then
                 payload.actionbars = AppendSegment(payload.actionbars, StripType(LPL.ActionBarShare:BuildExportPayload(actionBar)))
+            end
+        end
+    end
+
+    if LPL.KeybindShare and LPL.KeybindStore then
+        for _, setID in ipairs(LPL.LoadoutStore:GetSegmentIDs(set, "keybindSetIDs")) do
+            local keybindSet = LPL.KeybindStore:Get(setID)
+            if keybindSet then
+                payload.keybinds = AppendSegment(
+                    payload.keybinds,
+                    StripType(LPL.KeybindShare:BuildExportPayload(keybindSet))
+                )
             end
         end
     end

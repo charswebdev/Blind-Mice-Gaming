@@ -20,43 +20,6 @@ end
 
 local SWITCH_FLIGHT_STYLE = 436854
 
-local SKYRIDING_SPELL_IDS = {
-    [372608] = true, -- Surge Forward
-    [372610] = true, -- Skyward Ascent
-    [361584] = true, -- Whirling Surge
-    [418592] = true, -- Lightning Rush
-    [403092] = true, -- Aerial Halt
-    [425782] = true, -- Second Wind
-}
-
-local function NormalizeFlightStyleSpellID(spellID)
-    spellID = tonumber(spellID)
-    if not spellID then
-        return nil
-    end
-    local base = FindBaseSpellByID(spellID) or spellID
-    if SKYRIDING_SPELL_IDS[spellID] or SKYRIDING_SPELL_IDS[base] then
-        return SKYRIDING_SPELL_IDS[base] and base or spellID
-    end
-    if spellID == SWITCH_FLIGHT_STYLE or base == SWITCH_FLIGHT_STYLE or spellID == 459988 or base == 459988 then
-        return SWITCH_FLIGHT_STYLE
-    end
-    -- Live bar may show the active override; map it back when it overrides Switch Flight Style.
-    if C_Spell and C_Spell.GetOverrideSpell then
-        local ok, override = pcall(C_Spell.GetOverrideSpell, SWITCH_FLIGHT_STYLE)
-        if ok and override and tonumber(override) == spellID then
-            return SWITCH_FLIGHT_STYLE
-        end
-    end
-    if FindSpellOverrideByID then
-        local override = FindSpellOverrideByID(SWITCH_FLIGHT_STYLE)
-        if override and tonumber(override) == spellID then
-            return SWITCH_FLIGHT_STYLE
-        end
-    end
-    return base
-end
-
 local function CompareSlot(slot, tbl)
     local actionType, id, subType = GetActionInfo(slot)
 
@@ -66,7 +29,7 @@ local function CompareSlot(slot, tbl)
         actionType = actionType or "spell"
     end
 
-    if (not actionType or actionType == "spell") and C_ActionBar and C_ActionBar.GetSpell then
+    if (not actionType or not id) and C_ActionBar and C_ActionBar.GetSpell then
         local barSpell = C_ActionBar.GetSpell(slot)
         if barSpell and barSpell > 0 then
             actionType = "spell"
@@ -76,7 +39,7 @@ local function CompareSlot(slot, tbl)
     end
 
     if actionType == "spell" and id then
-        id = NormalizeFlightStyleSpellID(id) or FindBaseSpellByID(id)
+        id = LPL.ActionBarCodec:ResolveStoredSpellID(id, slot)
         if id == 460905 then
             subType = "spell"
         elseif id == SWITCH_FLIGHT_STYLE then
@@ -102,7 +65,7 @@ local function CompareSlot(slot, tbl)
 
     local targetId = tbl.id
     if tbl.type == "spell" and targetId then
-        targetId = NormalizeFlightStyleSpellID(targetId) or FindBaseSpellByID(targetId)
+        targetId = LPL.ActionBarCodec:ResolveStoredSpellID(targetId)
     end
 
     if tbl.type == "spell" and actionType == "spell" then

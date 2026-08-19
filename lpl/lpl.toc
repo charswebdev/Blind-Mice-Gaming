@@ -4,7 +4,7 @@
 ## Category-enUS: Blind Mice Gaming
 ## IconTexture: Interface\AddOns\lpl\icons\lpl_32.blp
 ## Notes: Plan, save, and apply loadouts - talents, gear, bars, PvP, Edit Mode, conditions, macros, and more. |cffffcc00/lpl|r to open.
-## Version: 1.0.0
+## Version: 1.0.3
 ## DefaultState: enabled
 ## OptionalDeps: LibTalentTree-1.0
 ## SavedVariables: LPLDB
@@ -113,6 +113,14 @@ Modules\VaultImportChooser.lua
 Modules\Talents.lua
 Modules\ImportExport.lua
 Modules\ActionBars.lua
+Modules\Keybinds\KeybindCodec.lua
+Modules\Keybinds\KeybindStore.lua
+Modules\Keybinds\KeybindShare.lua
+Modules\Keybinds\KeybindActivate.lua
+Modules\Keybinds\KeybindActive.lua
+Modules\Keybinds\KeybindSetList.lua
+Modules\Keybinds\KeybindEditor.lua
+Modules\Keybinds.lua
 Modules\Equipment.lua
 Modules\PvpTalents.lua
 Modules\CooldownManager.lua

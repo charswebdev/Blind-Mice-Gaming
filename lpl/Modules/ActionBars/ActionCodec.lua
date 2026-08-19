@@ -12,6 +12,19 @@ local function Trim(text)
     return text:match("^%s*(.-)%s*$") or ""
 end
 
+local SWITCH_FLIGHT_STYLE = 436854
+local WARBAND_DISTANCE_INHIBITOR = 460905
+local TELEPORT_HOME = 1233637
+
+local SKYRIDING_SPELL_IDS = {
+    [372608] = true, -- Surge Forward
+    [372610] = true, -- Skyward Ascent
+    [361584] = true, -- Whirling Surge
+    [418592] = true, -- Lightning Rush
+    [403092] = true, -- Aerial Halt
+    [425782] = true, -- Second Wind
+}
+
 local function FindBaseSpellByID(spellID)
     spellID = tonumber(spellID)
     if not spellID then
@@ -24,6 +37,469 @@ local function FindBaseSpellByID(spellID)
         end
     end
     return spellID
+end
+
+local function GetSpellOverrideID(spellID)
+    spellID = tonumber(spellID)
+    if not spellID then
+        return nil
+    end
+    if C_Spell and C_Spell.GetOverrideSpell then
+        local ok, override = pcall(C_Spell.GetOverrideSpell, spellID)
+        if ok and type(override) == "number" and override > 0 then
+            return override
+        end
+    end
+    if FindSpellOverrideByID then
+        local override = FindSpellOverrideByID(spellID)
+        if type(override) == "number" and override > 0 then
+            return override
+        end
+    end
+    return nil
+end
+
+local function GetSpellNameAndIcon(spellID)
+    spellID = tonumber(spellID)
+    if not spellID then
+        return nil, nil
+    end
+    local name, icon
+    if C_Spell and C_Spell.GetSpellInfo then
+        local ok, info = pcall(C_Spell.GetSpellInfo, spellID)
+        if ok and type(info) == "table" then
+            name = info.name
+            icon = info.iconID or info.originalIconID
+        end
+    end
+    if (not icon or icon == 0) and C_Spell and C_Spell.GetSpellTexture then
+        local ok, tex = pcall(C_Spell.GetSpellTexture, spellID)
+        if ok and tex and tex ~= 0 then
+            icon = tex
+        end
+    end
+    if name and icon then
+        return name, icon
+    end
+    if GetSpellInfo then
+        local nameOrInfo, _, legacyIcon = GetSpellInfo(spellID)
+        if type(nameOrInfo) == "table" then
+            return name or nameOrInfo.name, icon or nameOrInfo.iconID or nameOrInfo.originalIconID
+        end
+        return name or nameOrInfo, icon or legacyIcon
+    end
+    return name, icon
+end
+
+-- Collapse only known utility overrides (flight style, skyriding, housing).
+-- Talent replacements such as Blessing of Spellwarding must keep their live spell id.
+local function NormalizeCapturedSpellID(spellID)
+    spellID = tonumber(spellID)
+    if not spellID then
+        return nil
+    end
+    local baseID = FindBaseSpellByID(spellID) or spellID
+    if SKYRIDING_SPELL_IDS[spellID] or SKYRIDING_SPELL_IDS[baseID] then
+        return SKYRIDING_SPELL_IDS[baseID] and baseID or spellID
+    end
+    if spellID == WARBAND_DISTANCE_INHIBITOR or baseID == WARBAND_DISTANCE_INHIBITOR then
+        return WARBAND_DISTANCE_INHIBITOR
+    end
+    if spellID == TELEPORT_HOME or baseID == TELEPORT_HOME then
+        return TELEPORT_HOME
+    end
+    if spellID == SWITCH_FLIGHT_STYLE or baseID == SWITCH_FLIGHT_STYLE or spellID == 459988 or baseID == 459988 then
+        return SWITCH_FLIGHT_STYLE
+    end
+    local flightOverride = GetSpellOverrideID(SWITCH_FLIGHT_STYLE)
+    if flightOverride and flightOverride == spellID then
+        return SWITCH_FLIGHT_STYLE
+    end
+    return spellID
+end
+
+local function IsUtilityStoreSpellID(spellID)
+    spellID = tonumber(spellID)
+    if not spellID then
+        return false
+    end
+    local baseID = FindBaseSpellByID(spellID) or spellID
+    return spellID == SWITCH_FLIGHT_STYLE
+        or baseID == SWITCH_FLIGHT_STYLE
+        or spellID == 459988
+        or baseID == 459988
+        or spellID == WARBAND_DISTANCE_INHIBITOR
+        or baseID == WARBAND_DISTANCE_INHIBITOR
+        or spellID == TELEPORT_HOME
+        or baseID == TELEPORT_HOME
+        or SKYRIDING_SPELL_IDS[spellID] == true
+        or SKYRIDING_SPELL_IDS[baseID] == true
+end
+
+-- When the bar reports a base spell (Blessing of Protection) but the slot shows
+-- the talent replacement (Blessing of Spellwarding), keep the replacement.
+local function PreferDisplayedOverrideSpellID(slot, spellID)
+    spellID = tonumber(spellID)
+    if not spellID or IsUtilityStoreSpellID(spellID) then
+        return spellID
+    end
+
+    local slotTex = GetActionTexture and GetActionTexture(slot)
+    local function IconMatchesSlot(candidate)
+        if not slotTex or slotTex == 0 or not candidate then
+            return false
+        end
+        local _, icon = GetSpellNameAndIcon(candidate)
+        return icon ~= nil and icon == slotTex
+    end
+
+    if C_ActionBar and C_ActionBar.GetSpell then
+        local barSpell = tonumber(C_ActionBar.GetSpell(slot))
+        if barSpell and barSpell > 0 and barSpell ~= spellID and not IsUtilityStoreSpellID(barSpell) then
+            local barBase = FindBaseSpellByID(barSpell) or barSpell
+            local reportedBase = FindBaseSpellByID(spellID) or spellID
+            local sameFamily = barBase == reportedBase or barBase == spellID or reportedBase == barSpell
+            -- Prefer the specific override id (Spellwarding) over the base (Protection).
+            if sameFamily and barSpell ~= barBase then
+                spellID = barSpell
+            elseif IconMatchesSlot(barSpell) and not IconMatchesSlot(spellID) then
+                spellID = barSpell
+            end
+        end
+    end
+
+    local override = GetSpellOverrideID(spellID)
+    if override and override ~= spellID and not IsUtilityStoreSpellID(override) then
+        if IconMatchesSlot(override) and not IconMatchesSlot(spellID) then
+            return override
+        end
+    end
+    return spellID
+end
+
+function LPL.ActionBarCodec:ResolveStoredSpellID(spellID, slot)
+    if slot and C_ActionBar and C_ActionBar.GetSpell then
+        local barSpell = tonumber(C_ActionBar.GetSpell(slot))
+        if barSpell and barSpell > 0 and IsUtilityStoreSpellID(barSpell) then
+            spellID = barSpell
+        end
+    end
+    spellID = NormalizeCapturedSpellID(spellID)
+    if slot then
+        spellID = PreferDisplayedOverrideSpellID(slot, spellID)
+    end
+    return spellID
+end
+
+local function IsSpellBookBank(value)
+    if value == "spell" or value == "pet" or value == "professions" then
+        return true
+    end
+    local banks = Enum and Enum.SpellBookSpellBank
+    if banks then
+        return value == banks.Player or value == banks.Pet
+    end
+    return type(value) == "number" and value >= 0 and value <= 2
+end
+
+local function SpellIDFromBookItem(index, bank)
+    index = tonumber(index)
+    if not index or index < 1 then
+        return nil
+    end
+    if C_SpellBook and C_SpellBook.GetSpellBookItemInfo then
+        local resolvedBank = bank
+        local banks = Enum and Enum.SpellBookSpellBank
+        if banks then
+            if bank == "pet" then
+                resolvedBank = banks.Pet
+            elseif bank == "spell" or bank == "professions" or bank == nil then
+                resolvedBank = banks.Player
+            end
+        end
+        local ok, info = pcall(C_SpellBook.GetSpellBookItemInfo, index, resolvedBank)
+        if ok and type(info) == "table" then
+            return tonumber(info.spellID) or tonumber(info.actionID)
+        end
+    end
+    if GetSpellBookItemInfo then
+        local bookType = (bank == "pet") and "pet" or "spell"
+        local skillType, id = GetSpellBookItemInfo(index, bookType)
+        if (skillType == "SPELL" or skillType == "PETACTION") and tonumber(id) then
+            return tonumber(id)
+        end
+    end
+    return nil
+end
+
+-- GetCursorInfo("spell") is: spellIndex, bookType, spellID, baseSpellID.
+-- Using the first number as a spell id maps General-tab slots onto unrelated
+-- spells (e.g. book index 53 -> Backstab).
+local function ResolveCursorSpell()
+    local cursorType, a2, a3, a4, a5 = GetCursorInfo()
+    if cursorType ~= "spell" then
+        return nil
+    end
+
+    local spellID
+    if type(a4) == "number" and a4 > 0 then
+        spellID = a4
+    elseif IsSpellBookBank(a3) then
+        spellID = SpellIDFromBookItem(a2, a3) or tonumber(a2)
+    else
+        spellID = tonumber(a2)
+    end
+
+    local subType = "spell"
+    if a3 == "pet" or (Enum and Enum.SpellBookSpellBank and a3 == Enum.SpellBookSpellBank.Pet) then
+        subType = "pet"
+    end
+
+    return spellID, subType, tonumber(a5)
+end
+
+local function IsQuestionMarkIcon(icon)
+    if icon == nil or icon == false or icon == 0 then
+        return true
+    end
+    if icon == DEFAULT_ICON then
+        return true
+    end
+    if type(icon) == "string" then
+        local lower = icon:lower()
+        if lower == "" or lower:find("inv_misc_questionmark", 1, true) then
+            return true
+        end
+    end
+    return false
+end
+
+local function PreferResolvedIcon(preferred, fallback)
+    if preferred and not IsQuestionMarkIcon(preferred) then
+        return preferred
+    end
+    if fallback and not IsQuestionMarkIcon(fallback) then
+        return fallback
+    end
+    return preferred or fallback
+end
+
+local function GetItemIconSafe(item)
+    if item == nil or item == "" then
+        return nil
+    end
+    if C_Item and C_Item.GetItemIconByID then
+        local ok, icon = pcall(C_Item.GetItemIconByID, item)
+        if ok and icon and icon ~= 0 then
+            return icon
+        end
+    end
+    if GetItemIcon then
+        local icon = GetItemIcon(item)
+        if icon and icon ~= 0 then
+            return icon
+        end
+    end
+    if GetItemInfoInstant then
+        local icon = select(5, GetItemInfoInstant(item))
+        if icon and icon ~= 0 then
+            return icon
+        end
+    end
+    return nil
+end
+
+local function ParseSecureToken(text)
+    text = Trim(text)
+    if text == "" then
+        return ""
+    end
+    text = text:gsub("%-%-.*$", "")
+    text = Trim(text)
+    if text ~= "" and SecureCmdOptionParse then
+        local ok, parsed = pcall(SecureCmdOptionParse, text)
+        if ok and type(parsed) == "string" then
+            text = Trim(parsed)
+        end
+    end
+    return text
+end
+
+local function FirstMacroActionToken(body)
+    if type(body) ~= "string" or body == "" then
+        return nil
+    end
+
+    local tooltip = body:match("^%s*#showtooltip%s*([^\r\n]*)")
+        or body:match("^%s*#show%s*([^\r\n]*)")
+    tooltip = ParseSecureToken(tooltip or "")
+    if tooltip ~= "" then
+        local first = Trim((tooltip:match("^([^,;]+)") or tooltip))
+        if first ~= "" then
+            return first
+        end
+    end
+
+    for line in body:gmatch("([^\r\n]+)") do
+        local cmd, rest = Trim(line):match("^/(%w+)%s*(.*)$")
+        if cmd then
+            cmd = cmd:lower()
+            rest = ParseSecureToken(rest or "")
+            if cmd == "castsequence" or cmd == "castrandom" or cmd == "userandom" then
+                rest = Trim(rest:gsub("[Rr]eset=[^%s]+%s*", ""))
+            end
+            if (cmd == "cast" or cmd == "use" or cmd == "spell"
+                or cmd == "castsequence" or cmd == "castrandom" or cmd == "userandom")
+                and rest ~= "" then
+                local first = Trim((rest:match("^([^,;]+)") or rest))
+                if first ~= "" then
+                    return first
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local function IconFromActionToken(token)
+    token = Trim(token)
+    if token == "" then
+        return nil
+    end
+
+    local itemID = token:match("^[Ii]tem:(%d+)")
+    if itemID then
+        return GetItemIconSafe(tonumber(itemID))
+    end
+
+    if token:match("^%d+$") then
+        local _, spellIcon = GetSpellNameAndIcon(tonumber(token))
+        if spellIcon and not IsQuestionMarkIcon(spellIcon) then
+            return spellIcon
+        end
+        return GetItemIconSafe(tonumber(token))
+    end
+
+    if C_Spell and C_Spell.GetSpellInfo then
+        local ok, info = pcall(C_Spell.GetSpellInfo, token)
+        if ok and type(info) == "table" then
+            local spellIcon = info.iconID or info.originalIconID
+            if spellIcon and not IsQuestionMarkIcon(spellIcon) then
+                return spellIcon
+            end
+        end
+    end
+    if GetSpellInfo then
+        local nameOrInfo, _, legacyIcon = GetSpellInfo(token)
+        if type(nameOrInfo) == "table" then
+            local spellIcon = nameOrInfo.iconID or nameOrInfo.originalIconID
+            if spellIcon and not IsQuestionMarkIcon(spellIcon) then
+                return spellIcon
+            end
+        elseif legacyIcon and not IsQuestionMarkIcon(legacyIcon) then
+            return legacyIcon
+        end
+    end
+
+    return GetItemIconSafe(token)
+end
+
+local function MacroIndexExists(id)
+    if id == nil or id == false or id == 0 or id == "" then
+        return false
+    end
+    if not GetMacroInfo then
+        return false
+    end
+    local name = GetMacroInfo(id)
+    return type(name) == "string" and name ~= ""
+end
+
+-- GetCursorInfo("macro") is normally the global slot, but extra returns and
+-- names show up the same way spell-book indexes did on the General tab.
+local function ResolveCursorMacroID()
+    local cursorType, a2, a3, a4, a5 = GetCursorInfo()
+    if cursorType ~= "macro" then
+        return nil
+    end
+
+    local candidates = { a2, a3, a4, a5 }
+    for _, cand in ipairs(candidates) do
+        if MacroIndexExists(cand) then
+            return cand
+        end
+    end
+
+    if type(a2) == "string" and a2 ~= "" and GetMacroIndexByName then
+        local index = GetMacroIndexByName(a2)
+        if index and index > 0 then
+            return index
+        end
+    end
+
+    return a2
+end
+
+-- Blizzard bars show GetActionTexture / GetMacroSpell, not the saved macro
+-- icon. Macros that keep the default question mark (#showtooltip) would
+-- otherwise be stored and drawn as INV_Misc_QuestionMark.
+local function ResolveMacroVisual(id, slot)
+    local name, icon, body
+    if id ~= nil and GetMacroInfo then
+        name, icon, body = GetMacroInfo(id)
+    end
+    body = Trim(body or (id ~= nil and GetMacroBody and GetMacroBody(id)) or "")
+
+    local displayIcon = icon
+    if slot and GetActionTexture then
+        displayIcon = PreferResolvedIcon(GetActionTexture(slot), displayIcon)
+    end
+
+    if id ~= nil and GetMacroSpell then
+        local spellID = tonumber(GetMacroSpell(id))
+        if spellID and spellID > 0 then
+            local _, spellIcon = GetSpellNameAndIcon(spellID)
+            displayIcon = PreferResolvedIcon(spellIcon, displayIcon)
+        end
+    end
+
+    if IsQuestionMarkIcon(displayIcon) and id ~= nil and GetMacroItem then
+        local itemName, itemLink = GetMacroItem(id)
+        displayIcon = PreferResolvedIcon(GetItemIconSafe(itemLink or itemName), displayIcon)
+    end
+
+    if IsQuestionMarkIcon(displayIcon) then
+        displayIcon = PreferResolvedIcon(IconFromActionToken(FirstMacroActionToken(body)), displayIcon)
+    end
+
+    return name, displayIcon, body
+end
+
+local function BuildMacroAction(id, slot)
+    if id == nil or id == false or id == 0 then
+        return nil
+    end
+
+    local name, icon, body = ResolveMacroVisual(id, slot)
+    if (not name or name == "") and body == "" then
+        return nil
+    end
+
+    local numericID = tonumber(id)
+    if not numericID and type(id) == "string" and GetMacroIndexByName then
+        numericID = GetMacroIndexByName(id)
+        if numericID == 0 then
+            numericID = nil
+        end
+    end
+
+    return {
+        type = "macro",
+        id = numericID or id,
+        icon = icon,
+        name = name,
+        macroText = body,
+    }
 end
 
 local function CopyAction(action)
@@ -120,20 +596,24 @@ function LPL.ActionBarCodec:GetActionInfoFromSlot(slot)
     end
 
     local actionType, id, subType = GetActionInfo(slot)
-    if not actionType then
-        -- Some utility buttons still expose a spell id via C_ActionBar.
-        if C_ActionBar and C_ActionBar.GetSpell then
-            local barSpell = C_ActionBar.GetSpell(slot)
-            if barSpell and barSpell > 0 then
+    -- General-tab utilities (Switch Flight Style, Warband Bank Distance Inhibitor)
+    -- are more reliably identified by C_ActionBar.GetSpell than GetActionInfo.
+    if C_ActionBar and C_ActionBar.GetSpell then
+        local barSpell = tonumber(C_ActionBar.GetSpell(slot))
+        if barSpell and barSpell > 0 then
+            if not actionType then
                 actionType = "spell"
                 id = barSpell
                 subType = "spell"
-            else
-                return nil
+            elseif actionType == "spell" and IsUtilityStoreSpellID(barSpell) then
+                id = barSpell
+                subType = subType or "spell"
             end
-        else
+        elseif not actionType then
             return nil
         end
+    elseif not actionType then
+        return nil
     end
 
     if subType == "assistedcombat" then
@@ -142,53 +622,12 @@ function LPL.ActionBarCodec:GetActionInfoFromSlot(slot)
         actionType = "spell"
     end
 
-    -- Normalize Warband Bank Distance Inhibitor and Switch Flight Style to stable base ids.
+    -- Normalize only known utility overrides. Talent replacements keep their live spell id.
     if actionType == "spell" and id then
-        local baseID = FindBaseSpellByID(id) or id
-        local skyridingIDs = {
-            [372608] = true, -- Surge Forward
-            [372610] = true, -- Skyward Ascent
-            [361584] = true, -- Whirling Surge
-            [418592] = true, -- Lightning Rush
-            [403092] = true, -- Aerial Halt
-            [425782] = true, -- Second Wind
-        }
-        if skyridingIDs[id] or skyridingIDs[baseID] then
-            id = skyridingIDs[baseID] and baseID or id
-            subType = "spell"
-        elseif baseID == 460905 or id == 460905 then
-            id = 460905
-            subType = "spell"
-        elseif baseID == 436854 or id == 436854 or id == 459988 or baseID == 459988 then
-            id = 436854
-            subType = "spell"
-        else
-            -- Switch Flight Style live override may not report 436854 as GetBaseSpell.
-            if C_Spell and C_Spell.GetOverrideSpell then
-                local ok, override = pcall(C_Spell.GetOverrideSpell, 436854)
-                if ok and override and tonumber(override) == id then
-                    id = 436854
-                    subType = "spell"
-                else
-                    id = baseID
-                end
-            elseif FindSpellOverrideByID and FindSpellOverrideByID(436854) == id then
-                id = 436854
-                subType = "spell"
-            else
-                id = baseID
-            end
-        end
+        id = self:ResolveStoredSpellID(id, slot)
+        subType = subType or "spell"
     elseif actionType == "macro" and id and id ~= 0 then
-        local macroText = Trim(GetMacroBody and GetMacroBody(id) or "")
-        local name, icon = GetMacroInfo and GetMacroInfo(id)
-        return {
-            type = "macro",
-            id = id,
-            icon = icon,
-            name = name,
-            macroText = macroText,
-        }
+        return BuildMacroAction(id, slot)
     elseif actionType == "macro" and (not id or id == 0) then
         return nil
     end
@@ -196,21 +635,10 @@ function LPL.ActionBarCodec:GetActionInfoFromSlot(slot)
     local icon = GetActionTexture and GetActionTexture(slot)
     local name = GetActionText and GetActionText(slot)
     if actionType == "spell" and id then
-        if (not name or name == "") and GetSpellInfo then
-            local spellName, _, spellIcon = GetSpellInfo(id)
-            name = spellName or name
-            icon = icon or spellIcon
-        elseif (not icon or icon == 0) and GetSpellInfo then
-            local _, _, spellIcon = GetSpellInfo(id)
-            icon = icon or spellIcon
-        end
-        if C_Spell and C_Spell.GetSpellInfo then
-            local ok, info = pcall(C_Spell.GetSpellInfo, id)
-            if ok and type(info) == "table" then
-                name = name or info.name
-                icon = icon or info.iconID or info.originalIconID
-            end
-        end
+        local spellName, spellIcon = GetSpellNameAndIcon(id)
+        name = spellName or name
+        -- Prefer the resolved spell's icon so talent replacements are not shown as their base.
+        icon = spellIcon or icon
     end
     return {
         type = actionType,
@@ -356,41 +784,26 @@ function LPL.ActionBarCodec:BuildActionTableFromCursor()
             name = name,
         }
     elseif cursorType == "spell" then
-        local rawId, subType = a2, a3 or "spell"
-        local dragName, _, dragIcon
-        if GetSpellInfo then
-            dragName, _, dragIcon = GetSpellInfo(rawId)
+        local rawId, subType, baseSpellID = ResolveCursorSpell()
+        if not rawId then
+            return nil
         end
-        if (not dragName or not dragIcon) and C_Spell and C_Spell.GetSpellInfo then
-            local ok, info = pcall(C_Spell.GetSpellInfo, rawId)
-            if ok and type(info) == "table" then
-                dragName = dragName or info.name
-                dragIcon = dragIcon or info.iconID or info.originalIconID
+        local dragName, dragIcon = GetSpellNameAndIcon(rawId)
+        local id = NormalizeCapturedSpellID(rawId) or rawId
+        if baseSpellID then
+            local baseNorm = NormalizeCapturedSpellID(baseSpellID)
+            if baseNorm and IsUtilityStoreSpellID(baseNorm) then
+                id = baseNorm
             end
         end
-        local id = FindBaseSpellByID(rawId) or rawId
-        if id == 436854 or rawId == 436854 or rawId == 459988 or id == 459988 then
-            id = 436854
+        if id == SWITCH_FLIGHT_STYLE or id == WARBAND_DISTANCE_INHIBITOR or id == TELEPORT_HOME then
             subType = "spell"
-        elseif C_Spell and C_Spell.GetOverrideSpell then
-            local ok, override = pcall(C_Spell.GetOverrideSpell, 436854)
-            if ok and override and tonumber(override) == tonumber(rawId) then
-                id = 436854
-                subType = "spell"
-            end
         end
-        local name, _, icon = GetSpellInfo and GetSpellInfo(id)
-        if (not name or not icon) and C_Spell and C_Spell.GetSpellInfo then
-            local ok, info = pcall(C_Spell.GetSpellInfo, id)
-            if ok and type(info) == "table" then
-                name = name or info.name
-                icon = icon or info.iconID or info.originalIconID
-            end
-        end
+        local name, icon = GetSpellNameAndIcon(id)
         return {
             type = "spell",
             id = id,
-            subType = subType,
+            subType = subType or "spell",
             icon = icon or dragIcon,
             name = name or dragName,
         }
@@ -403,10 +816,7 @@ function LPL.ActionBarCodec:BuildActionTableFromCursor()
         end
         return { type = "equipmentset", id = id, icon = icon, name = name }
     elseif cursorType == "macro" then
-        local id = a2
-        local macroText = Trim(GetMacroBody and GetMacroBody(id) or "")
-        local name, icon = GetMacroInfo and GetMacroInfo(id)
-        return { type = "macro", id = id, icon = icon, name = name, macroText = macroText }
+        return BuildMacroAction(ResolveCursorMacroID() or a2)
     elseif cursorType == "flyout" then
         return { type = "flyout", id = a2, icon = a3 }
     elseif cursorType == "item" then
@@ -584,25 +994,32 @@ function LPL.ActionBarCodec:ResolveActionDisplay(action, ignored)
         end
     elseif action.type == "spell" or action.type == "petspell" then
         local spellID = action.id or action.spellID
-        if GetSpellInfo then
-            local spellName, _, spellIcon = GetSpellInfo(spellID)
-            name = name or spellName
-            icon = icon or spellIcon
-        end
-        if (not name or not icon) and C_Spell and C_Spell.GetSpellInfo then
-            local ok, info = pcall(C_Spell.GetSpellInfo, spellID)
-            if ok and type(info) == "table" then
-                name = name or info.name
-                icon = icon or info.iconID or info.originalIconID
-            end
-        end
+        local spellName, spellIcon = GetSpellNameAndIcon(spellID)
+        name = spellName or name
+        icon = spellIcon or icon
     elseif action.type == "macro" then
         local index = FindMacroIndexByText(action.macroText)
-        if index and GetMacroInfo then
-            name, icon = GetMacroInfo(index)
-        elseif not ignored then
-            errorText = "Macro missing"
+        if not index and action.name and GetMacroIndexByName then
+            local byName = GetMacroIndexByName(action.name)
+            if byName and byName > 0 then
+                index = byName
+            end
+        end
+        if not index and action.id and MacroIndexExists(action.id) then
+            index = action.id
+        end
+        if index then
+            local liveName, liveIcon = ResolveMacroVisual(index)
+            name = liveName or name or action.name or "Macro"
+            icon = PreferResolvedIcon(liveIcon, icon)
+        else
             name = name or action.name or "Macro"
+            if IsQuestionMarkIcon(icon) then
+                icon = PreferResolvedIcon(IconFromActionToken(FirstMacroActionToken(action.macroText)), icon)
+            end
+            if not ignored then
+                errorText = "Macro missing"
+            end
         end
     elseif action.type == "summonmount" then
         if action.id == 0xFFFFFFF then

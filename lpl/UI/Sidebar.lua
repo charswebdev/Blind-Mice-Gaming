@@ -46,6 +46,14 @@ local TAB_DEFINITIONS = {
         bottom = false,
     },
     {
+        id = "keybinds",
+        label = "Keybinding Profiles",
+        description = "Save and activate account-wide or character keybinding profiles.",
+        iconStem = "keybinds_64",
+        order = 45,
+        bottom = false,
+    },
+    {
         id = "equipment",
         label = "Equipment",
         description = "Manage gear sets and tie them to your loadouts.",

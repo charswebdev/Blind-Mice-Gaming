@@ -9,6 +9,7 @@ local DELETE_DIALOG = "LPL_CONFIRM_DELETE_LOADOUT"
 local SEGMENT_DEFS = {
     { singular = "talentBuildID", plural = "talentBuildIDs", label = "Talents" },
     { singular = "actionBarSetID", plural = "actionBarSetIDs", label = "Action Bars" },
+    { singular = "keybindSetID", plural = "keybindSetIDs", label = "Keybinds" },
     { singular = "equipmentSetID", plural = "equipmentSetIDs", label = "Equipment" },
     { singular = "pvpTalentSetID", plural = "pvpTalentSetIDs", label = "PvP" },
     { singular = "cooldownManagerSetID", plural = "cooldownManagerSetIDs", label = "Cooldown Manager" },
