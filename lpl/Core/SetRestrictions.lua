@@ -92,6 +92,17 @@ local function ClassRestrictionMatches(classBucket, classFile, classID)
     if classFile and classBucket[classFile] then
         return true
     end
+    if type(classFile) == "string" then
+        local upper = classFile:upper()
+        if classBucket[upper] then
+            return true
+        end
+        for key in pairs(classBucket) do
+            if type(key) == "string" and key:upper() == upper then
+                return true
+            end
+        end
+    end
     if classID then
         if classBucket[classID] then
             return true

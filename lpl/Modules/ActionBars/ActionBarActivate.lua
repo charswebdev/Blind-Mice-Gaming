@@ -1250,7 +1250,9 @@ local function ApplySetData(setData, setName)
     end
 
     if LPL.SetRestrictions and not LPL.SetRestrictions:AreValidForPlayer(setData.restrictions) then
-        return Fail("This set is restricted to another character, class, or specialization.")
+        local summary = LPL.SetRestrictions:GetSummaryLine(setData.restrictions)
+            or "another character, class, or specialization"
+        return Fail("This set is restricted to " .. summary .. ".")
     end
 
     local complete = true

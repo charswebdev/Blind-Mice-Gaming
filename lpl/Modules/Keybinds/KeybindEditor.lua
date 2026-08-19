@@ -70,8 +70,9 @@ local function AttachKeepHoverTooltip(button, title, body)
 end
 
 function LPL.KeybindEditor:Create(parent)
-    local frame = CreateFrame("Frame", nil, parent)
+    local frame = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     frame:SetAllPoints(parent)
+    LPL.Theme:ApplyBackdrop(frame, "panel", "bgPrimary", "border")
     frame.draft = nil
     frame.searchText = ""
     frame.boundOnly = false
@@ -80,21 +81,27 @@ function LPL.KeybindEditor:Create(parent)
     frame.filtered = {}
     frame.listening = nil
 
+    local footerHeight = LPL.TalentActionBar and LPL.TalentActionBar.TREE_HEIGHT or 84
+
     local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, -16)
+    title:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, -12)
     title:SetText("Keybinding Profile")
     title:SetTextColor(LPL.Theme:GetColor("textBright"))
 
     local status = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    status:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
-    status:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -20, -8)
+    status:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -4)
+    status:SetPoint("RIGHT", frame, "RIGHT", -20, 0)
     status:SetJustifyH("LEFT")
-    status:SetWordWrap(true)
+    status:SetJustifyV("TOP")
+    status:SetWordWrap(false)
+    if status.SetMaxLines then
+        status:SetMaxLines(1)
+    end
     status:SetTextColor(LPL.Theme:GetColor("textSecondary"))
     frame.statusLabel = status
 
     local scopeLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    scopeLabel:SetPoint("TOPLEFT", status, "BOTTOMLEFT", 0, -14)
+    scopeLabel:SetPoint("TOPLEFT", status, "BOTTOMLEFT", 0, -10)
     scopeLabel:SetText("Scope")
     scopeLabel:SetTextColor(LPL.Theme:GetColor("textLabel"))
 
@@ -145,16 +152,18 @@ function LPL.KeybindEditor:Create(parent)
     hint:SetPoint("LEFT", collapseAll, "RIGHT", 12, 0)
     hint:SetPoint("RIGHT", frame, "RIGHT", -20, 0)
     hint:SetJustifyH("LEFT")
+    hint:SetJustifyV("MIDDLE")
+    hint:SetWordWrap(false)
+    if hint.SetMaxLines then
+        hint:SetMaxLines(1)
+    end
     hint:SetTextColor(LPL.Theme:GetColor("textMuted"))
-    hint:SetText("Categories start collapsed. Click a header to expand, then click a key slot and press a key, mouse button, or mouse wheel. Right-click or Esc clears. Live binds do not change until Activate.")
+    hint:SetText("Categories start collapsed. Click a header to expand, then click a key slot and press a key. Right-click or Esc clears. Activate to apply.")
 
     local listHost = CreateFrame("Frame", nil, frame, "BackdropTemplate")
-    listHost:SetPoint("TOPLEFT", expandAll, "BOTTOMLEFT", 0, -10)
-    listHost:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -20, 16)
-    LPL.Theme:ApplyBackdrop(listHost, "panel", "bgPrimary", "border")
-    if listHost.SetBackdropColor then
-        listHost:SetBackdropColor(0, 0, 0, 1)
-    end
+    listHost:SetPoint("TOPLEFT", expandAll, "BOTTOMLEFT", 0, -8)
+    listHost:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -20, footerHeight + 8)
+    LPL.Theme:ApplyBackdrop(listHost, "panel", "actionBarSlotBg", "border")
 
     local scroll = CreateFrame("ScrollFrame", nil, listHost, "UIPanelScrollFrameTemplate")
     scroll:SetPoint("TOPLEFT", listHost, "TOPLEFT", 8, -8)

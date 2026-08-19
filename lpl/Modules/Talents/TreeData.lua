@@ -77,9 +77,28 @@ end
 
 function LPL.TalentTree:GetSpecsForClass(classID)
     local specs = {}
-    local numSpecs = GetNumSpecializationsForClassID(classID) or 0
+    local numSpecs = 0
+    if C_SpecializationInfo and C_SpecializationInfo.GetNumSpecializationsForClassID then
+        numSpecs = C_SpecializationInfo.GetNumSpecializationsForClassID(classID) or 0
+    elseif GetNumSpecializationsForClassID then
+        numSpecs = GetNumSpecializationsForClassID(classID) or 0
+    end
+
+    local getInfo = GetSpecializationInfoForClassID
+    if C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfoForClassID then
+        getInfo = C_SpecializationInfo.GetSpecializationInfoForClassID
+    end
+    if not getInfo then
+        return specs
+    end
+
     for specIndex = 1, numSpecs do
-        local specID, specName = GetSpecializationInfoForClassID(classID, specIndex)
+        local specID, specName = getInfo(classID, specIndex)
+        if type(specID) == "table" then
+            specName = specID.name or specName
+            specID = specID.specID or specID.id
+        end
+        specID = tonumber(specID)
         if specID then
             specs[#specs + 1] = {
                 id = specID,
@@ -923,26 +942,19 @@ end
 
 function LPL.TalentTree:GetPlayerIdentity()
     local classID = self:GetDefaultClassID()
-    local specID = nil
-
-    if C_SpecializationInfo and C_SpecializationInfo.GetSpecialization then
-        local specIndex = C_SpecializationInfo.GetSpecialization()
-        if specIndex and specIndex > 0 and C_SpecializationInfo.GetSpecializationInfo then
-            specID = C_SpecializationInfo.GetSpecializationInfo(specIndex)
-        end
-    end
-
-    if not specID and GetSpecialization then
-        local specIndex = GetSpecialization()
-        if specIndex and specIndex > 0 and GetSpecializationInfo then
-            specID = select(1, GetSpecializationInfo(specIndex))
-        end
-    end
-
+    local specID = LPL.Character and LPL.Character.GetSpecID and LPL.Character:GetSpecID()
     return classID, specID
 end
 
 function LPL.TalentTree:GetPlayerActiveSubTreeID(specID, configID)
+    specID = tonumber(specID)
+    if not specID and LPL.Character and LPL.Character.GetSpecID then
+        specID = LPL.Character:GetSpecID()
+    end
+    if not configID and C_ClassTalents and C_ClassTalents.GetActiveConfigID then
+        configID = C_ClassTalents.GetActiveConfigID()
+    end
+
     local lib = GetLib()
     if not lib or not specID or not configID or not C_Traits or not C_Traits.GetNodeInfo then
         return nil

@@ -86,10 +86,28 @@ local function GetPlayerSpecID()
 end
 
 local function GetSpecIndexForSpecID(specID)
+    specID = tonumber(specID)
+    if not specID then
+        return nil
+    end
+
+    local function InfoID(index)
+        if C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo then
+            local result = C_SpecializationInfo.GetSpecializationInfo(index)
+            if type(result) == "table" then
+                return tonumber(result.specID or result.id)
+            end
+            return tonumber(result)
+        end
+        if GetSpecializationInfo then
+            return tonumber(select(1, GetSpecializationInfo(index)))
+        end
+        return nil
+    end
+
     if C_SpecializationInfo and C_SpecializationInfo.GetNumSpecializations then
         for index = 1, C_SpecializationInfo.GetNumSpecializations() do
-            local id = C_SpecializationInfo.GetSpecializationInfo(index)
-            if id == specID then
+            if InfoID(index) == specID then
                 return index
             end
         end
@@ -97,8 +115,7 @@ local function GetSpecIndexForSpecID(specID)
 
     if GetNumSpecializations then
         for index = 1, GetNumSpecializations() do
-            local id = select(1, GetSpecializationInfo(index))
-            if id == specID then
+            if InfoID(index) == specID then
                 return index
             end
         end
@@ -373,7 +390,9 @@ function LPL.TalentActivate:ApplyBuildNow(build)
     end
 
     if LPL.SetRestrictions and not LPL.SetRestrictions:AreValidForPlayer(build.restrictions) then
-        return Fail("This build is restricted to another character, class, or specialization.")
+        local summary = LPL.SetRestrictions:GetSummaryLine(build.restrictions)
+            or "another character, class, or specialization"
+        return Fail("This build is restricted to " .. summary .. ".")
     end
 
     if not EnsureTalentAPIs() then

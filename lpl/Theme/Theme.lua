@@ -273,10 +273,7 @@ function LPL.Theme:ApplyBackdrop(frame, backdropKey, bgColorKey, borderColorKey)
         frame:SetBackdrop(backdropInfo)
         frame:SetBackdropColor(r, g, b, a)
         frame:SetBackdropBorderColor(br, bg, bb, ba)
-        return
-    end
-
-    if frame.ApplyBackdrop then
+    elseif frame.ApplyBackdrop then
         frame.backdropInfo = backdropInfo
         frame:ApplyBackdrop()
         if frame.SetBackdropColor then
@@ -285,10 +282,13 @@ function LPL.Theme:ApplyBackdrop(frame, backdropKey, bgColorKey, borderColorKey)
         if frame.SetBackdropBorderColor then
             frame:SetBackdropBorderColor(br, bg, bb, ba)
         end
-        return
     end
 
-    self:ApplyFlatBackground(frame, bgColorKey, borderColorKey)
+    -- Panel chrome must keep a color-texture fill. SetBackdrop can succeed
+    -- without drawing, which leaves titles and footers floating on the world.
+    if backdropKey == "panel" or (not frame.SetBackdrop and not frame.ApplyBackdrop) then
+        self:ApplyFlatBackground(frame, bgColorKey, borderColorKey)
+    end
 end
 
 function LPL.Theme:ClearBackdrop(frame)

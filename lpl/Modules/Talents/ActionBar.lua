@@ -2,7 +2,7 @@ local addonName, LPL = ...
 
 LPL.TalentActionBar = {
     LIST_HEIGHT = 44,
-    TREE_HEIGHT = 80,
+    TREE_HEIGHT = 84,
     HEIGHT = 44,
     LIST_MARGIN = 12,
     LIST_MIN_GAP = 8,
@@ -26,6 +26,9 @@ function LPL.TalentActionBar:Create(parent, handlers, options)
     bar:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
     bar:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
     bar:SetFrameLevel(parent:GetFrameLevel() + 20)
+    if bar.SetClipsChildren then
+        bar:SetClipsChildren(true)
+    end
     LPL.Theme:ApplyBackdrop(bar, "panel", "titleBar", "border")
 
     bar.treeCanDelete = false
@@ -290,6 +293,10 @@ function LPL.TalentActionBar:Create(parent, handlers, options)
 
         local barWidth = self:GetWidth()
         if barWidth < 1 then
+            local host = self:GetParent()
+            barWidth = host and host:GetWidth() or 0
+        end
+        if barWidth < 1 then
             return
         end
 
@@ -298,7 +305,10 @@ function LPL.TalentActionBar:Create(parent, handlers, options)
         local buttonRowInset = LPL.TalentActionBar.TREE_BUTTON_ROW_INSET
         local nameRowHeight = 28
         local nameRowTop = -nameRowInset
-        local labelHeight = nameLabel:GetStringHeight() or 11
+        local labelHeight = nameLabel:GetStringHeight()
+        if not labelHeight or labelHeight < 1 then
+            labelHeight = 11
+        end
         local labelTop = nameRowTop - math.floor((nameRowHeight - labelHeight) / 2)
 
         nameLabel:ClearAllPoints()
@@ -391,6 +401,9 @@ function LPL.TalentActionBar:Create(parent, handlers, options)
         self.listEmpty = listEmpty
 
         if mode == "tree" then
+            self:ClearAllPoints()
+            self:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
+            self:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
             self:SetHeight(LPL.TalentActionBar.TREE_HEIGHT)
             self:Show()
             backButton:Show()

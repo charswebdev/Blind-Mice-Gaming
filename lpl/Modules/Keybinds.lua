@@ -87,7 +87,9 @@ local function UpdateListViewLayout(frame, hasSets)
 end
 
 local function UpdateEditorViewLayout(frame)
-    frame.editorView:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, LPL.TalentActionBar.TREE_HEIGHT)
+    frame.editorView:ClearAllPoints()
+    frame.editorView:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+    frame.editorView:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
 end
 
 local function SelectSet(frame, setID)
@@ -139,6 +141,7 @@ local function ShowEditorView(frame, setID, isNew)
     frame.editorView:Show()
     UpdateEditorViewLayout(frame)
     BuildEditor(frame)
+    frame.actionBar:SetFrameLevel(frame:GetFrameLevel() + 20)
     frame.actionBar:SetMode("tree")
     frame.actionBar:SetBuildName(frame.draftSet.name or LPL.KeybindStore:SuggestSetName())
     frame.actionBar:UpdateTreeActions(frame.activeSetID ~= nil, true)
@@ -289,7 +292,7 @@ function KeybindsModule.create(parent)
 
     local editorView = CreateFrame("Frame", nil, frame)
     editorView:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
-    editorView:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, LPL.TalentActionBar.TREE_HEIGHT)
+    editorView:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
     editorView:SetFrameLevel(frame:GetFrameLevel() + 1)
     editorView:EnableMouse(false)
     editorView:Hide()
