@@ -361,16 +361,100 @@ local function AppendPlainPart(parts, value)
     end
 end
 
+local function GetSpellNameByID(spellID)
+    spellID = tonumber(spellID)
+    if not spellID or spellID < 1 then
+        return nil
+    end
+    if C_Spell and C_Spell.GetSpellName then
+        local name = LPL:PlainString(C_Spell.GetSpellName(spellID))
+        if name then
+            return name
+        end
+    end
+    if GetSpellInfo then
+        return LPL:PlainString(GetSpellInfo(spellID))
+    end
+    return nil
+end
+
+-- Matches Blizzard TalentUtil.GetTalentName / TalentDisplayMixin:GetName.
+function LPL.TalentTree:GetEntryTalentName(entryID)
+    entryID = tonumber(entryID)
+    if not entryID then
+        return nil
+    end
+
+    local configID = VIEW_CONFIG_ID or -3
+    local lib = GetLib()
+    local entryInfo = C_Traits.GetEntryInfo(configID, entryID) or (lib and lib:GetEntryInfo(entryID))
+    if not entryInfo then
+        return nil
+    end
+
+    if entryInfo.subTreeID then
+        local subTreeInfo = lib and lib:GetSubTreeInfo(entryInfo.subTreeID)
+        local subTreeName = LPL:PlainString(subTreeInfo and subTreeInfo.name)
+        if subTreeName then
+            return subTreeName
+        end
+    end
+
+    if not entryInfo.definitionID then
+        return nil
+    end
+
+    local defInfo = C_Traits.GetDefinitionInfo(entryInfo.definitionID)
+    if not defInfo then
+        return nil
+    end
+
+    local overrideName = LPL:PlainString(defInfo.overrideName)
+    if overrideName then
+        return overrideName
+    end
+
+    return GetSpellNameByID(defInfo.spellID)
+end
+
+local function SetTooltipTitle(tooltip, name)
+    if not tooltip or not name then
+        return
+    end
+    if GameTooltip_SetTitle then
+        GameTooltip_SetTitle(tooltip, name)
+        return
+    end
+    local r, g, b = LPL:GetTooltipColor("title")
+    tooltip:SetText(name, r, g, b)
+end
+
+local function AddTooltipBlankLine(tooltip)
+    if not tooltip then
+        return
+    end
+    if GameTooltip_AddBlankLineToTooltip then
+        GameTooltip_AddBlankLineToTooltip(tooltip)
+    else
+        tooltip:AddLine(" ")
+    end
+end
+
 function LPL.TalentTree:BuildTraitEntryPlainText(entryID, rank, nodeInfo, liveInfo, includeSupplemental)
     includeSupplemental = includeSupplemental ~= false
     local parts = {}
+    local talentName = self:GetEntryTalentName(entryID)
+    AppendPlainPart(parts, talentName)
 
     if entryID and C_TooltipInfo and C_TooltipInfo.GetTraitEntry then
         local data = C_TooltipInfo.GetTraitEntry(entryID, rank or 1)
         SurfaceTooltipData(data)
         if data and data.lines then
             for _, line in ipairs(data.lines) do
-                AppendPlainPart(parts, line.leftText)
+                local left = LPL:PlainString(line.leftText)
+                if not (talentName and left == talentName) then
+                    AppendPlainPart(parts, line.leftText)
+                end
                 AppendPlainPart(parts, line.rightText)
             end
         end
@@ -406,6 +490,29 @@ function LPL.TalentTree:BuildTraitEntryPlainText(entryID, rank, nodeInfo, liveIn
     return table.concat(parts, " ")
 end
 
+local function AppendTraitEntryBody(tooltip, entryID, rank, talentName)
+    if tooltip.AppendInfo then
+        local ok = pcall(tooltip.AppendInfo, tooltip, "GetTraitEntry", entryID, rank)
+        if ok then
+            return true
+        end
+    end
+
+    if C_TooltipInfo and C_TooltipInfo.GetTraitEntry then
+        local data = C_TooltipInfo.GetTraitEntry(entryID, rank)
+        if data and data.lines then
+            SurfaceTooltipData(data)
+            local first = data.lines[1]
+            local firstText = first and LPL:PlainString(first.leftText)
+            local skipHeader = talentName and firstText and firstText == talentName
+            LPL.TalentTree:AddPlainTooltipDataLines(tooltip, data, skipHeader)
+            return true
+        end
+    end
+
+    return false
+end
+
 local function ApplyTraitEntryTooltip(owner, entryID, rank, nodeInfo, liveInfo)
     if not owner or not entryID or not GameTooltip then
         return false
@@ -413,28 +520,20 @@ local function ApplyTraitEntryTooltip(owner, entryID, rank, nodeInfo, liveInfo)
 
     rank = rank or 1
     GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
-
-    local shown = false
-    if GameTooltip.SetTraitEntry then
-        local ok, result = pcall(GameTooltip.SetTraitEntry, GameTooltip, entryID, rank)
-        shown = ok and result
+    if LPL.ResetGameTooltipContent then
+        LPL:ResetGameTooltipContent(GameTooltip)
+    elseif GameTooltip.ClearLines then
+        GameTooltip:ClearLines()
     end
 
-    if not shown and GameTooltip.ProcessInfo and C_TooltipInfo and C_TooltipInfo.GetTraitEntry then
-        local info
-        if CreateBaseTooltipInfo then
-            info = CreateBaseTooltipInfo("GetTraitEntry", entryID, rank)
-        else
-            info = {
-                getterName = "GetTraitEntry",
-                getterArgs = { entryID, rank, n = 2 },
-            }
-        end
-        local ok, result = pcall(GameTooltip.ProcessInfo, GameTooltip, info)
-        shown = ok and result
+    local talentName = LPL.TalentTree:GetEntryTalentName(entryID)
+    if talentName then
+        SetTooltipTitle(GameTooltip, talentName)
+        AddTooltipBlankLine(GameTooltip)
     end
 
-    if not shown then
+    local shown = AppendTraitEntryBody(GameTooltip, entryID, rank, talentName)
+    if not shown and not talentName then
         local plainOnly = LPL.TalentTree:BuildTraitEntryPlainText(entryID, rank, nodeInfo, liveInfo, true)
         if not plainOnly then
             return false
@@ -802,18 +901,9 @@ function LPL.TalentTree:GetNodeTooltip(nodeInfo)
         or nodeInfo.entryIDs and nodeInfo.entryIDs[1]
 
     if entryID then
-        local entryInfo = C_Traits.GetEntryInfo(configID, entryID)
-        if entryInfo and entryInfo.definitionID then
-            local defInfo = C_Traits.GetDefinitionInfo(entryInfo.definitionID)
-            if defInfo then
-                local name = defInfo.overrideName
-                if not name and defInfo.spellID and C_Spell.GetSpellName then
-                    name = C_Spell.GetSpellName(defInfo.spellID)
-                end
-                if name then
-                    return name
-                end
-            end
+        local name = self:GetEntryTalentName(entryID)
+        if name then
+            return name
         end
     end
 
