@@ -823,18 +823,23 @@ function ImportExportModule.create(parent)
                     if type(rawSource.dftalents) == "table" and #rawSource.dftalents > 1 and LPL.BuildStore then
                         for index = 2, #rawSource.dftalents do
                             local segment = rawSource.dftalents[index]
-                            if type(segment) == "table" and type(segment.nodes) == "table" then
+                            if type(segment) == "table" then
                                 local extraName = segment.name or (path .. " " .. tostring(index))
-                                local importData = {
-                                    name = extraName,
-                                    classID = segment.classID,
-                                    specID = segment.specID,
-                                    subTreeID = segment.subTreeID,
-                                    nodes = LPL.BuildStore:NormalizeNodesForStorage(segment.nodes),
-                                }
                                 local extraOpts = CopyTable(options)
                                 extraOpts.existingBuildID = nil
-                                local extra = LPL.BuildStore:ApplyImport(importData, extraName, extraOpts)
+                                local extra
+                                if type(segment.string) == "string" and segment.string ~= "" then
+                                    extra = LPL.TalentShare:ImportString(segment.string, extraName, extraOpts)
+                                elseif type(segment.nodes) == "table" then
+                                    local importData = {
+                                        name = extraName,
+                                        classID = segment.classID,
+                                        specID = segment.specID,
+                                        subTreeID = segment.subTreeID,
+                                        nodes = LPL.BuildStore:NormalizeNodesForStorage(segment.nodes),
+                                    }
+                                    extra = LPL.BuildStore:ApplyImport(importData, extraName, extraOpts)
+                                end
                                 if extra and extra.id then
                                     talentBuildIDs[#talentBuildIDs + 1] = extra.id
                                 end

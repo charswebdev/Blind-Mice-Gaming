@@ -84,15 +84,10 @@ function LPL.LoadoutShare:BuildExportPayload(set, name)
                 payload.specID = build.specID
                 payload.classID = build.classID
             end
-            payload.dftalents = AppendSegment(payload.dftalents, {
-                type = "dftalents",
-                version = 1,
-                name = build.name,
-                classID = build.classID,
-                specID = build.specID,
-                subTreeID = build.subTreeID,
-                nodes = LPL.BuildStore:NormalizeNodesForStorage(build.nodes),
-            })
+            payload.dftalents = AppendSegment(
+                payload.dftalents,
+                LPL.TalentShare:BuildLoadoutTalentSegment(build)
+            )
             if build.subTreeID then
                 payload.herotalents = AppendSegment(payload.herotalents, {
                     type = "herotalents",
@@ -101,7 +96,6 @@ function LPL.LoadoutShare:BuildExportPayload(set, name)
                     classID = build.classID,
                     specID = build.specID,
                     subTreeID = build.subTreeID,
-                    nodes = LPL.BuildStore:NormalizeNodesForStorage(build.nodes),
                 })
             end
         end

@@ -78,8 +78,8 @@ function LPL.TalentTree:GetNodeArtKind(nodeInfo)
         or entryType == Enum.TraitNodeEntryType.SpendCapstoneSquare
     )
 
-    if nodeInfo.isApexTalent or self:GetNodeMaxRanks(nodeInfo) >= 3 then
-        return square and "apexSquare" or "apexCircle"
+    if nodeInfo.isApexTalent then
+        return square and "square" or "circle"
     end
 
     return square and "square" or "circle"
@@ -864,54 +864,46 @@ function LPL.TalentTree:ApplyEntryIcon(texture, entryID)
         return
     end
 
+    local definitionID = entryInfo.definitionID
+    if definitionID then
+        local defInfo = C_Traits.GetDefinitionInfo(definitionID)
+        if defInfo then
+            if defInfo.overrideIcon then
+                texture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+                if type(defInfo.overrideIcon) == "string" then
+                    texture:SetAtlas(defInfo.overrideIcon)
+                else
+                    texture:SetTexture(defInfo.overrideIcon)
+                end
+                return
+            end
+
+            if defInfo.spellID and defInfo.spellID > 0 then
+                local spellTexture
+                if C_Spell and C_Spell.GetSpellTexture then
+                    spellTexture = C_Spell.GetSpellTexture(defInfo.spellID)
+                end
+                if not spellTexture and GetSpellTexture then
+                    spellTexture = GetSpellTexture(defInfo.spellID)
+                end
+                if spellTexture then
+                    texture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+                    if type(spellTexture) == "string" and not spellTexture:find("^Interface") then
+                        texture:SetAtlas(spellTexture)
+                    else
+                        texture:SetTexture(spellTexture)
+                    end
+                    return
+                end
+            end
+        end
+    end
+
     if entryInfo.subTreeID and lib then
         local subTreeInfo = lib:GetSubTreeInfo(entryInfo.subTreeID)
         if subTreeInfo and subTreeInfo.iconElementID then
             texture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
             texture:SetAtlas(subTreeInfo.iconElementID)
-            return
-        end
-    end
-
-    local definitionID = entryInfo.definitionID
-    if not definitionID then
-        texture:SetTexture(136243)
-        texture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-        return
-    end
-
-    local defInfo = C_Traits.GetDefinitionInfo(definitionID)
-    if not defInfo then
-        texture:SetTexture(136243)
-        texture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-        return
-    end
-
-    if defInfo.overrideIcon then
-        texture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-        if type(defInfo.overrideIcon) == "string" then
-            texture:SetAtlas(defInfo.overrideIcon)
-        else
-            texture:SetTexture(defInfo.overrideIcon)
-        end
-        return
-    end
-
-    if defInfo.spellID and defInfo.spellID > 0 then
-        local spellTexture
-        if C_Spell and C_Spell.GetSpellTexture then
-            spellTexture = C_Spell.GetSpellTexture(defInfo.spellID)
-        end
-        if not spellTexture and GetSpellTexture then
-            spellTexture = GetSpellTexture(defInfo.spellID)
-        end
-        if spellTexture then
-            texture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-            if type(spellTexture) == "string" and not spellTexture:find("^Interface") then
-                texture:SetAtlas(spellTexture)
-            else
-                texture:SetTexture(spellTexture)
-            end
             return
         end
     end
@@ -955,38 +947,33 @@ function LPL.TalentTree:GetNodeIcon(nodeInfo)
         return 136243, false
     end
 
+    local definitionID = entryInfo.definitionID
+    if definitionID then
+        local defInfo = C_Traits.GetDefinitionInfo(definitionID)
+        if defInfo then
+            if defInfo.overrideIcon then
+                return defInfo.overrideIcon, type(defInfo.overrideIcon) == "string"
+            end
+            if defInfo.spellID and defInfo.spellID > 0 then
+                local spellTexture
+                if C_Spell and C_Spell.GetSpellTexture then
+                    spellTexture = C_Spell.GetSpellTexture(defInfo.spellID)
+                end
+                if not spellTexture and GetSpellTexture then
+                    spellTexture = GetSpellTexture(defInfo.spellID)
+                end
+                if spellTexture then
+                    local isAtlas = type(spellTexture) == "string" and not spellTexture:find("^Interface")
+                    return spellTexture, isAtlas
+                end
+            end
+        end
+    end
+
     if entryInfo.subTreeID and lib then
         local subTreeInfo = lib:GetSubTreeInfo(entryInfo.subTreeID)
         if subTreeInfo and subTreeInfo.iconElementID then
             return subTreeInfo.iconElementID, true
-        end
-    end
-
-    local definitionID = entryInfo.definitionID
-    if not definitionID then
-        return 136243, false
-    end
-
-    local defInfo = C_Traits.GetDefinitionInfo(definitionID)
-    if not defInfo then
-        return 136243, false
-    end
-
-    if defInfo.overrideIcon then
-        return defInfo.overrideIcon, type(defInfo.overrideIcon) == "string"
-    end
-
-    if defInfo.spellID and defInfo.spellID > 0 then
-        local spellTexture
-        if C_Spell and C_Spell.GetSpellTexture then
-            spellTexture = C_Spell.GetSpellTexture(defInfo.spellID)
-        end
-        if not spellTexture and GetSpellTexture then
-            spellTexture = GetSpellTexture(defInfo.spellID)
-        end
-        if spellTexture then
-            local isAtlas = type(spellTexture) == "string" and not spellTexture:find("^Interface")
-            return spellTexture, isAtlas
         end
     end
 

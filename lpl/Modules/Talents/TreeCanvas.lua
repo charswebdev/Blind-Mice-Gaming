@@ -2,16 +2,17 @@ local addonName, LPL = ...
 
 LPL.TalentCanvas = {}
 
-local BASE_COL_WIDTH = 56
-local BASE_ROW_HEIGHT = 56
-local BASE_NODE_SIZE = 38
+local BASE_COL_WIDTH = 66
+local BASE_ROW_HEIGHT = 66
+local BASE_NODE_SIZE = 48
 local HERO_NODE_SCALE = 1.45
-local APEX_NODE_SCALE = 1.22
+local APEX_NODE_SCALE = 1.0
+local CHOICE_NODE_SCALE = 1.2
 local HERO_EMBLEM_GAP = 8
-local CANVAS_PADDING = 28
+local CANVAS_PADDING = 20
 local POS_STEP = 600
-local COLUMN_GAP = 1.6
-local APEX_PIP_RESERVE = 22
+local COLUMN_GAP = 0.85
+local APEX_PIP_RESERVE = 34
 local BORDER_SCALE = 1.18
 local SHADOW_SCALE = 1.12
 local GLOW_SCALE = 1.28
@@ -49,34 +50,42 @@ local ART_SETS = {
         maxed = "talents-node-choice-yellow",
         locked = "talents-node-choice-locked",
         glow = "talents-node-choice-greenglow",
-        iconInset = 0.18,
+        iconInset = 0.14,
+        borderScale = 1.22,
+        shadowScale = 1.16,
+        glowScale = 1.32,
     },
     apexCircle = {
         iconMask = "talents-node-circle-mask",
-        shadow = "talents-node-circle-shadow",
+        shadow = nil,
         normal = "talents-node-apex-large-yellow",
         disabled = "talents-node-apex-large-gray",
         selectable = "talents-node-apex-large-green",
         maxed = "talents-node-apex-large-yellow",
         locked = "talents-node-apex-large-locked",
         glow = "talents-node-apex-large-glow",
-        iconInset = 0.16,
+        iconInset = 0.26,
+        borderScale = 1.02,
+        glowScale = 1.1,
     },
     apexSquare = {
         iconMask = nil,
-        shadow = "talents-node-square-shadow",
+        shadow = nil,
         normal = "talents-node-apex-active-large-yellow",
         disabled = "talents-node-apex-active-large-gray",
         selectable = "talents-node-apex-active-large-green",
         maxed = "talents-node-apex-active-large-yellow",
         locked = "talents-node-apex-active-large-locked",
         glow = "talents-node-apex-active-large-glow",
-        iconInset = 0.12,
+        iconInset = 0.22,
+        borderScale = 1.02,
+        glowScale = 1.1,
     },
 }
 
-local LINE_GOLD = { 1, 0.82, 0, 0.95 }
-local LINE_GRAY = { 0.55, 0.55, 0.55, 0.8 }
+local LINE_GOLD = { 1, 0.82, 0.12, 1 }
+local LINE_BLUE = { 0.38, 0.78, 1.0, 1 }
+local LINE_THICKNESS = 3
 local RANK_GOLD = { 1, 0.82, 0 }
 local RANK_GREEN = { 0.1, 1, 0.1 }
 local RANK_GRAY = { 0.6, 0.6, 0.6 }
@@ -175,8 +184,8 @@ local function ApplyNodeVisuals(button, state, nodeSize)
         and not state.selectedEntryID
         and #(nodeInfo.entryIDs or {}) >= 2
 
-    if TrySetAtlas(button.shadow, art.shadow, false) then
-        button.shadow:SetSize(nodeSize * SHADOW_SCALE, nodeSize * SHADOW_SCALE)
+    if art.shadow and TrySetAtlas(button.shadow, art.shadow, false) then
+        button.shadow:SetSize(nodeSize * (art.shadowScale or SHADOW_SCALE), nodeSize * (art.shadowScale or SHADOW_SCALE))
         button.shadow:Show()
     else
         button.shadow:Hide()
@@ -194,19 +203,21 @@ local function ApplyNodeVisuals(button, state, nodeSize)
     end
 
     local borderAtlas, visual = GetVisualBorderAtlas(art, state)
+    local borderScale = art.borderScale or BORDER_SCALE
     if TrySetAtlas(button.stateBorder, borderAtlas, false) then
-        button.stateBorder:SetSize(nodeSize * BORDER_SCALE, nodeSize * BORDER_SCALE)
+        button.stateBorder:SetSize(nodeSize * borderScale, nodeSize * borderScale)
         button.stateBorder:Show()
     else
         button.stateBorder:Hide()
     end
     if TrySetAtlas(button.stateBorderHover, borderAtlas, false) then
-        button.stateBorderHover:SetSize(nodeSize * BORDER_SCALE, nodeSize * BORDER_SCALE)
+        button.stateBorderHover:SetSize(nodeSize * borderScale, nodeSize * borderScale)
         button.stateBorderHover:SetAlpha(visual == "selectable" and 1 or 0.7)
     end
 
+    local glowScale = art.glowScale or GLOW_SCALE
     if visual == "selectable" and TrySetAtlas(button.glow, art.glow, false) then
-        button.glow:SetSize(nodeSize * GLOW_SCALE, nodeSize * GLOW_SCALE)
+        button.glow:SetSize(nodeSize * glowScale, nodeSize * glowScale)
         button.glow:Show()
     else
         button.glow:Hide()
@@ -383,6 +394,9 @@ local function PositionHeroEmblem(canvas, subTreeID, specID, heroBounds, nodeSiz
     if subTreeInfo and subTreeInfo.iconElementID then
         emblem.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
         emblem.icon:SetAtlas(subTreeInfo.iconElementID)
+    else
+        emblem.icon:SetTexture(136243)
+        emblem.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     end
     emblem.icon:SetDesaturated(false)
     emblem.icon:SetAlpha(1)
@@ -456,28 +470,34 @@ local function ApplyApexPips(button, state, nodeSize)
     end
 
     local pipCount = math.min(4, maxRank)
-    local pipSize = math.max(10, math.floor(nodeSize * 0.26))
-    local gap = math.max(4, math.floor(pipSize * 0.28))
+    local pipSize = math.max(9, math.floor(nodeSize * 0.2))
+    local gap = math.max(4, math.floor(pipSize * 0.4))
     local active = state.activeRank or 0
-    local filledAtlas = "talents-node-circle-yellow"
+    local filledAtlas = "talents-node-apex-small-yellow"
     local emptyAtlas = "talents-node-apex-small-gray"
+    if not (C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(filledAtlas)) then
+        filledAtlas = "talents-node-circle-yellow"
+    end
     if not (C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(emptyAtlas)) then
         emptyAtlas = "talents-node-circle-gray"
     end
 
     local totalWidth = pipCount * pipSize + (pipCount - 1) * gap
     local startX = -totalWidth / 2 + pipSize / 2
+    local yOff = -math.max(10, math.floor(nodeSize * 0.14))
+    local pipParent = button:GetParent() or button
 
     for i = 1, 4 do
         local pip = pips[i]
         if i > pipCount then
             pip:Hide()
         else
+            pip:SetParent(pipParent)
             pip:SetSize(pipSize, pipSize)
             pip:ClearAllPoints()
-            pip:SetPoint("TOP", button, "BOTTOM", startX + (i - 1) * (pipSize + gap), -2)
+            pip:SetPoint("TOP", button, "BOTTOM", startX + (i - 1) * (pipSize + gap), yOff)
             pip:Show()
-            pip:SetFrameLevel((button:GetFrameLevel() or 1) + 8)
+            pip:SetFrameLevel((button:GetFrameLevel() or 1) + 2)
 
             local filled = active >= i
             if not TrySetAtlas(pip.ring, filled and filledAtlas or emptyAtlas, false) then
@@ -509,41 +529,57 @@ local function ApplyApexPips(button, state, nodeSize)
 end
 
 local function ColorLine(line, accent)
-    local color = accent and LINE_GOLD or LINE_GRAY
+    local color = accent and LINE_GOLD or LINE_BLUE
     if line.SetVertexColor then
-        line:SetVertexColor(color[1], color[2], color[3], color[4])
-    elseif line.SetColorTexture then
-        pcall(line.SetColorTexture, line, color[1], color[2], color[3], color[4])
+        line:SetVertexColor(color[1], color[2], color[3], color[4] or 1)
+    end
+    if line.SetAlpha then
+        line:SetAlpha(color[4] or 1)
     end
 end
 
-local function DrawEdge(canvas, lineIndex, startButton, endButton, accent)
-    local line = canvas.linePool[lineIndex]
-    if not line then
-        if canvas.content.CreateLine then
-            line = canvas.content:CreateLine(nil, "BACKGROUND")
-            if line then
-                line:SetThickness(3.25)
-                if line.EnableMouse then
-                    line:EnableMouse(false)
-                end
-            end
-        end
-        canvas.linePool[lineIndex] = line
+local function AcquireLine(canvas, index)
+    if canvas.linePool[index] then
+        return canvas.linePool[index]
     end
 
-    if not line or not line.SetStartPoint or not startButton or not endButton then
+    local parent = canvas.lineLayer or canvas.content
+    local line = parent:CreateTexture(nil, "ARTWORK")
+    line:SetTexture("Interface\\Buttons\\WHITE8x8")
+    line:SetBlendMode("BLEND")
+    line:Hide()
+    canvas.linePool[index] = line
+    return line
+end
+
+local function DrawEdge(canvas, lineIndex, startID, endID, accent)
+    local startPos = canvas.nodePositions and canvas.nodePositions[startID]
+    local endPos = canvas.nodePositions and canvas.nodePositions[endID]
+    if not startPos or not endPos then
         return lineIndex
     end
 
+    local dx = endPos.x - startPos.x
+    local dy = endPos.y - startPos.y
+    local length = math.sqrt(dx * dx + dy * dy)
+    if length < 4 then
+        return lineIndex
+    end
+
+    local line = AcquireLine(canvas, lineIndex)
     ColorLine(line, accent)
-    if not pcall(line.SetStartPoint, line, "CENTER", startButton) then
-        return lineIndex
+    line:SetSize(length, LINE_THICKNESS)
+    line:ClearAllPoints()
+    line:SetPoint(
+        "CENTER",
+        canvas.content,
+        "TOPLEFT",
+        (startPos.x + endPos.x) / 2,
+        -((startPos.y + endPos.y) / 2)
+    )
+    if line.SetRotation then
+        line:SetRotation(-math.atan2(dy, dx))
     end
-    if not pcall(line.SetEndPoint, line, "CENTER", endButton) then
-        return lineIndex
-    end
-    line:SetDrawLayer("BACKGROUND", 0)
     line:Show()
     return lineIndex + 1
 end
@@ -570,8 +606,13 @@ function LPL.TalentCanvas:Create(parent, options)
     content:SetPoint("CENTER")
     content:SetSize(400, 300)
 
+    local lineLayer = CreateFrame("Frame", nil, content)
+    lineLayer:SetAllPoints(content)
+    lineLayer:SetFrameLevel((content:GetFrameLevel() or 1) + 1)
+
     frame.viewport = viewport
     frame.content = content
+    frame.lineLayer = lineLayer
     frame.nodePool = {}
     frame.linePool = {}
     frame.nodePositions = {}
@@ -876,14 +917,17 @@ function LPL.TalentCanvas:Create(parent, options)
             for _, item in ipairs(column.items) do
                 nodeIndex = nodeIndex + 1
                 local info = item.info
+                local artKind = LPL.TalentTree:GetNodeArtKind(info)
                 local size = math.max(nodeSize, 18)
-                if IsApexNode(info) then
+                if artKind == "choice" then
+                    size = math.max(nodeSize * CHOICE_NODE_SCALE, 18)
+                elseif IsApexNode(info) then
                     size = math.max(nodeSize * APEX_NODE_SCALE, 18)
                 end
                 local button = AcquireNodeButton(self, nodeIndex, size)
                 local x = padding + (column.originX + column.xMap[item.posX]) * colWidth
                 local y = yOffset + column.yMap[item.posY] * rowHeight
-                if IsApexNode(info) then
+                if size ~= nodeSize then
                     x = x - (size - nodeSize) / 2
                     y = y - (size - nodeSize) / 2
                 end
@@ -909,16 +953,21 @@ function LPL.TalentCanvas:Create(parent, options)
         PositionHeroEmblem(self, view.subTreeID, view.specID, heroBounds, nodeSize, fitScale)
 
         local lineIndex = 1
+        if self.lineLayer then
+            self.lineLayer:SetFrameLevel((self.content:GetFrameLevel() or 1) + 1)
+        end
         for nodeID, data in pairs(layout) do
             local edges = LPL.TalentTree:GetNodeEdges(nodeID)
-            local startButton = self.nodeButtons[nodeID]
-            if startButton and edges and sandbox then
-                local activeRank = LPL.TalentInteractions:GetActiveRank(sandbox, data.info, view.specID)
-                local edgeActive = activeRank >= LPL.TalentTree:GetNodeMaxRanks(data.info)
-                for _, edge in ipairs(edges) do
-                    local endButton = self.nodeButtons[edge.targetNode]
-                    if endButton and layout[edge.targetNode] then
-                        lineIndex = DrawEdge(self, lineIndex, startButton, endButton, edgeActive)
+            if edges then
+                local edgeActive = false
+                if sandbox then
+                    local activeRank = LPL.TalentInteractions:GetActiveRank(sandbox, data.info, view.specID)
+                    edgeActive = activeRank >= LPL.TalentTree:GetNodeMaxRanks(data.info)
+                end
+                for _, edge in pairs(edges) do
+                    local targetID = type(edge) == "table" and edge.targetNode
+                    if targetID and layout[targetID] then
+                        lineIndex = DrawEdge(self, lineIndex, nodeID, targetID, edgeActive)
                     end
                 end
             end

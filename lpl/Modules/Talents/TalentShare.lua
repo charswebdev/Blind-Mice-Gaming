@@ -730,9 +730,21 @@ local function ParseBlizzardExportString(exportString)
     }
 end
 
+local function IsSelectionNodeInfo(nodeInfo)
+    if not nodeInfo then
+        return false
+    end
+    local nodeType = Enum and Enum.TraitNodeType
+    return nodeInfo.isSubTreeSelection == true
+        or (nodeType and (nodeInfo.type == nodeType.Selection or nodeInfo.type == nodeType.SubTreeSelection))
+end
+
+-- Older dftalents strings stored choice index as a bare number. Current LPL
+-- storage uses that same number as rank, including apex/tiered nodes that have
+-- several entryIDs. Only rewrite numbers on real choice nodes.
 local function ConvertLegacyNodes(rawNodes, specID)
     local lib = GetLib()
-    if not lib or type(rawNodes) ~= "table" then
+    if type(rawNodes) ~= "table" then
         return {}
     end
 
@@ -740,7 +752,7 @@ local function ConvertLegacyNodes(rawNodes, specID)
     for rawNodeID, value in pairs(rawNodes) do
         local nodeID = tonumber(rawNodeID)
         if nodeID then
-            local nodeInfo = GetCachedNodeInfo(lib, nodeID)
+            local nodeInfo = lib and GetCachedNodeInfo(lib, nodeID)
             if type(value) == "table" then
                 local rank = tonumber(value.rank or value.ranks or value[1]) or 1
                 local entryID = tonumber(value.entryID or value.entryId)
@@ -753,21 +765,42 @@ local function ConvertLegacyNodes(rawNodes, specID)
                     converted[tostring(nodeID)] = rank
                 end
             elseif type(value) == "number" and value > 0 then
-                if nodeInfo and nodeInfo.entryIDs and #nodeInfo.entryIDs > 1 then
-                    local entryID = nodeInfo.entryIDs[value]
-                    if entryID then
-                        converted[tostring(nodeID)] = {
-                            rank = 1,
-                            entryID = entryID,
-                        }
-                    end
+                if IsSelectionNodeInfo(nodeInfo) and nodeInfo.entryIDs and nodeInfo.entryIDs[value] then
+                    converted[tostring(nodeID)] = {
+                        rank = 1,
+                        entryID = nodeInfo.entryIDs[value],
+                    }
                 else
-                    converted[tostring(nodeID)] = value
+                    converted[tostring(nodeID)] = math.floor(value)
                 end
             end
         end
     end
     return converted
+end
+
+local function MergeEntriesIntoNodes(nodes, entries)
+    local stored = LPL.BuildStore:NormalizeNodesForStorage(nodes)
+    if type(entries) ~= "table" then
+        return stored
+    end
+
+    for rawNodeID, entryID in pairs(entries) do
+        local key = tostring(rawNodeID)
+        entryID = tonumber(entryID)
+        local current = stored[key]
+        if current and entryID then
+            if type(current) == "number" then
+                stored[key] = {
+                    rank = current,
+                    entryID = entryID,
+                }
+            elseif type(current) == "table" and not current.entryID then
+                current.entryID = entryID
+            end
+        end
+    end
+    return stored
 end
 
 local function MergeImportSources(primary, secondary)
@@ -899,7 +932,15 @@ local function NormalizeLoadoutImport(source)
                 local wrapped = ApplyLoadoutContext(WithSegmentType("herotalents", segment), context)
                 local heroData, heroErr = NormalizeImportTable(wrapped)
                 if heroData then
-                    primary = MergeImportSources(primary, heroData)
+                    if not primary.subTreeID and heroData.subTreeID then
+                        primary.subTreeID = heroData.subTreeID
+                    end
+                    -- Older loadouts cloned the full tree into herotalents.
+                    -- Merging that copy would overwrite a correct talent string
+                    -- with ranks rewritten as choice indexes.
+                    if not primary.nodes or not next(primary.nodes) then
+                        primary = MergeImportSources(primary, heroData)
+                    end
                 elseif heroErr and not primary.nodes then
                     return nil, heroErr
                 end
@@ -931,20 +972,30 @@ NormalizeImportTable = function(source)
     end
 
     if importType == "dftalents" then
-        if (source.version or 1) ~= 1 then
+        if (source.version or 1) > 2 then
             return nil, "Unsupported talent export version."
         end
         local specID = source.specID
         if not specID or not GetSpecializationInfoByID(specID) then
             return nil, "Invalid specialization in import string."
         end
+        if type(source.string) == "string" and source.string ~= "" then
+            local blizzardData = ParseBlizzardExportString(source.string)
+            if blizzardData then
+                blizzardData.name = source.name or blizzardData.name
+                blizzardData.subTreeID = blizzardData.subTreeID or source.subTreeID
+                blizzardData.classID = source.classID or blizzardData.classID
+                blizzardData.level = source.level or blizzardData.level
+                return blizzardData
+            end
+        end
         return {
             name = source.name,
             classID = source.classID or LPL.TalentTree:GetClassIDForSpec(specID),
             specID = specID,
             subTreeID = source.subTreeID,
-            level = GetMaxLevelForPlayerExpansion and GetMaxLevelForPlayerExpansion() or 90,
-            nodes = ConvertLegacyNodes(source.nodes, specID),
+            level = source.level or (GetMaxLevelForPlayerExpansion and GetMaxLevelForPlayerExpansion()) or 90,
+            nodes = MergeEntriesIntoNodes(ConvertLegacyNodes(source.nodes, specID), source.entries),
         }
     end
 
@@ -1079,6 +1130,34 @@ function LPL.TalentShare:ExportSandbox(sandbox, view, name)
     end
 
     return nil, err or "Could not export build."
+end
+
+function LPL.TalentShare:BuildLoadoutTalentSegment(build)
+    if not build then
+        return nil
+    end
+
+    local blizzardString = self:ExportBuild(build)
+    if type(blizzardString) ~= "string" or blizzardString == "" then
+        blizzardString = nil
+    end
+
+    local segment = {
+        type = "dftalents",
+        version = 2,
+        name = build.name,
+        classID = build.classID,
+        specID = build.specID,
+        subTreeID = build.subTreeID,
+        level = build.level,
+        nodes = MergeEntriesIntoNodes(build.nodes, build.entries),
+        string = blizzardString,
+    }
+    local entries = LPL.BuildStore:NormalizeEntriesForStorage(build.entries)
+    if entries then
+        segment.entries = entries
+    end
+    return segment
 end
 
 function LPL.TalentShare:ParseImportString(text)
