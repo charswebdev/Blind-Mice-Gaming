@@ -9,6 +9,24 @@ local function GetLib()
     return LibStub and LibStub:GetLibrary("LibTalentTree-1.0", true)
 end
 
+local function GetCachedNodeInfo(lib, nodeID)
+    nodeID = tonumber(nodeID) or nodeID
+    if not lib or not nodeID then
+        return nil
+    end
+    local nodeInfo
+    if lib.GetLibNodeInfo then
+        nodeInfo = lib:GetLibNodeInfo(nodeID)
+    end
+    if not nodeInfo or not nodeInfo.ID or nodeInfo.ID == 0 then
+        nodeInfo = lib:GetNodeInfo(nodeID)
+    end
+    if nodeInfo then
+        nodeInfo.ID = nodeID
+    end
+    return nodeInfo
+end
+
 local function IsChoiceNode(nodeInfo)
     if not nodeInfo or not Enum or not Enum.TraitNodeType then
         return false
@@ -66,7 +84,7 @@ function LPL.TalentInteractions:GetActiveRank(sandbox, nodeInfo, specID)
         return 0
     end
     if LPL.TalentTree:IsNodeGranted(nodeInfo, specID) then
-        return nodeInfo.maxRanks or 1
+        return LPL.TalentTree:GetNodeMaxRanks(nodeInfo)
     end
     if IsChoiceNode(nodeInfo) then
         local entryID = sandbox:GetNodeEntryID(nodeInfo.ID)
@@ -135,10 +153,9 @@ function LPL.TalentInteractions:MeetsEdgeRequirements(sandbox, specID, classID, 
     local hasInactiveIncomingEdge = false
 
     for _, sourceNodeID in ipairs(incoming) do
-        local nodeInfo = lib:GetNodeInfo(sourceNodeID)
+        local nodeInfo = GetCachedNodeInfo(lib, sourceNodeID)
         if nodeInfo and lib:IsNodeVisibleForSpec(specID, sourceNodeID) then
-            nodeInfo.ID = sourceNodeID
-            local maxRank = nodeInfo.maxRanks or 1
+            local maxRank = LPL.TalentTree:GetNodeMaxRanks(nodeInfo)
             local activeRank = self:GetActiveRank(sandbox, nodeInfo, specID)
             local isEdgeActive = activeRank >= maxRank
             if isEdgeActive then
@@ -156,8 +173,8 @@ local VIEW_CONFIG_ID = Constants and Constants.TraitConsts and Constants.TraitCo
 
 local function ResolveTraitCurrencyID(nodeID, nodeInfo, pool, subTreeID, currencies)
     if C_Traits and C_Traits.GetNodeCost and VIEW_CONFIG_ID then
-        local nodeCost = C_Traits.GetNodeCost(VIEW_CONFIG_ID, nodeID)
-        if nodeCost and next(nodeCost) then
+        local ok, nodeCost = pcall(C_Traits.GetNodeCost, VIEW_CONFIG_ID, nodeID)
+        if ok and nodeCost and next(nodeCost) then
             for _, cost in pairs(nodeCost) do
                 if cost.ID then
                     for _, currency in ipairs(currencies) do
@@ -218,12 +235,16 @@ function LPL.TalentInteractions:GetCurrencySpending(sandbox, classID, specID, su
     for rawNodeID, rank in pairs(sandbox.nodes) do
         rank = tonumber(rank) or 0
         if rank > 0 then
-            local nodeInfo = lib:GetNodeInfo(rawNodeID)
+            local nodeInfo = GetCachedNodeInfo(lib, rawNodeID)
             if nodeInfo and not nodeInfo.isSubTreeSelection and not lib:IsNodeGrantedForSpec(specID, rawNodeID) then
-                local pool = LPL.TalentTree:GetNodePointPool(rawNodeID, subTreeID)
-                local currencyID = ResolveTraitCurrencyID(rawNodeID, nodeInfo, pool, subTreeID, currencies)
-                if currencyID then
-                    spending[currencyID] = (spending[currencyID] or 0) + rank
+                if not lib.IsNodeVisibleForSpec or lib:IsNodeVisibleForSpec(specID, rawNodeID) then
+                    if not nodeInfo.subTreeID or not subTreeID or nodeInfo.subTreeID == subTreeID then
+                        local pool = LPL.TalentTree:GetNodePointPool(rawNodeID, subTreeID)
+                        local currencyID = ResolveTraitCurrencyID(rawNodeID, nodeInfo, pool, subTreeID, currencies)
+                        if currencyID then
+                            spending[currencyID] = (spending[currencyID] or 0) + rank
+                        end
+                    end
                 end
             end
         end
@@ -277,7 +298,7 @@ end
 
 function LPL.TalentInteractions:GetNodeState(sandbox, nodeInfo, specID, classID, subTreeID, level)
     local nodeID = nodeInfo and nodeInfo.ID
-    local maxRank = nodeInfo and (nodeInfo.maxRanks or 1) or 1
+    local maxRank = nodeInfo and LPL.TalentTree:GetNodeMaxRanks(nodeInfo) or 1
     local isGranted = nodeInfo and LPL.TalentTree:IsNodeGranted(nodeInfo, specID)
     local isChoice = IsChoiceNode(nodeInfo)
     local activeRank = self:GetActiveRank(sandbox, nodeInfo, specID)
@@ -430,10 +451,9 @@ function LPL.TalentInteractions:GetNodeUnavailabilityLines(sandbox, nodeInfo, sp
                     requiresAllPrecedingTraits = false
                 end
 
-                local sourceInfo = lib:GetNodeInfo(sourceNodeID)
+                local sourceInfo = GetCachedNodeInfo(lib, sourceNodeID)
                 if sourceInfo then
-                    sourceInfo.ID = sourceNodeID
-                    local maxRank = sourceInfo.maxRanks or 1
+                    local maxRank = LPL.TalentTree:GetNodeMaxRanks(sourceInfo)
                     local activeRank = self:GetActiveRank(sandbox, sourceInfo, specID)
                     if activeRank < maxRank then
                         inactiveSources[#inactiveSources + 1] = {
@@ -509,9 +529,8 @@ function LPL.TalentInteractions:InvalidateDependentNodes(sandbox, specID, classI
         changed = false
         for _, nodeID in ipairs(C_Traits.GetTreeNodes(treeID)) do
             if sandbox:GetNodeRank(nodeID) > 0 or sandbox:GetNodeEntryID(nodeID) then
-                local nodeInfo = lib:GetNodeInfo(nodeID)
+                local nodeInfo = GetCachedNodeInfo(lib, nodeID)
                 if nodeInfo and not lib:IsNodeGrantedForSpec(specID, nodeID) then
-                    nodeInfo.ID = nodeID
                     if not self:MeetsEdgeRequirements(sandbox, specID, classID, nodeID)
                         or not self:MeetsGateRequirements(sandbox, specID, classID, subTreeID, level, nodeInfo) then
                         sandbox:SetNodeRank(nodeID, 0)

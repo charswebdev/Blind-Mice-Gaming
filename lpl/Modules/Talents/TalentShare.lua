@@ -12,6 +12,23 @@ local function GetLib()
     return LibStub and LibStub:GetLibrary("LibTalentTree-1.0", true)
 end
 
+local function GetCachedNodeInfo(lib, nodeID)
+    if not lib or not nodeID then
+        return nil
+    end
+    local nodeInfo
+    if lib.GetLibNodeInfo then
+        nodeInfo = lib:GetLibNodeInfo(nodeID)
+    end
+    if not nodeInfo or not nodeInfo.ID or nodeInfo.ID == 0 then
+        nodeInfo = lib:GetNodeInfo(nodeID)
+    end
+    if nodeInfo then
+        nodeInfo.ID = nodeID
+    end
+    return nodeInfo
+end
+
 local function Trim(text)
     if type(text) ~= "string" then
         return ""
@@ -178,10 +195,39 @@ local function ReadLoadoutHeader(importStream)
     return true, serializationVersion, specID, treeHash
 end
 
+local function CopyTreeNodes(treeID)
+    local nodes = C_Traits.GetTreeNodes(treeID)
+    if not nodes then
+        return {}
+    end
+    local copy = {}
+    for _, nodeID in ipairs(nodes) do
+        copy[#copy + 1] = nodeID
+    end
+    return copy
+end
+
+-- Blizzard V2 loadouts are positional: bit n describes C_Traits.GetTreeNodes(treeID)[n].
+-- TLM, ZugZug, PeaversTalents, and TalentTreeTweaks all use that live ipairs order.
+-- Sorting or remapping those bits onto another ID list is what produced 15/29/10 builds.
+local function ExtractBits(importStream, width)
+    local ok, value = pcall(importStream.ExtractValue, importStream, width)
+    if not ok then
+        return 0, false
+    end
+    return value or 0, true
+end
+
 local function ReadLoadoutContent(importStream, treeID)
     local results = {}
-    for _, nodeID in ipairs(C_Traits.GetTreeNodes(treeID)) do
-        local isNodeSelected = importStream:ExtractValue(1) == 1
+    local treeNodes = CopyTreeNodes(treeID)
+    for i, nodeID in ipairs(treeNodes) do
+        local selectedValue, ok = ExtractBits(importStream, 1)
+        if not ok then
+            break
+        end
+
+        local isNodeSelected = selectedValue == 1
         local isNodePurchased = false
         local isPartiallyRanked = false
         local partialRanksPurchased = 0
@@ -189,21 +235,44 @@ local function ReadLoadoutContent(importStream, treeID)
         local choiceNodeSelection = 0
 
         if isNodeSelected then
-            isNodePurchased = importStream:ExtractValue(1) == 1
+            local purchasedValue
+            purchasedValue, ok = ExtractBits(importStream, 1)
+            if not ok then
+                break
+            end
+            isNodePurchased = purchasedValue == 1
             if isNodePurchased then
-                isPartiallyRanked = importStream:ExtractValue(1) == 1
-                if isPartiallyRanked then
-                    partialRanksPurchased = importStream:ExtractValue(BIT_WIDTH_RANKS_PURCHASED)
+                local partialValue
+                partialValue, ok = ExtractBits(importStream, 1)
+                if not ok then
+                    break
                 end
-                isChoiceNode = importStream:ExtractValue(1) == 1
+                isPartiallyRanked = partialValue == 1
+                if isPartiallyRanked then
+                    partialRanksPurchased, ok = ExtractBits(importStream, BIT_WIDTH_RANKS_PURCHASED)
+                    if not ok then
+                        break
+                    end
+                end
+                local choiceValue
+                choiceValue, ok = ExtractBits(importStream, 1)
+                if not ok then
+                    break
+                end
+                isChoiceNode = choiceValue == 1
                 if isChoiceNode then
-                    choiceNodeSelection = importStream:ExtractValue(2)
+                    choiceNodeSelection, ok = ExtractBits(importStream, 2)
+                    if not ok then
+                        break
+                    end
                 end
             end
         end
 
-        results[#results + 1] = {
+        results[i] = {
             nodeID = nodeID,
+            isNodeSelected = isNodeSelected,
+            isNodeGranted = isNodeSelected and not isNodePurchased,
             isNodePurchased = isNodePurchased,
             isPartiallyRanked = isPartiallyRanked,
             partialRanksPurchased = partialRanksPurchased,
@@ -260,7 +329,7 @@ local function ResolveSelectionEntryID(nodeID, entryID)
 
     local lib = GetLib()
     if lib then
-        local nodeInfo = lib:GetNodeInfo(nodeID)
+        local nodeInfo = GetCachedNodeInfo(lib, nodeID)
         if nodeInfo and nodeInfo.entryIDs and nodeInfo.entryIDs[1] then
             return nodeInfo.entryIDs[1]
         end
@@ -323,8 +392,8 @@ local function WriteLoadoutContentFromBuild(exportStream, specID, treeID, nodes,
     local lib = GetLib()
     local purchaseMap = BuildNodePurchaseMap(specID, subTreeID, nodes, extraEntries)
 
-    for _, nodeID in ipairs(C_Traits.GetTreeNodes(treeID)) do
-        local nodeInfo = lib and lib:GetNodeInfo(nodeID)
+    for _, nodeID in ipairs(CopyTreeNodes(treeID)) do
+        local nodeInfo = lib and GetCachedNodeInfo(lib, nodeID)
         local purchase = purchaseMap[nodeID]
         local isNodeGranted = lib and lib.IsNodeGrantedForSpec and lib:IsNodeGrantedForSpec(specID, nodeID)
 
@@ -335,7 +404,11 @@ local function WriteLoadoutContentFromBuild(exportStream, specID, treeID, nodes,
         if purchase then
             local rank = purchase.rank
             local entryID = purchase.entryID
-            local isPartiallyRanked = nodeInfo and nodeInfo.maxRanks ~= rank
+            local maxRanks = 1
+            if nodeInfo then
+                maxRanks = nodeInfo.totalMaxRanks or nodeInfo.maxRanks or 1
+            end
+            local isPartiallyRanked = rank ~= maxRanks
             local isChoiceNode = nodeInfo
                 and (nodeInfo.type == Enum.TraitNodeType.Selection
                     or nodeInfo.type == Enum.TraitNodeType.SubTreeSelection
@@ -465,58 +538,136 @@ local function ExportBlizzardLoadout(specID, subTreeID, level, nodes, extraEntri
     return exportString
 end
 
-local function ConvertBlizzardContentToNodes(configID, treeID, loadoutContent)
+local function GetImportedRanks(nodeInfo, indexInfo)
+    if indexInfo.isPartiallyRanked then
+        return indexInfo.partialRanksPurchased or 1
+    end
+    if nodeInfo.totalMaxRanks and nodeInfo.totalMaxRanks > 0 then
+        return nodeInfo.totalMaxRanks
+    end
+    return nodeInfo.maxRanks or 1
+end
+
+local function ConvertBlizzardContentToNodes(configID, treeID, loadoutContent, specID, preferredSubTreeID)
     local nodes = {}
-    local subTreeID = nil
+    local subTreeID = preferredSubTreeID
+    local lib = GetLib()
+
+    local function ResolveImportNodeInfo(nodeID)
+        local nodeInfo = GetCachedNodeInfo(lib, nodeID)
+        if nodeInfo and nodeInfo.ID and nodeInfo.ID ~= 0 then
+            return nodeInfo
+        end
+        nodeInfo = C_Traits.GetNodeInfo(configID, nodeID)
+        if nodeInfo then
+            nodeInfo.ID = nodeID
+            if nodeInfo.ID ~= 0 then
+                return nodeInfo
+            end
+        end
+        return GetCachedNodeInfo(lib, nodeID)
+    end
+
+    local function ResolveEntryInfo(entryID)
+        if not entryID then
+            return nil
+        end
+        if lib and lib.GetEntryInfo then
+            local entryInfo = lib:GetEntryInfo(entryID)
+            if entryInfo then
+                return entryInfo
+            end
+        end
+        return C_Traits.GetEntryInfo(configID, entryID)
+    end
+
+    local function BelongsToImportedSpec(nodeInfo, nodeID)
+        if not nodeInfo then
+            return false
+        end
+        if nodeInfo.isSubTreeSelection or nodeInfo.type == Enum.TraitNodeType.SubTreeSelection then
+            return false
+        end
+        if nodeInfo.subTreeID then
+            if preferredSubTreeID then
+                return nodeInfo.subTreeID == preferredSubTreeID
+            end
+            if specID and lib and lib.IsNodeVisibleForSpec then
+                return lib:IsNodeVisibleForSpec(specID, nodeID)
+            end
+            return true
+        end
+        if lib and lib.IsClassNode and lib:IsClassNode(nodeID) then
+            return true
+        end
+        if specID and lib and lib.IsNodeVisibleForSpec then
+            return lib:IsNodeVisibleForSpec(specID, nodeID)
+        end
+        return true
+    end
 
     for _, indexInfo in ipairs(loadoutContent) do
         if indexInfo.isNodePurchased then
             local nodeID = indexInfo.nodeID
-            local nodeInfo = C_Traits.GetNodeInfo(configID, nodeID)
-            if nodeInfo and nodeInfo.ID ~= 0 then
+            local nodeInfo = ResolveImportNodeInfo(nodeID)
+            if nodeInfo then
                 local isChoice = nodeInfo.type == Enum.TraitNodeType.Selection
                     or nodeInfo.type == Enum.TraitNodeType.SubTreeSelection
-                local ranks = nodeInfo.maxRanks or 1
-                if indexInfo.isPartiallyRanked then
-                    ranks = indexInfo.partialRanksPurchased
-                end
+                    or nodeInfo.isSubTreeSelection
+                local ranks = GetImportedRanks(nodeInfo, indexInfo)
 
-                if nodeInfo.type == Enum.TraitNodeType.SubTreeSelection then
-                    local choiceIdx = indexInfo.isChoiceNode and indexInfo.choiceNodeSelection or nil
-                    if choiceIdx and nodeInfo.entryIDs and nodeInfo.entryIDs[choiceIdx] then
-                        local entryInfo = C_Traits.GetEntryInfo(configID, nodeInfo.entryIDs[choiceIdx])
+                if nodeInfo.type == Enum.TraitNodeType.SubTreeSelection or nodeInfo.isSubTreeSelection then
+                    local choiceIdx = indexInfo.isChoiceNode and indexInfo.choiceNodeSelection or 1
+                    local entryID = nodeInfo.entryIDs and (nodeInfo.entryIDs[choiceIdx] or nodeInfo.entryIDs[1])
+                    if entryID then
+                        local entryInfo = ResolveEntryInfo(entryID)
                         if entryInfo and entryInfo.subTreeID then
                             subTreeID = entryInfo.subTreeID
                         end
                     end
-                elseif isChoice and indexInfo.isChoiceNode and nodeInfo.entryIDs then
-                    local entryID = nodeInfo.entryIDs[indexInfo.choiceNodeSelection]
-                    if entryID then
-                        nodes[tostring(nodeID)] = {
-                            rank = 1,
-                            entryID = entryID,
-                        }
-                    end
-                elseif nodeInfo.subTreeID then
-                    if isChoice and nodeInfo.entryIDs and #nodeInfo.entryIDs > 1 then
-                        local entryID = nodeInfo.entryIDs[indexInfo.choiceNodeSelection] or nodeInfo.entryIDs[1]
+                elseif BelongsToImportedSpec(nodeInfo, nodeID) then
+                    if isChoice and nodeInfo.entryIDs and #nodeInfo.entryIDs > 0 then
+                        local choiceIdx = indexInfo.isChoiceNode and indexInfo.choiceNodeSelection or 1
+                        local entryID = nodeInfo.entryIDs[choiceIdx] or nodeInfo.entryIDs[1]
                         if entryID then
                             nodes[tostring(nodeID)] = {
-                                rank = ranks,
+                                rank = ranks > 0 and ranks or 1,
                                 entryID = entryID,
                             }
                         end
                     else
                         nodes[tostring(nodeID)] = ranks
                     end
-                else
-                    nodes[tostring(nodeID)] = ranks
                 end
             end
         end
     end
 
     return nodes, subTreeID
+end
+
+local function PeekImportedSubTreeID(configID, loadoutContent)
+    local lib = GetLib()
+    for _, indexInfo in ipairs(loadoutContent) do
+        if indexInfo.isNodePurchased then
+            local nodeInfo = GetCachedNodeInfo(lib, indexInfo.nodeID)
+            if not nodeInfo or not nodeInfo.ID or nodeInfo.ID == 0 then
+                nodeInfo = C_Traits.GetNodeInfo(configID, indexInfo.nodeID)
+            end
+            if nodeInfo and (nodeInfo.type == Enum.TraitNodeType.SubTreeSelection or nodeInfo.isSubTreeSelection) then
+                local choiceIdx = indexInfo.isChoiceNode and indexInfo.choiceNodeSelection or nil
+                if choiceIdx and nodeInfo.entryIDs and nodeInfo.entryIDs[choiceIdx] then
+                    local entryID = nodeInfo.entryIDs[choiceIdx]
+                    local entryInfo = (lib and lib.GetEntryInfo and lib:GetEntryInfo(entryID))
+                        or C_Traits.GetEntryInfo(configID, entryID)
+                    if entryInfo and entryInfo.subTreeID then
+                        return entryInfo.subTreeID
+                    end
+                end
+            end
+        end
+    end
+    return nil
 end
 
 local function ParseBlizzardExportString(exportString)
@@ -534,8 +685,12 @@ local function ParseBlizzardExportString(exportString)
         return nil, "Invalid Blizzard export string."
     end
 
-    if serializationVersion ~= C_Traits.GetLoadoutSerializationVersion() then
+    local liveVersion = C_Traits.GetLoadoutSerializationVersion and C_Traits.GetLoadoutSerializationVersion()
+    if liveVersion and serializationVersion ~= liveVersion then
         return nil, "Export string version does not match this game version."
+    end
+    if not liveVersion and serializationVersion ~= 2 then
+        return nil, "Unsupported talent string version."
     end
 
     if not specID or not GetSpecializationInfoByID(specID) then
@@ -546,15 +701,23 @@ local function ParseBlizzardExportString(exportString)
     C_ClassTalents.InitializeViewLoadout(specID, level)
     C_ClassTalents.ViewLoadout({})
 
-    local treeID = C_ClassTalents.GetTraitTreeForSpec(specID)
+    local classID = LPL.TalentTree:GetClassIDForSpec(specID)
+    local treeID = GetTreeIDForSpec(specID, classID) or C_ClassTalents.GetTraitTreeForSpec(specID)
     if not treeID then
         return nil, "Could not resolve talent tree for this specialization."
     end
 
     local loadoutContent = ReadLoadoutContent(importStream, treeID)
-    local nodes, subTreeID = ConvertBlizzardContentToNodes(VIEW_CONFIG_ID, treeID, loadoutContent)
+    local peekedHero = PeekImportedSubTreeID(VIEW_CONFIG_ID, loadoutContent)
+    if peekedHero and LPL.TalentTree and LPL.TalentTree.ApplyView then
+        LPL.TalentTree:ApplyView(classID, specID, peekedHero, level)
+    end
 
-    local classID = LPL.TalentTree:GetClassIDForSpec(specID)
+    local nodes, subTreeID = ConvertBlizzardContentToNodes(
+        VIEW_CONFIG_ID, treeID, loadoutContent, specID, peekedHero
+    )
+    subTreeID = subTreeID or peekedHero
+
     local _, specName = GetSpecializationInfoByID(specID)
 
     return {
@@ -563,7 +726,7 @@ local function ParseBlizzardExportString(exportString)
         specID = specID,
         subTreeID = subTreeID,
         level = level,
-        nodes = nodes,
+        nodes = nodes or {},
     }
 end
 
@@ -577,7 +740,7 @@ local function ConvertLegacyNodes(rawNodes, specID)
     for rawNodeID, value in pairs(rawNodes) do
         local nodeID = tonumber(rawNodeID)
         if nodeID then
-            local nodeInfo = lib:GetNodeInfo(nodeID)
+            local nodeInfo = GetCachedNodeInfo(lib, nodeID)
             if type(value) == "table" then
                 local rank = tonumber(value.rank or value.ranks or value[1]) or 1
                 local entryID = tonumber(value.entryID or value.entryId)

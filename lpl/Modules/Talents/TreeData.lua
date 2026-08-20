@@ -18,6 +18,73 @@ local function GetLib()
     return LPL.TalentTree.lib
 end
 
+local function GetCachedNodeInfo(lib, nodeID)
+    if not lib or not nodeID then
+        return nil
+    end
+    local nodeInfo
+    if lib.GetLibNodeInfo then
+        nodeInfo = lib:GetLibNodeInfo(nodeID)
+    end
+    if not nodeInfo or not nodeInfo.ID or nodeInfo.ID == 0 then
+        nodeInfo = lib:GetNodeInfo(nodeID)
+    end
+    if nodeInfo then
+        nodeInfo.ID = nodeID
+    end
+    return nodeInfo
+end
+
+function LPL.TalentTree:GetNodeMaxRanks(nodeInfo)
+    if not nodeInfo then
+        return 1
+    end
+    if nodeInfo.totalMaxRanks and nodeInfo.totalMaxRanks > 0 then
+        return nodeInfo.totalMaxRanks
+    end
+    return nodeInfo.maxRanks or 1
+end
+
+function LPL.TalentTree:GetEntryType(entryID)
+    entryID = tonumber(entryID)
+    if not entryID then
+        return nil
+    end
+    local lib = GetLib()
+    local entryInfo = lib and lib.GetEntryInfo and lib:GetEntryInfo(entryID)
+    if entryInfo and entryInfo.type then
+        return entryInfo.type
+    end
+    local configID = VIEW_CONFIG_ID or -3
+    entryInfo = C_Traits.GetEntryInfo and C_Traits.GetEntryInfo(configID, entryID)
+    return entryInfo and entryInfo.type
+end
+
+function LPL.TalentTree:GetNodeArtKind(nodeInfo)
+    if not nodeInfo then
+        return "circle"
+    end
+
+    local nodeType = Enum and Enum.TraitNodeType
+    local isChoice = nodeInfo.isSubTreeSelection
+        or (nodeType and (nodeInfo.type == nodeType.Selection or nodeInfo.type == nodeType.SubTreeSelection))
+    if isChoice then
+        return "choice"
+    end
+
+    local entryType = self:GetEntryType(nodeInfo.entryIDs and nodeInfo.entryIDs[1])
+    local square = Enum.TraitNodeEntryType and (
+        entryType == Enum.TraitNodeEntryType.SpendSquare
+        or entryType == Enum.TraitNodeEntryType.SpendCapstoneSquare
+    )
+
+    if nodeInfo.isApexTalent or self:GetNodeMaxRanks(nodeInfo) >= 3 then
+        return square and "apexSquare" or "apexCircle"
+    end
+
+    return square and "square" or "circle"
+end
+
 function LPL.TalentTree:IsAvailable()
     local lib = GetLib()
     return lib and lib.IsCompatible and lib:IsCompatible()
@@ -214,12 +281,14 @@ function LPL.TalentTree:GetVisibleNodes(classID, specID, subTreeID, level)
     local nodes = {}
     for _, nodeID in ipairs(C_Traits.GetTreeNodes(treeID)) do
         if lib:IsNodeVisibleForSpec(specID, nodeID) then
-            local nodeInfo = lib:GetNodeInfo(nodeID)
+            local nodeInfo = GetCachedNodeInfo(lib, nodeID)
             if nodeInfo then
-                nodeInfo.ID = nodeID
                 local nodeSubTreeID = nodeInfo.subTreeID
                 local show = true
                 if nodeSubTreeID and subTreeID and nodeSubTreeID ~= subTreeID and not nodeInfo.isSubTreeSelection then
+                    show = false
+                end
+                if show and not nodeInfo.isSubTreeSelection and (not nodeInfo.entryIDs or not nodeInfo.entryIDs[1]) then
                     show = false
                 end
                 if show then
@@ -260,7 +329,7 @@ function LPL.TalentTree:GetNodePointPool(nodeID, selectedSubTreeID)
         return nil
     end
 
-    local nodeInfo = lib:GetNodeInfo(nodeID)
+    local nodeInfo = GetCachedNodeInfo(lib, nodeID)
     if not nodeInfo then
         return nil
     end
@@ -314,6 +383,21 @@ function LPL.TalentTree:CountSandboxSpent(sandbox, subTreeID, specID, classID, l
     end
 
     return classSpent, specSpent, heroSpent
+end
+
+function LPL.TalentTree:GetNodePosition(nodeID)
+    local lib = GetLib()
+    if not lib or not nodeID then
+        return nil, nil
+    end
+    if lib.GetNodePosition then
+        return lib:GetNodePosition(nodeID)
+    end
+    local nodeInfo = GetCachedNodeInfo(lib, nodeID)
+    if not nodeInfo then
+        return nil, nil
+    end
+    return nodeInfo.posX, nodeInfo.posY
 end
 
 function LPL.TalentTree:GetNodeGridPosition(nodeID)
@@ -461,17 +545,20 @@ function LPL.TalentTree:BuildTraitEntryPlainText(entryID, rank, nodeInfo, liveIn
     end
 
     if includeSupplemental then
-        local maxRank = nodeInfo and nodeInfo.maxRanks or 1
+        local maxRank = nodeInfo and self:GetNodeMaxRanks(nodeInfo) or 1
+        local purchased = (type(liveInfo) == "number" and liveInfo)
+            or (liveInfo and (liveInfo.sandboxRank or liveInfo.activeRank or liveInfo.currentRank))
+            or 0
         if maxRank > 1 and TALENT_BUTTON_TOOLTIP_RANK_FORMAT then
-            local purchased = liveInfo and (liveInfo.activeRank or liveInfo.currentRank) or 0
             AppendPlainPart(parts, string.format(TALENT_BUTTON_TOOLTIP_RANK_FORMAT, purchased, maxRank))
         end
 
-        if liveInfo and liveInfo.nextEntry and liveInfo.nextEntry.entryID and TALENT_BUTTON_TOOLTIP_NEXT_RANK then
-            local currentRank = liveInfo.activeRank or liveInfo.currentRank or 0
-            if currentRank > 0 and currentRank < maxRank then
+        if purchased > 0 and purchased < maxRank and TALENT_BUTTON_TOOLTIP_NEXT_RANK then
+            local nextEntryID = (type(liveInfo) == "table" and liveInfo.nextEntry and liveInfo.nextEntry.entryID)
+                or entryID
+            if nextEntryID then
                 AppendPlainPart(parts, TALENT_BUTTON_TOOLTIP_NEXT_RANK)
-                local nextData = C_TooltipInfo.GetTraitEntry(liveInfo.nextEntry.entryID, currentRank + 1)
+                local nextData = C_TooltipInfo.GetTraitEntry(nextEntryID, purchased + 1)
                 SurfaceTooltipData(nextData)
                 if nextData and nextData.lines then
                     for index = 2, #nextData.lines do
@@ -544,18 +631,18 @@ local function ApplyTraitEntryTooltip(owner, entryID, rank, nodeInfo, liveInfo)
         return true
     end
 
-    local maxRank = nodeInfo and nodeInfo.maxRanks or 1
+    local maxRank = nodeInfo and LPL.TalentTree:GetNodeMaxRanks(nodeInfo) or 1
+    local purchased = (liveInfo and (liveInfo.sandboxRank or liveInfo.activeRank or liveInfo.currentRank)) or 0
     if maxRank > 1 and TALENT_BUTTON_TOOLTIP_RANK_FORMAT then
-        local purchased = liveInfo and (liveInfo.activeRank or liveInfo.currentRank) or 0
         GameTooltip:AddLine(string.format(TALENT_BUTTON_TOOLTIP_RANK_FORMAT, purchased, maxRank), 1, 0.82, 0)
     end
 
-    if liveInfo and liveInfo.nextEntry and liveInfo.nextEntry.entryID and TALENT_BUTTON_TOOLTIP_NEXT_RANK then
-        local currentRank = liveInfo.activeRank or liveInfo.currentRank or 0
-        if currentRank > 0 and currentRank < maxRank then
+    if purchased > 0 and purchased < maxRank and TALENT_BUTTON_TOOLTIP_NEXT_RANK then
+        local nextEntryID = (liveInfo and liveInfo.nextEntry and liveInfo.nextEntry.entryID) or entryID
+        if nextEntryID then
             GameTooltip:AddLine(" ")
             GameTooltip:AddLine(TALENT_BUTTON_TOOLTIP_NEXT_RANK, 1, 0.82, 0)
-            local nextData = C_TooltipInfo.GetTraitEntry(liveInfo.nextEntry.entryID, currentRank + 1)
+            local nextData = C_TooltipInfo.GetTraitEntry(nextEntryID, purchased + 1)
             LPL.TalentTree:AddPlainTooltipDataLines(GameTooltip, nextData, true)
         end
     end
@@ -611,17 +698,20 @@ function LPL.TalentTree:GetNodeEntryAndRank(nodeInfo, sandbox, specID)
         or (nodeInfo and nodeInfo.activeEntry and nodeInfo.activeEntry.entryID)
         or (nodeInfo and nodeInfo.entryIDs and nodeInfo.entryIDs[1])
 
-    local rank
+    local purchased = 0
     if sandbox and specID and LPL.TalentInteractions then
-        rank = LPL.TalentInteractions:GetActiveRank(sandbox, nodeInfo, specID)
+        purchased = LPL.TalentInteractions:GetActiveRank(sandbox, nodeInfo, specID) or 0
     else
-        rank = liveInfo and (liveInfo.activeRank or liveInfo.currentRank) or 0
+        purchased = liveInfo and (liveInfo.activeRank or liveInfo.currentRank) or 0
     end
-    if rank < 1 then
-        rank = 1
+    if liveInfo then
+        liveInfo.sandboxRank = purchased
+    else
+        liveInfo = { sandboxRank = purchased }
     end
 
-    return entryID, rank, liveInfo
+    local tooltipRank = purchased > 0 and purchased or 1
+    return entryID, tooltipRank, liveInfo
 end
 
 function LPL.TalentTree:ShowHeroEmblemTooltip(owner, subTreeID)
@@ -745,6 +835,20 @@ function LPL.TalentTree:ShowNodeTooltip(owner, nodeInfo, specID, sandbox)
     self:AppendNodeAvailabilityToTooltip(owner, nodeInfo, specID, sandbox, title)
 end
 
+local function ResolveEntryInfo(entryID)
+    if not entryID then
+        return nil
+    end
+    local lib = GetLib()
+    local configID = VIEW_CONFIG_ID or -3
+    local liveInfo = C_Traits.GetEntryInfo and C_Traits.GetEntryInfo(configID, entryID)
+    local cachedInfo = lib and lib.GetEntryInfo and lib:GetEntryInfo(entryID)
+    if liveInfo and cachedInfo then
+        return Mixin(liveInfo, cachedInfo)
+    end
+    return cachedInfo or liveInfo
+end
+
 function LPL.TalentTree:ApplyEntryIcon(texture, entryID)
     if not texture or not entryID then
         texture:SetTexture(136243)
@@ -753,8 +857,7 @@ function LPL.TalentTree:ApplyEntryIcon(texture, entryID)
     end
 
     local lib = GetLib()
-    local configID = VIEW_CONFIG_ID or -3
-    local entryInfo = C_Traits.GetEntryInfo(configID, entryID) or (lib and lib:GetEntryInfo(entryID))
+    local entryInfo = ResolveEntryInfo(entryID)
     if not entryInfo then
         texture:SetTexture(136243)
         texture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
@@ -847,7 +950,7 @@ function LPL.TalentTree:GetNodeIcon(nodeInfo)
     local entryID = liveInfo and liveInfo.activeEntry and liveInfo.activeEntry.entryID
         or nodeInfo.entryIDs[1]
 
-    local entryInfo = C_Traits.GetEntryInfo(configID, entryID) or (lib and lib:GetEntryInfo(entryID))
+    local entryInfo = ResolveEntryInfo(entryID)
     if not entryInfo then
         return 136243, false
     end

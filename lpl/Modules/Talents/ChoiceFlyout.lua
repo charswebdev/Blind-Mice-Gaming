@@ -2,14 +2,29 @@ local addonName, LPL = ...
 
 LPL.TalentChoiceFlyout = {}
 
-local ATLAS = {
-    circle = "talents-node-circle",
-    green = "talents-node-green",
-    yellow = "talents-node-yellow",
-    mask = "talents-node-circle-mask",
-    shadow = "talents-node-circle-shadow",
-    hover = "talents-node-circle-hover",
+local FLYOUT_ART = {
+    circle = {
+        iconMask = "talents-node-circle-mask",
+        shadow = "talents-node-choiceflyout-circle-shadow",
+        normal = "talents-node-choiceflyout-circle-gray",
+        selectable = "talents-node-choiceflyout-circle-green",
+        maxed = "talents-node-choiceflyout-circle-yellow",
+        glow = "talents-node-choiceflyout-circle-greenglow",
+        iconInset = 0.16,
+    },
+    square = {
+        iconMask = "talents-node-choiceflyout-mask",
+        shadow = "talents-node-choiceflyout-square-shadow",
+        normal = "talents-node-choiceflyout-square-gray",
+        selectable = "talents-node-choiceflyout-square-green",
+        maxed = "talents-node-choiceflyout-square-yellow",
+        glow = "talents-node-choiceflyout-square-greenglow",
+        iconInset = 0.12,
+    },
 }
+
+local LINE_GOLD = { 1, 0.82, 0, 0.95 }
+local LINE_GRAY = { 0.55, 0.55, 0.55, 0.75 }
 
 local function TrySetAtlas(texture, atlasName, useAtlasSize)
     if not texture or not atlasName or not texture.SetAtlas then
@@ -21,36 +36,82 @@ local function TrySetAtlas(texture, atlasName, useAtlasSize)
     return pcall(texture.SetAtlas, texture, atlasName, useAtlasSize == true)
 end
 
+local function ApplyIconMask(texture, mask, atlasName)
+    if not texture or not texture.AddMaskTexture or not mask then
+        return
+    end
+    if atlasName and TrySetAtlas(mask, atlasName, false) then
+        mask:SetAllPoints(texture)
+        mask:Show()
+        texture:AddMaskTexture(mask)
+    else
+        mask:Hide()
+        if texture.RemoveMaskTexture then
+            pcall(texture.RemoveMaskTexture, texture, mask)
+        end
+    end
+end
+
+local function GetOptionArt(entryID)
+    local entryType = LPL.TalentTree:GetEntryType(entryID)
+    if Enum.TraitNodeEntryType and (
+        entryType == Enum.TraitNodeEntryType.SpendSquare
+        or entryType == Enum.TraitNodeEntryType.SpendCapstoneSquare
+    ) then
+        return FLYOUT_ART.square
+    end
+    return FLYOUT_ART.circle
+end
+
 local function GetArcOffset(index, count, radius)
     if count <= 1 then
         return 0, radius
     end
 
-    -- Fan options in an arc above the anchor node (Blizzard-style).
-    local minAngle = math.rad(52)
-    local maxAngle = math.rad(128)
+    -- Sweep left-to-right so entryIDs[1] matches Blizzard's first (top) choice.
+    local minAngle = math.rad(128)
+    local maxAngle = math.rad(52)
     local angle = minAngle + (index - 1) * (maxAngle - minAngle) / (count - 1)
-    local x = math.cos(angle) * radius
-    local y = math.sin(angle) * radius
-    return x, y
+    return math.cos(angle) * radius, math.sin(angle) * radius
 end
 
-local function ApplyOptionVisual(option, isSelected, canSelect)
-    local ringAtlas = ATLAS.circle
-    if isSelected then
-        ringAtlas = ATLAS.green
-    elseif canSelect then
-        ringAtlas = ATLAS.yellow
+local function ApplyOptionVisual(option, art, isSelected, canSelect)
+    local pad = math.max(4, math.floor(option:GetWidth() * (art.iconInset or 0.14)))
+    option.icon:ClearAllPoints()
+    option.icon:SetPoint("TOPLEFT", pad, -pad)
+    option.icon:SetPoint("BOTTOMRIGHT", -pad, pad)
+    ApplyIconMask(option.icon, option.iconMask, art.iconMask)
+
+    if TrySetAtlas(option.shadow, art.shadow, false) then
+        option.shadow:SetSize(option:GetWidth() * 1.3, option:GetHeight() * 1.3)
+        option.shadow:Show()
+    else
+        option.shadow:Hide()
     end
 
-    if not TrySetAtlas(option.ring, ringAtlas, true) then
-        option.ring:SetTexture("Interface\\Buttons\\UI-Quickslot2")
+    local borderAtlas = art.normal
+    if isSelected then
+        borderAtlas = art.maxed
+    elseif canSelect then
+        borderAtlas = art.selectable
+    end
+    if TrySetAtlas(option.ring, borderAtlas, false) then
+        option.ring:SetSize(option:GetWidth() * 1.4, option:GetHeight() * 1.4)
+        option.ring:Show()
+    end
+    if TrySetAtlas(option.hoverGlow, borderAtlas, false) then
+        option.hoverGlow:SetSize(option:GetWidth() * 1.4, option:GetHeight() * 1.4)
+    end
+
+    if canSelect and not isSelected and TrySetAtlas(option.glow, art.glow, false) then
+        option.glow:SetSize(option:GetWidth() * 1.55, option:GetHeight() * 1.55)
+        option.glow:Show()
+    else
+        option.glow:Hide()
     end
 
     option.icon:SetDesaturated(not isSelected and not canSelect)
-    option.icon:SetAlpha(isSelected and 1 or (canSelect and 1 or 0.45))
-    option.selectedGlow:SetShown(isSelected)
-    option.hoverGlow:SetShown(false)
+    option.icon:SetAlpha(isSelected and 1 or (canSelect and 1 or 0.5))
 end
 
 local function AcquireConnectorLine(flyout, index)
@@ -58,7 +119,7 @@ local function AcquireConnectorLine(flyout, index)
         local line
         if flyout.frame.CreateLine then
             line = flyout.frame:CreateLine(nil, "BACKGROUND")
-            line:SetThickness(1.25)
+            line:SetThickness(2.5)
         end
         flyout.linePool[index] = line
     end
@@ -73,50 +134,32 @@ local function AcquireOptionButton(flyout, index, size)
 
         local shadow = button:CreateTexture(nil, "BACKGROUND", nil, 0)
         shadow:SetPoint("CENTER")
-        if not TrySetAtlas(shadow, ATLAS.shadow, true) then
-            shadow:Hide()
-        end
         button.shadow = shadow
 
-        local ring = button:CreateTexture(nil, "ARTWORK", nil, 1)
-        ring:SetPoint("CENTER")
-        if not TrySetAtlas(ring, ATLAS.circle, true) then
-            ring:SetAllPoints()
-            ring:SetTexture("Interface\\Buttons\\UI-Quickslot2")
-        end
-        button.ring = ring
-
-        local icon = button:CreateTexture(nil, "ARTWORK", nil, 2)
+        local icon = button:CreateTexture(nil, "ARTWORK", nil, 1)
         icon:SetPoint("TOPLEFT", 6, -6)
         icon:SetPoint("BOTTOMRIGHT", -6, 6)
         icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
         button.icon = icon
 
-        if button.icon.AddMaskTexture then
-            local mask = button:CreateMaskTexture(nil, "ARTWORK")
-            if TrySetAtlas(mask, ATLAS.mask, true) then
-                mask:SetAllPoints(icon)
-                icon:AddMaskTexture(mask)
-                button.iconMask = mask
-            end
-        end
+        local iconMask = button:CreateMaskTexture(nil, "ARTWORK")
+        iconMask:SetAllPoints(icon)
+        iconMask:Hide()
+        button.iconMask = iconMask
 
-        local selectedGlow = button:CreateTexture(nil, "OVERLAY", nil, 1)
-        selectedGlow:SetTexture("Interface\\Buttons\\CheckButtonHilight")
-        selectedGlow:SetBlendMode("ADD")
-        selectedGlow:SetPoint("TOPLEFT", -4, 4)
-        selectedGlow:SetPoint("BOTTOMRIGHT", 4, -4)
-        selectedGlow:Hide()
-        button.selectedGlow = selectedGlow
+        local glow = button:CreateTexture(nil, "OVERLAY", nil, 0)
+        glow:SetPoint("CENTER")
+        glow:SetBlendMode("ADD")
+        glow:Hide()
+        button.glow = glow
+
+        local ring = button:CreateTexture(nil, "OVERLAY", nil, 1)
+        ring:SetPoint("CENTER")
+        button.ring = ring
 
         local hoverGlow = button:CreateTexture(nil, "OVERLAY", nil, 2)
         hoverGlow:SetPoint("CENTER")
-        if not TrySetAtlas(hoverGlow, ATLAS.hover, true) then
-            hoverGlow:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
-            hoverGlow:SetBlendMode("ADD")
-            hoverGlow:SetPoint("TOPLEFT", -6, 6)
-            hoverGlow:SetPoint("BOTTOMRIGHT", 6, -6)
-        end
+        hoverGlow:SetBlendMode("ADD")
         hoverGlow:Hide()
         button.hoverGlow = hoverGlow
 
@@ -190,7 +233,8 @@ function LPL.TalentChoiceFlyout:Create(parent)
     }
 
     local frame = CreateFrame("Frame", nil, parent)
-    frame:SetFrameStrata("TOOLTIP")
+    frame:SetFrameStrata("FULLSCREEN_DIALOG")
+    frame:SetFrameLevel((parent:GetFrameLevel() or 1) + 50)
     frame:EnableMouse(true)
     frame:Hide()
 
@@ -237,17 +281,16 @@ function LPL.TalentChoiceFlyout:Create(parent)
         end
 
         local anchorSize = nodeButton:GetWidth() or 30
-        local optionSize = math.max(44, math.floor(anchorSize * 1.45))
-        local radius = math.max(optionSize * 0.95, anchorSize * 1.35)
+        local optionSize = math.max(46, math.floor(anchorSize * 1.55))
+        local radius = math.max(optionSize * 1.05, anchorSize * 1.45)
 
         frame:ClearAllPoints()
-        frame:SetPoint("BOTTOM", nodeButton, "TOP", 0, -10)
+        frame:SetPoint("BOTTOM", nodeButton, "TOP", 0, -8)
         frame:SetSize(radius * 2 + optionSize, radius + optionSize)
+        frame:Raise()
 
-        local br, bg, bb = LPL.Theme:GetColor("border")
-        local ar, ag, ab = LPL.Theme:GetColor("accent")
         local centerX = frame:GetWidth() / 2
-        local baseY = 6
+        local baseY = 8
 
         for index, entryID in ipairs(entries) do
             local offsetX, offsetY = GetArcOffset(index, count, radius)
@@ -263,11 +306,16 @@ function LPL.TalentChoiceFlyout:Create(parent)
 
             local isSelected = state.selectedEntryID == entryID
             local canSelect = not isSelected and (state.canPurchase or state.selectedEntryID ~= nil)
-            ApplyOptionVisual(option, isSelected, canSelect)
+            ApplyOptionVisual(option, GetOptionArt(entryID), isSelected, canSelect)
 
             local line = AcquireConnectorLine(self, index)
             if line and line.SetStartPoint then
-                line:SetColorTexture(ar, ag, ab, isSelected and 0.95 or 0.45)
+                local color = isSelected and LINE_GOLD or LINE_GRAY
+                if line.SetVertexColor then
+                    line:SetVertexColor(color[1], color[2], color[3], color[4])
+                elseif line.SetColorTexture then
+                    line:SetColorTexture(color[1], color[2], color[3], color[4])
+                end
                 line:SetStartPoint("BOTTOM", frame, "BOTTOM", centerX, baseY)
                 line:SetEndPoint("CENTER", option, "CENTER")
                 line:Show()
