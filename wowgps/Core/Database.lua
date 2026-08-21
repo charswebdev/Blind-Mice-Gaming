@@ -84,6 +84,11 @@ function Database:RestoreWindow(frame)
     local w = self:GetProfile().window
     local width = tonumber(w.width) or c.WIDTH
     local height = tonumber(w.height) or c.HEIGHT
+    -- Previous default was 340x360; bump saved cramped windows to the new size.
+    if width <= 340 and height <= 360 then
+        width = c.WIDTH
+        height = c.HEIGHT
+    end
     width = math.max(c.MIN_WIDTH, math.min(c.MAX_WIDTH, width))
     height = math.max(c.MIN_HEIGHT, math.min(c.MAX_HEIGHT, height))
     frame:SetSize(width, height)

@@ -2,10 +2,10 @@ local _, ns = ...
 
 ns.Constants = {
     WINDOW = {
-        WIDTH = 340,
-        HEIGHT = 360,
-        MIN_WIDTH = 320,
-        MIN_HEIGHT = 320,
+        WIDTH = 400,
+        HEIGHT = 440,
+        MIN_WIDTH = 360,
+        MIN_HEIGHT = 380,
         MAX_WIDTH = 720,
         MAX_HEIGHT = 800,
     },

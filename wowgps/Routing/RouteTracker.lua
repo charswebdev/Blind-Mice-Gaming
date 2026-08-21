@@ -10,6 +10,7 @@ local PERSIST_STEP_KEYS = {
     "completionMapId", "completionX", "completionY",
     "checkDistance", "actionOptions", "instantUse", "completed", "isSubStep",
     "isPortalStep", "portalDestMap", "worldX", "worldY",
+    "item", "spell", "toy", "actionTitle", "housingTeleport", "housingReturn",
 }
 
 function RouteTracker:CopyStep(step)

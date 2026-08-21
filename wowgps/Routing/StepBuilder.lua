@@ -186,6 +186,13 @@ function StepBuilder:FromRoute(routeResult)
             completionY = compY,
             checkDistance = edge.checkDistance,
             actionOptions = edge.actionOptions,
+            item = edge.item,
+            spell = edge.spell,
+            toy = edge.toy,
+            initfunc = edge.initfunc,
+            actionTitle = edge.actionTitle,
+            housingTeleport = edge.housingTeleport,
+            housingReturn = edge.housingReturn,
             instantUse = edge.checkDistance == false and edge.actionOptions and #edge.actionOptions > 0,
             completed = false,
             isPortalStep = edge.isPortalStep,
@@ -205,6 +212,9 @@ function StepBuilder:FromRoute(routeResult)
                 end
             end
             if ns.TravelActions then
+                if ns.TravelActions.MarkHousingFromStep then
+                    ns.TravelActions:MarkHousingFromStep(step)
+                end
                 ns.TravelActions:EvaluateStep(step)
             end
             local lastStep = steps[#steps]

@@ -6,7 +6,7 @@
 
 ## Author: Blind Mice Gaming
 
-## Version: 0.4.3
+## Version: 0.4.4
 
 ## SavedVariables: WowGPSDB
 

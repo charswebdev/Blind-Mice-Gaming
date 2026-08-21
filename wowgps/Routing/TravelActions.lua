@@ -38,8 +38,16 @@ function TravelActions:StepNeedsUseAtLocation(step)
         end
     end
 
-    local text = (step.text or ""):lower()
+    if step.item or step.spell or step.housingTeleport or step.housingReturn or step.initfunc then
+        return true
+    end
+
+    local text = (step.text or "") .. " " .. (step.actionTitle or "")
+    text = text:lower()
     if text:find("hearthstone") or text:find("hearth") then
+        return true
+    end
+    if text:find("teleport to plot", 1, true) then
         return true
     end
 
@@ -51,6 +59,12 @@ function TravelActions:IsRemoteTravelStep(step)
         return false
     end
     if self:StepNeedsUseAtLocation(step) then
+        return true
+    end
+    if step.housingTeleport or step.housingReturn or step.initfunc then
+        return true
+    end
+    if step.item or step.spell then
         return true
     end
     if step.checkDistance == false and step.actionOptions and #step.actionOptions > 0 then
@@ -285,6 +299,14 @@ function TravelActions:EvaluateStep(step)
         return nil
     end
 
+    if (not step.actionOptions or #step.actionOptions == 0) then
+        if step.item then
+            step.actionOptions = { { type = "item", data = step.item } }
+        elseif step.spell then
+            step.actionOptions = { { type = "spell", data = step.spell } }
+        end
+    end
+
     step.travelActions = {}
     if not step.actionOptions then
         step.hasTravelAction = false
@@ -351,30 +373,123 @@ function TravelActions:GetUseMacro(action)
     return nil
 end
 
-function TravelActions:GetUseLabel(action)
+function TravelActions:GetUseLabel(action, short)
     if not action then
         return nil
     end
     local L = LibStub("AceLocale-3.0"):GetLocale("WowGPS", true)
+    if action.housingTeleport then
+        return (_G.HOUSING_DASHBOARD_TELEPORT_TO_PLOT)
+            or (L and L["TELEPORT_TO_PLOT"])
+            or "Teleport to Plot"
+    end
+    if action.housingReturn then
+        return (_G.HOUSING_DASHBOARD_RETURN)
+            or (L and L["HOUSING_RETURN"])
+            or "Return from House"
+    end
     local name = action.name
     if name and name ~= "" and not name:match("^Item %d+$") and not name:match("^Spell %d+$") then
+        if short then
+            return name
+        end
         local fmt = (L and L["USE_ITEM_NAMED"]) or "Use %s"
         return string.format(fmt, name)
     end
     return (L and L["USE_ITEM"]) or "Use"
 end
 
--- Secure-button payloads for the current step (item / toy / spell), matching Exploration's /use macros.
+function TravelActions:HousingTitle()
+    return (_G.HOUSING_DASHBOARD_TELEPORT_TO_PLOT) or "Teleport to Plot"
+end
+
+function TravelActions:HousingReturnTitle()
+    return (_G.HOUSING_DASHBOARD_RETURN) or "Return from House"
+end
+
+function TravelActions:StepLooksLikeHousingTeleport(step)
+    if not step then
+        return false
+    end
+    if step.housingTeleport then
+        return true
+    end
+    local blob = ((step.actionTitle or "") .. " " .. (step.text or "")):lower()
+    local title = self:HousingTitle():lower()
+    if title ~= "" and blob:find(title, 1, true) then
+        return true
+    end
+    return blob:find("teleport to plot", 1, true) ~= nil
+end
+
+function TravelActions:StepLooksLikeHousingReturn(step)
+    if not step then
+        return false
+    end
+    if step.housingReturn then
+        return true
+    end
+    local blob = ((step.actionTitle or "") .. " " .. (step.text or "")):lower()
+    local title = self:HousingReturnTitle():lower()
+    if title ~= "" and blob:find(title, 1, true) then
+        return true
+    end
+    return blob:find("return from house", 1, true) ~= nil
+        or blob:find("return from housing", 1, true) ~= nil
+end
+
+function TravelActions:MarkHousingFromStep(step)
+    if not step then
+        return
+    end
+    if step.initfunc and not step.housingTeleport and not step.housingReturn then
+        local ok, attrs = pcall(step.initfunc)
+        if ok and type(attrs) == "table" then
+            if attrs.type == "teleporthome" then
+                step.housingTeleport = true
+            elseif attrs.type == "returnhome" then
+                step.housingReturn = true
+            end
+        end
+    end
+    if self:StepLooksLikeHousingTeleport(step) then
+        step.housingTeleport = true
+    elseif self:StepLooksLikeHousingReturn(step) then
+        step.housingReturn = true
+    end
+end
+
+-- Secure-button payloads for a step (item / toy / spell / housing), matching Exploration.
 function TravelActions:GetStepUseActions(step)
     if not step or step.completed then
         return {}
     end
 
+    self:MarkHousingFromStep(step)
     if not step.travelActions then
         self:EvaluateStep(step)
     end
 
     local list = {}
+
+    if step.housingTeleport or self:StepLooksLikeHousingTeleport(step) then
+        list[#list + 1] = {
+            housingTeleport = true,
+            initfunc = step.initfunc,
+            name = self:HousingTitle(),
+            label = self:HousingTitle(),
+            available = true,
+        }
+    elseif step.housingReturn or self:StepLooksLikeHousingReturn(step) then
+        list[#list + 1] = {
+            housingReturn = true,
+            initfunc = step.initfunc,
+            name = self:HousingReturnTitle(),
+            label = self:HousingReturnTitle(),
+            available = true,
+        }
+    end
+
     for _, action in ipairs(step.travelActions or {}) do
         if (action.type == "item" or action.type == "spell") and action.id then
             local macro = self:GetUseMacro(action)
@@ -385,8 +500,8 @@ function TravelActions:GetStepUseActions(step)
                     name = action.name,
                     icon = action.icon,
                     available = action.available,
-                    isToy = action.isToy,
-                    label = self:GetUseLabel(action),
+                    isToy = action.isToy or step.toy,
+                    label = self:GetUseLabel(action, true),
                     macro = macro,
                 }
             end
@@ -408,7 +523,7 @@ function TravelActions:GetStepUseActions(step)
                     icon = action.icon,
                     available = action.available,
                     isToy = action.isToy,
-                    label = self:GetUseLabel(action),
+                    label = self:GetUseLabel(action, true),
                     macro = self:GetUseMacro(action),
                 }
             end
@@ -416,6 +531,126 @@ function TravelActions:GetStepUseActions(step)
     end
 
     return list
+end
+
+local houseInfos = nil
+local housingFrame = nil
+local housingPending = false
+
+local function pickHouseInfo(list)
+    if type(list) ~= "table" or #list == 0 then
+        return nil
+    end
+    local faction = UnitFactionGroup and UnitFactionGroup("player")
+    local wantMap = (faction == "Horde") and 2351 or 2352
+    local fallback = list[1]
+    for _, info in ipairs(list) do
+        if info and info.neighborhoodGUID and info.houseGUID and info.plotID then
+            if C_Housing and C_Housing.GetUIMapIDForNeighborhood then
+                local mapID = C_Housing.GetUIMapIDForNeighborhood(info.neighborhoodGUID)
+                if mapID == wantMap then
+                    return info
+                end
+            end
+            if not fallback then
+                fallback = info
+            end
+        end
+    end
+    if fallback and fallback.neighborhoodGUID and fallback.houseGUID and fallback.plotID then
+        return fallback
+    end
+    return nil
+end
+
+function TravelActions:RequestOwnedHouses()
+    if not C_Housing or not C_Housing.GetPlayerOwnedHouses then
+        return
+    end
+    if not housingFrame then
+        housingFrame = CreateFrame("Frame")
+        housingFrame:RegisterEvent("PLAYER_HOUSE_LIST_UPDATED")
+        housingFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+        housingFrame:SetScript("OnEvent", function(_, event, payload)
+            if event == "PLAYER_HOUSE_LIST_UPDATED" then
+                houseInfos = payload
+                housingPending = false
+                if ns.RouteTab and ns.RouteTab.Refresh then
+                    ns.RouteTab:Refresh()
+                end
+            elseif event == "PLAYER_REGEN_ENABLED" and housingPending then
+                housingPending = false
+                if ns.RouteTab and ns.RouteTab.Refresh then
+                    ns.RouteTab:Refresh()
+                end
+            end
+        end)
+    end
+    C_Housing.GetPlayerOwnedHouses()
+end
+
+function TravelActions:GetOwnedHouseForTeleport()
+    return pickHouseInfo(houseInfos)
+end
+
+function TravelActions:ConfigureInitFuncButton(btn, initfunc)
+    if not btn or type(initfunc) ~= "function" then
+        return false
+    end
+    if InCombatLockdown and InCombatLockdown() then
+        return false
+    end
+    local ok, attrs = pcall(initfunc)
+    if not ok or type(attrs) ~= "table" then
+        return false
+    end
+    for field, value in pairs(attrs) do
+        btn:SetAttribute(field, value)
+    end
+    return attrs.type ~= nil
+end
+
+function TravelActions:ConfigureHousingTeleportButton(btn)
+    if not btn then
+        return false
+    end
+    if InCombatLockdown and InCombatLockdown() then
+        housingPending = true
+        self:RequestOwnedHouses()
+        return false
+    end
+
+    local info = self:GetOwnedHouseForTeleport()
+    if not info then
+        housingPending = true
+        self:RequestOwnedHouses()
+        if btn.useAction and btn.useAction.initfunc then
+            return self:ConfigureInitFuncButton(btn, btn.useAction.initfunc)
+        end
+        btn:SetAttribute("type", nil)
+        btn:SetAttribute("house-neighborhood-guid", nil)
+        btn:SetAttribute("house-guid", nil)
+        btn:SetAttribute("house-plot-id", nil)
+        return false
+    end
+
+    btn:SetAttribute("useOnKeyDown", false)
+    btn:RegisterForClicks("AnyDown", "AnyUp")
+    btn:SetAttribute("type", "teleporthome")
+    btn:SetAttribute("house-neighborhood-guid", info.neighborhoodGUID)
+    btn:SetAttribute("house-guid", info.houseGUID)
+    btn:SetAttribute("house-plot-id", info.plotID)
+    return true
+end
+
+function TravelActions:ClearHousingTeleportButton(btn)
+    if not btn or (InCombatLockdown and InCombatLockdown()) then
+        return
+    end
+    btn:SetAttribute("type", nil)
+    btn:SetAttribute("house-neighborhood-guid", nil)
+    btn:SetAttribute("house-guid", nil)
+    btn:SetAttribute("house-plot-id", nil)
 end
 
 function TravelActions:GetStepActionSummary(step)

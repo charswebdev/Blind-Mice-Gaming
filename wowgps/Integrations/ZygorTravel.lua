@@ -182,6 +182,110 @@ end
 
 
 
+function ZygorTravel:CopyNodeTravelAction(edge, node)
+
+    if not edge or not node then
+
+        return
+
+    end
+
+    local link = node.link or node.parentlink
+
+    local item = node.item or (link and link.item)
+
+    local spell = node.spell or (link and link.spell)
+
+    local toy = node.toy or (link and link.toy)
+
+    local initfunc = node.initfunc or (link and link.initfunc)
+
+    local title = node.title or (link and link.title)
+
+    if type(title) == "function" then
+
+        title = title(node)
+
+    end
+
+
+
+    if item then
+
+        edge.item = item
+
+    end
+
+    if spell then
+
+        edge.spell = spell
+
+    end
+
+    if toy then
+
+        edge.toy = toy and true or nil
+
+    end
+
+    if initfunc then
+
+        edge.initfunc = initfunc
+
+    end
+
+    if title and title ~= "" then
+
+        edge.actionTitle = title
+
+    end
+
+    local titleLower = tostring(title or edge.loca or ""):lower()
+
+    if initfunc then
+
+        local ok, attrs = pcall(initfunc)
+
+        if ok and type(attrs) == "table" and attrs.type == "teleporthome" then
+
+            edge.housingTeleport = true
+
+        elseif ok and type(attrs) == "table" and attrs.type == "returnhome" then
+
+            edge.housingReturn = true
+
+        elseif titleLower:find("teleport to plot", 1, true) then
+
+            edge.housingTeleport = true
+
+        end
+
+    elseif titleLower:find("teleport to plot", 1, true) then
+
+        edge.housingTeleport = true
+
+    end
+
+
+
+    if (not edge.actionOptions or #edge.actionOptions == 0) then
+
+        if item then
+
+            edge.actionOptions = { { type = "item", data = item } }
+
+        elseif spell then
+
+            edge.actionOptions = { { type = "spell", data = spell } }
+
+        end
+
+    end
+
+end
+
+
+
 function ZygorTravel:IsPortalEdge(edge)
 
     if not edge then
@@ -423,6 +527,8 @@ function ZygorTravel:NodeToEdge(node, prevNode, nextNode, dest)
         edge.actionOptions = node.actionOptions
 
     end
+
+    self:CopyNodeTravelAction(edge, node)
 
 
 

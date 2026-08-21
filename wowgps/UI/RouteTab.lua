@@ -4,9 +4,9 @@ local RouteTab = {}
 ns.RouteTab = RouteTab
 
 RouteTab.LIST_WIDTH = 280
-RouteTab.STEP_HEIGHT = 36
-RouteTab.SUBSTEP_HEIGHT = 30
-RouteTab.STEP_GAP = 4
+RouteTab.STEP_HEIGHT = 44
+RouteTab.SUBSTEP_HEIGHT = 36
+RouteTab.STEP_GAP = 6
 
 function RouteTab:FormatTravelSuffix(step, route)
     if not ns.TravelActions then
@@ -24,7 +24,7 @@ end
 
 function RouteTab:GetListWidth()
     if self.scroll then
-        return math.max(200, (self.scroll:GetWidth() or self.LIST_WIDTH) - 4)
+        return math.max(200, (self.scroll:GetWidth() or self.LIST_WIDTH) - 8)
     end
     return self.LIST_WIDTH
 end
@@ -60,31 +60,217 @@ function RouteTab:GetOrCreateStepRow(index)
     row.bar:SetColorTexture(0, 0, 0, 0)
 
     row.num = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    row.num:SetPoint("TOPLEFT", 10, -8)
+    row.num:SetPoint("TOPLEFT", 10, -10)
     row.num:SetWidth(22)
     row.num:SetJustifyH("RIGHT")
 
     row.text = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    row.text:SetPoint("TOPLEFT", 34, -8)
-    row.text:SetWidth(238)
+    row.text:SetPoint("TOPLEFT", 36, -10)
+    row.text:SetPoint("RIGHT", -10, 0)
     row.text:SetJustifyH("LEFT")
     row.text:SetWordWrap(true)
+    row.text:SetNonSpaceWrap(true)
 
     self.stepRows[index] = row
     return row
 end
 
+function RouteTab:EnsureStepUseButton(row)
+    if row.useBtn then
+        return row.useBtn
+    end
+
+    local theme = ns.Theme
+    local L = LibStub("AceLocale-3.0"):GetLocale("WowGPS")
+    -- Parent to the step row (a Frame). Never anchor this secure button to a FontString.
+    local btn = CreateFrame("Button", nil, row, "SecureActionButtonTemplate, BackdropTemplate")
+    btn:SetSize(72, 22)
+    btn:SetText(L["USE_ITEM"] or "Use")
+    btn:RegisterForClicks("AnyUp", "AnyDown")
+    btn:SetFrameLevel(row:GetFrameLevel() + 6)
+    theme:StyleSmallButton(btn, "royal")
+    btn.icon = btn:CreateTexture(nil, "ARTWORK")
+    btn.icon:SetSize(16, 16)
+    btn.icon:SetPoint("LEFT", 5, 0)
+    btn.icon:Hide()
+    local fs = btn:GetFontString()
+    if fs then
+        fs:ClearAllPoints()
+        fs:SetPoint("LEFT", 8, 0)
+        fs:SetPoint("RIGHT", -6, 0)
+        fs:SetJustifyH("CENTER")
+    end
+    btn:SetScript("OnEnter", function(selfBtn)
+        local h = selfBtn._themeHoverBg
+        if h then
+            selfBtn:SetBackdropColor(h[1], h[2], h[3], 1)
+        end
+        RouteTab:ShowUseTooltip(selfBtn)
+    end)
+    btn:SetScript("OnLeave", function(selfBtn)
+        local b = selfBtn._themeBaseBg
+        if b then
+            selfBtn:SetBackdropColor(b[1], b[2], b[3], 1)
+        end
+        GameTooltip:Hide()
+    end)
+    btn:Hide()
+    row.useBtn = btn
+    return btn
+end
+
+function RouteTab:ConfigureUseButton(btn, act)
+    if not btn then
+        return
+    end
+    if InCombatLockdown() then
+        self._pendingUseUpdate = true
+        return
+    end
+    if not act then
+        self:ClearUseButton(btn)
+        return
+    end
+
+    local theme = ns.Theme
+    local L = LibStub("AceLocale-3.0"):GetLocale("WowGPS")
+    local label = L["USE_ITEM"] or "Use"
+    if act.housingTeleport or act.housingReturn then
+        label = act.label or label
+    end
+    btn:SetText(label)
+    btn.useAction = act
+
+    local fs = btn:GetFontString()
+    if btn.icon then
+        local icon = act.icon
+        if not icon and act.id then
+            if act.type == "spell" then
+                icon = (C_Spell and C_Spell.GetSpellTexture and C_Spell.GetSpellTexture(act.id)) or GetSpellTexture(act.id)
+            else
+                icon = (C_Item and C_Item.GetItemIconByID and C_Item.GetItemIconByID(act.id)) or GetItemIcon(act.id)
+            end
+        end
+        if icon then
+            btn.icon:SetTexture(icon)
+            btn.icon:Show()
+            if fs then
+                fs:ClearAllPoints()
+                fs:SetPoint("LEFT", btn.icon, "RIGHT", 4, 0)
+                fs:SetPoint("RIGHT", -6, 0)
+                fs:SetJustifyH("LEFT")
+            end
+        else
+            btn.icon:Hide()
+            if fs then
+                fs:ClearAllPoints()
+                fs:SetPoint("LEFT", 8, 0)
+                fs:SetPoint("RIGHT", -6, 0)
+                fs:SetJustifyH("CENTER")
+            end
+        end
+    end
+
+    if ns.TravelActions and ns.TravelActions.ClearHousingTeleportButton then
+        ns.TravelActions:ClearHousingTeleportButton(btn)
+    end
+
+    if act.housingTeleport then
+        ns.TravelActions:ConfigureHousingTeleportButton(btn)
+        btn:SetScript("PreClick", function()
+            ns.TravelActions:ConfigureHousingTeleportButton(btn)
+        end)
+    elseif act.housingReturn and act.initfunc then
+        ns.TravelActions:ConfigureInitFuncButton(btn, act.initfunc)
+        btn:SetScript("PreClick", function()
+            ns.TravelActions:ConfigureInitFuncButton(btn, act.initfunc)
+        end)
+    elseif act.isToy and act.id then
+        btn:SetScript("PreClick", nil)
+        local toyName = act.name
+        if C_ToyBox and C_ToyBox.GetToyInfo then
+            local _, name = C_ToyBox.GetToyInfo(act.id)
+            if name and name ~= "" then
+                toyName = name
+            end
+        end
+        btn:SetAttribute("type", "toy")
+        btn:SetAttribute("toy", toyName or act.id)
+        btn:SetAttribute("macrotext", nil)
+        btn:SetAttribute("spell", nil)
+    elseif act.type == "spell" and act.id then
+        btn:SetScript("PreClick", nil)
+        btn:SetAttribute("type", "spell")
+        btn:SetAttribute("spell", act.id)
+        btn:SetAttribute("macrotext", nil)
+    elseif act.macro then
+        btn:SetScript("PreClick", nil)
+        btn:SetAttribute("type", "macro")
+        btn:SetAttribute("macrotext", act.macro)
+        btn:SetAttribute("spell", nil)
+    else
+        self:ClearUseButton(btn)
+        return
+    end
+
+    btn:Enable()
+    btn:Show()
+    local textW = (theme.GetButtonTextWidth and theme:GetButtonTextWidth(btn) or 24) + 20
+    if btn.icon and btn.icon:IsShown() then
+        textW = textW + 20
+    end
+    local maxW = (act.housingTeleport or act.housingReturn) and 148 or 76
+    btn:SetWidth(math.max(52, math.min(maxW, textW)))
+    btn:SetHeight(24)
+end
+
+function RouteTab:AnchorStepUseButton(row)
+    if not row or not row.useBtn or not row.useBtn:IsShown() then
+        return
+    end
+    if InCombatLockdown() then
+        self._pendingUseUpdate = true
+        return
+    end
+    local btn = row.useBtn
+    btn:ClearAllPoints()
+    btn:SetPoint("RIGHT", row, "RIGHT", -8, 0)
+    btn:SetFrameLevel(row:GetFrameLevel() + 6)
+    local width = btn:GetWidth() or 56
+    row.text:ClearAllPoints()
+    row.text:SetPoint("TOPLEFT", 36, -10)
+    row.text:SetPoint("RIGHT", row, "RIGHT", -(width + 16), 0)
+end
+
 function RouteTab:StyleStepRow(row, stepNum, step, route, active, isNav, isSubStep)
     local theme = ns.Theme
     local c = theme.colors
-    local completed = step.completed
-    local text = self:GetStepText(step) .. self:FormatTravelSuffix(step, route)
-    local height = isSubStep and self.SUBSTEP_HEIGHT or self.STEP_HEIGHT
+    local actions = ns.TravelActions and ns.TravelActions.GetStepUseActions and ns.TravelActions:GetStepUseActions(step)
+    local act = (not completed) and actions and actions[1]
+    local text = self:GetStepText(step)
+    if not act then
+        text = text .. self:FormatTravelSuffix(step, route)
+    end
 
+    local height = isSubStep and self.SUBSTEP_HEIGHT or self.STEP_HEIGHT
     row:SetHeight(height)
     local listWidth = self:GetListWidth()
     row:SetWidth(isSubStep and math.max(160, listWidth - 8) or listWidth)
-    row.text:SetWidth(math.max(120, listWidth - (isSubStep and 54 or 42)))
+
+    if act then
+        local btn = self:EnsureStepUseButton(row)
+        self:ConfigureUseButton(btn, act)
+        row.text:ClearAllPoints()
+        row.text:SetPoint("TOPLEFT", 36, -10)
+        row.text:SetPoint("RIGHT", row, "RIGHT", -((btn:GetWidth() or 56) + 16), 0)
+    else
+        if row.useBtn then
+            self:ClearUseButton(row.useBtn)
+        end
+        row.text:ClearAllPoints()
+        row.text:SetPoint("TOPLEFT", 36, -10)
+        row.text:SetPoint("RIGHT", -10, 0)
+    end
 
     if isSubStep then
         row.num:SetText(string.char(96 + stepNum) .. ".")
@@ -92,6 +278,13 @@ function RouteTab:StyleStepRow(row, stepNum, step, route, active, isNav, isSubSt
         row.num:SetText(tostring(stepNum) .. ".")
     end
     row.text:SetText(text)
+
+    local textH = row.text:GetStringHeight() or 12
+    local needed = textH + 20
+    if act then
+        needed = math.max(needed, 44)
+    end
+    row:SetHeight(math.max(height, needed))
 
     if isNav then
         theme:SetCardHover(row, true)
@@ -182,7 +375,7 @@ function RouteTab:Build(parent, mainFrame)
     self.destCard = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     self.destCard:SetPoint("TOPLEFT", 12, -34)
     self.destCard:SetPoint("TOPRIGHT", -12, -34)
-    self.destCard:SetHeight(52)
+    self.destCard:SetHeight(58)
     theme:StyleCard(self.destCard)
     self.destCard.title = self.destCard:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     self.destCard.title:SetPoint("TOPLEFT", 10, -8)
@@ -210,14 +403,19 @@ function RouteTab:Build(parent, mainFrame)
     self.noticeCard.text:SetWordWrap(true)
     self.noticeCard:Hide()
 
-    self.stepsHeader = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    self.stepsHeader:SetPoint("TOPLEFT", self.destCard, "BOTTOMLEFT", 0, -8)
+    self.stepsHeaderFrame = CreateFrame("Frame", nil, parent)
+    self.stepsHeaderFrame:SetPoint("TOPLEFT", self.destCard, "BOTTOMLEFT", 0, -8)
+    self.stepsHeaderFrame:SetPoint("TOPRIGHT", self.destCard, "BOTTOMRIGHT", 0, -8)
+    self.stepsHeaderFrame:SetHeight(16)
+    self.stepsHeaderFrame:Hide()
+
+    self.stepsHeader = self.stepsHeaderFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    self.stepsHeader:SetPoint("LEFT", self.stepsHeaderFrame, "LEFT", 0, 0)
     self.stepsHeader:SetText(L["ROUTE_STEPS_HEADER"])
     theme:SetTextColor(self.stepsHeader, theme.colors.sectionHeader)
-    self.stepsHeader:Hide()
 
     local scroll = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
-    scroll:SetPoint("TOPLEFT", self.stepsHeader, "BOTTOMLEFT", -4, -4)
+    scroll:SetPoint("TOPLEFT", self.stepsHeaderFrame, "BOTTOMLEFT", -4, -4)
     local listContent = CreateFrame("Frame", nil, scroll)
     listContent:SetSize(1, 1)
     scroll:SetScrollChild(listContent)
@@ -334,9 +532,8 @@ function RouteTab:Build(parent, mainFrame)
         local combatFrame = CreateFrame("Frame")
         combatFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
         combatFrame:SetScript("OnEvent", function()
-            if RouteTab._pendingUseUpdate then
-                RouteTab:UpdateUseButtons()
-                RouteTab:LayoutFooterButtons()
+            if RouteTab._pendingUseUpdate or RouteTab.parent then
+                RouteTab:Refresh()
             end
         end)
         self.combatFrame = combatFrame
@@ -353,7 +550,11 @@ function RouteTab:ShowUseTooltip(btn)
     local L = LibStub("AceLocale-3.0"):GetLocale("WowGPS")
     GameTooltip:SetOwner(btn, "ANCHOR_TOP")
     GameTooltip:SetText(act.name or act.label or L["USE_ITEM"], 1, 1, 1)
-    if act.available == false then
+    if act.housingTeleport then
+        GameTooltip:AddLine("Click to teleport to your house plot.", 0.75, 0.98, 0.80, true)
+    elseif act.housingReturn then
+        GameTooltip:AddLine("Click to return from your house.", 0.75, 0.98, 0.80, true)
+    elseif act.available == false then
         GameTooltip:AddLine(L["TRAVEL_MISSING"], 1, 0.3, 0.3, true)
     else
         GameTooltip:AddLine(L["USE_ITEM_TIP"] or "Click to use this item.", 0.75, 0.98, 0.80, true)
@@ -370,6 +571,9 @@ function RouteTab:ClearUseButton(btn)
     end
     btn:Hide()
     btn.useAction = nil
+    if btn.icon then
+        btn.icon:Hide()
+    end
     if InCombatLockdown() then
         return
     end
@@ -377,6 +581,11 @@ function RouteTab:ClearUseButton(btn)
     btn:SetAttribute("macrotext", nil)
     btn:SetAttribute("spell", nil)
     btn:SetAttribute("item", nil)
+    btn:SetAttribute("toy", nil)
+    if ns.TravelActions and ns.TravelActions.ClearHousingTeleportButton then
+        ns.TravelActions:ClearHousingTeleportButton(btn)
+    end
+    btn:SetScript("PreClick", nil)
 end
 
 function RouteTab:UpdateUseButtons()
@@ -388,33 +597,9 @@ function RouteTab:UpdateUseButtons()
         return
     end
     self._pendingUseUpdate = false
-
-    local actions = {}
-    local tracker = ns.RouteTracker
-    local step = tracker and tracker.GetActiveStep and tracker:GetActiveStep()
-    if step and ns.TravelActions and ns.TravelActions.GetStepUseActions then
-        actions = ns.TravelActions:GetStepUseActions(step) or {}
-    end
-
-    for i, btn in ipairs(self.useBtns) do
-        local act = actions[i]
-        if act and act.macro then
-            btn:SetText(act.label or "Use")
-            if act.type == "spell" and act.id then
-                btn:SetAttribute("type", "spell")
-                btn:SetAttribute("spell", act.id)
-                btn:SetAttribute("macrotext", nil)
-            else
-                btn:SetAttribute("type", "macro")
-                btn:SetAttribute("macrotext", act.macro)
-                btn:SetAttribute("spell", nil)
-            end
-            btn.useAction = act
-            btn:Enable()
-            btn:Show()
-        else
-            self:ClearUseButton(btn)
-        end
+    -- Per-step buttons already cover use actions; hide the duplicate footer copies.
+    for _, btn in ipairs(self.useBtns) do
+        self:ClearUseButton(btn)
     end
 end
 
@@ -595,11 +780,17 @@ function RouteTab:Refresh()
 
     for _, row in ipairs(self.stepRows) do
         row:Hide()
+        if row.useBtn and not InCombatLockdown() then
+            self:ClearUseButton(row.useBtn)
+        end
     end
 
     if not route then
+        self.stepsHeaderFrame:Hide()
         self.stepsHeader:Hide()
-        self.listContent:Hide()
+        if not InCombatLockdown() then
+            self.listContent:Hide()
+        end
         self.recalcBtn:Hide()
         self.completeBtn:Hide()
 
@@ -660,11 +851,17 @@ function RouteTab:Refresh()
         theme:StyleNoticeCard(self.noticeCard, noticeTone)
         self.noticeCard:Show()
         self.noticeCard:SetPoint("TOPLEFT", self.destCard, "BOTTOMLEFT", 0, -6)
-        self.stepsHeader:SetPoint("TOPLEFT", self.noticeCard, "BOTTOMLEFT", 0, -8)
+        self.noticeCard:SetPoint("TOPRIGHT", self.destCard, "BOTTOMRIGHT", 0, -6)
+        self.stepsHeaderFrame:ClearAllPoints()
+        self.stepsHeaderFrame:SetPoint("TOPLEFT", self.noticeCard, "BOTTOMLEFT", 0, -8)
+        self.stepsHeaderFrame:SetPoint("TOPRIGHT", self.noticeCard, "BOTTOMRIGHT", 0, -8)
     else
         self.noticeCard:Hide()
-        self.stepsHeader:SetPoint("TOPLEFT", self.destCard, "BOTTOMLEFT", 0, -8)
+        self.stepsHeaderFrame:ClearAllPoints()
+        self.stepsHeaderFrame:SetPoint("TOPLEFT", self.destCard, "BOTTOMLEFT", 0, -8)
+        self.stepsHeaderFrame:SetPoint("TOPRIGHT", self.destCard, "BOTTOMRIGHT", 0, -8)
     end
+    self.stepsHeaderFrame:Show()
     self.stepsHeader:Show()
 
     local active = route.activeStepIndex
@@ -677,9 +874,11 @@ function RouteTab:Refresh()
         local row = self:GetOrCreateStepRow(rowIndex)
         local isNav = (i == active and not (navStep and navStep.isSubStep))
         self:StyleStepRow(row, i, step, route, i == active, isNav, false)
-        row:SetPoint("TOPLEFT", 0, y)
+        row:ClearAllPoints()
+        row:SetPoint("TOPLEFT", self.listContent, "TOPLEFT", 0, y)
         row:Show()
-        y = y - self.STEP_HEIGHT - self.STEP_GAP
+        self:AnchorStepUseButton(row)
+        y = y - row:GetHeight() - self.STEP_GAP
 
         if i == active then
             local subs = ns.SubStepResolver:GetSubStepsForDisplay(route, i)
@@ -691,9 +890,11 @@ function RouteTab:Refresh()
                     local subRow = self:GetOrCreateStepRow(rowIndex)
                     local subNav = (navStep == sub)
                     self:StyleStepRow(subRow, subNum, sub, route, true, subNav, true)
-                    subRow:SetPoint("TOPLEFT", 8, y)
+                    subRow:ClearAllPoints()
+                    subRow:SetPoint("TOPLEFT", self.listContent, "TOPLEFT", 8, y)
                     subRow:Show()
-                    y = y - self.SUBSTEP_HEIGHT - self.STEP_GAP
+                    self:AnchorStepUseButton(subRow)
+                    y = y - subRow:GetHeight() - self.STEP_GAP
                 end
             end
         end
