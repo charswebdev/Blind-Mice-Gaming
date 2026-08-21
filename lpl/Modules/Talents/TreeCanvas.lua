@@ -12,7 +12,6 @@ local HERO_EMBLEM_GAP = 8
 local CANVAS_PADDING = 20
 local POS_STEP = 600
 local COLUMN_GAP = 0.85
-local APEX_PIP_RESERVE = 34
 local BORDER_SCALE = 1.18
 local SHADOW_SCALE = 1.12
 local GLOW_SCALE = 1.28
@@ -195,7 +194,11 @@ local function ApplyNodeVisuals(button, state, nodeSize)
         ApplySplitChoiceIcons(button, nodeInfo, isAvailable, canInteract, art)
     else
         button.secondaryIcon:Hide()
-        SetIconInset(button.icon, button, art.iconInset)
+        local iconInset = art.iconInset
+        if nodeInfo and nodeInfo.isApexTalent and not nodeInfo.subTreeID then
+            iconInset = math.max(iconInset or 0.16, 0.24)
+        end
+        SetIconInset(button.icon, button, iconInset)
         ApplyIconMask(button.icon, button.iconMask, art.iconMask)
         ApplyIconMask(button.disabledOverlay, button.disabledMask, art.iconMask)
         button.icon:SetDesaturated(not isSelected and not canInteract)
@@ -248,6 +251,9 @@ local function AcquireNodeButton(canvas, index, nodeSize)
     if not canvas.nodePool[index] then
         local button = CreateFrame("Button", nil, canvas.content)
         button:SetSize(nodeSize, nodeSize)
+        if button.SetClipsChildren then
+            button:SetClipsChildren(false)
+        end
 
         local shadow = button:CreateTexture(nil, "BACKGROUND", nil, 0)
         shadow:SetPoint("CENTER")
@@ -407,9 +413,22 @@ local function PositionHeroEmblem(canvas, subTreeID, specID, heroBounds, nodeSiz
     emblem:Show()
 end
 
+local function HideApexPips(button)
+    local pips = button and button.apexPips
+    if not pips then
+        return
+    end
+    for i = 1, #pips do
+        pips[i]:SetParent(button)
+        pips[i]:Hide()
+    end
+end
+
 local function HideExtraNodes(canvas, usedCount)
     for index = usedCount + 1, #canvas.nodePool do
-        canvas.nodePool[index]:Hide()
+        local button = canvas.nodePool[index]
+        HideApexPips(button)
+        button:Hide()
     end
 end
 
@@ -442,86 +461,99 @@ local function AxisSpan(map)
 end
 
 local function IsApexNode(nodeInfo)
-    if not nodeInfo then
-        return false
-    end
-    if nodeInfo.subTreeID then
-        return false
-    end
-    if nodeInfo.isApexTalent then
-        return true
-    end
-    return LPL.TalentTree:GetNodeMaxRanks(nodeInfo) >= 3
+    return nodeInfo and nodeInfo.isApexTalent and not nodeInfo.subTreeID
 end
 
-local function ApplyApexPips(button, state, nodeSize)
+-- Pip centers sit on the gold ring at each corner, not over the icon.
+local APEX_PIP_ANCHORS = {
+    { "CENTER", "TOPLEFT", 1, -1 },
+    { "CENTER", "TOPRIGHT", -1, -1 },
+    { "CENTER", "BOTTOMRIGHT", -1, 1 },
+    { "CENTER", "BOTTOMLEFT", 1, 1 },
+}
+
+local function EnsureApexPipArt(pip)
+    if pip.apexArtReady then
+        return
+    end
+    pip.fill = pip.fill or pip:CreateTexture(nil, "ARTWORK", nil, 1)
+    pip.ringMask = pip.ringMask or pip:CreateMaskTexture()
+    pip.fillMask = pip.fillMask or pip:CreateMaskTexture()
+    pip.ringMask:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    pip.fillMask:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    pip.ringMask:SetAllPoints(pip.ring)
+    pip.fillMask:SetAllPoints(pip.fill)
+    if pip.ring.AddMaskTexture then
+        pip.ring:AddMaskTexture(pip.ringMask)
+    end
+    if pip.fill.AddMaskTexture then
+        pip.fill:AddMaskTexture(pip.fillMask)
+    end
+    pip.apexArtReady = true
+end
+
+local function PaintApexPip(pip, pipSize, filled)
+    EnsureApexPipArt(pip)
+    pip:SetSize(pipSize, pipSize)
+    pip:EnableMouse(false)
+    pip.label:Hide()
+    if pip.fill then
+        pip.fill:Hide()
+    end
+
+    pip.ring:ClearAllPoints()
+    pip.ring:SetAllPoints()
+    pip.ringMask:ClearAllPoints()
+    pip.ringMask:SetAllPoints(pip.ring)
+    pip.ring:SetVertexColor(1, 1, 1, 1)
+    if filled then
+        pip.ring:SetColorTexture(RANK_GOLD[1], RANK_GOLD[2], RANK_GOLD[3], 1)
+    else
+        pip.ring:SetColorTexture(0.32, 0.32, 0.32, 1)
+    end
+end
+
+local function ApplyApexPips(button, state, nodeSize, sandbox)
     local pips = button.apexPips
     if not pips then
         return false
     end
 
-    local isApex = IsApexNode(button.nodeInfo)
-    local maxRank = state.maxRank or LPL.TalentTree:GetNodeMaxRanks(button.nodeInfo)
-    if not isApex or maxRank < 3 then
-        for i = 1, #pips do
-            pips[i]:Hide()
-        end
+    if not IsApexNode(button.nodeInfo) then
+        HideApexPips(button)
         return false
     end
 
-    local pipCount = math.min(4, maxRank)
-    local pipSize = math.max(9, math.floor(nodeSize * 0.2))
-    local gap = math.max(4, math.floor(pipSize * 0.4))
-    local active = state.activeRank or 0
-    local filledAtlas = "talents-node-apex-small-yellow"
-    local emptyAtlas = "talents-node-apex-small-gray"
-    if not (C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(filledAtlas)) then
-        filledAtlas = "talents-node-circle-yellow"
+    local maxRank = state.maxRank or LPL.TalentTree:GetNodeMaxRanks(button.nodeInfo)
+    local pipCount = math.min(4, math.max(1, maxRank))
+    local pipSize = math.max(10, math.floor(nodeSize * 0.2))
+    local active = 0
+    if sandbox and sandbox.GetNodeRank and button.nodeInfo then
+        active = tonumber(sandbox:GetNodeRank(button.nodeInfo.ID)) or 0
+    else
+        active = tonumber(state.activeRank) or 0
+        if state.isGranted and active >= pipCount then
+            active = 0
+        end
     end
-    if not (C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(emptyAtlas)) then
-        emptyAtlas = "talents-node-circle-gray"
+    if active < 0 then
+        active = 0
+    elseif active > pipCount then
+        active = pipCount
     end
-
-    local totalWidth = pipCount * pipSize + (pipCount - 1) * gap
-    local startX = -totalWidth / 2 + pipSize / 2
-    local yOff = -math.max(10, math.floor(nodeSize * 0.14))
-    local pipParent = button:GetParent() or button
 
     for i = 1, 4 do
         local pip = pips[i]
+        pip:SetParent(button)
         if i > pipCount then
             pip:Hide()
         else
-            pip:SetParent(pipParent)
-            pip:SetSize(pipSize, pipSize)
             pip:ClearAllPoints()
-            pip:SetPoint("TOP", button, "BOTTOM", startX + (i - 1) * (pipSize + gap), yOff)
+            local anchor = APEX_PIP_ANCHORS[i]
+            pip:SetPoint(anchor[1], button, anchor[2], anchor[3], anchor[4])
+            PaintApexPip(pip, pipSize, active >= i)
+            pip:SetFrameLevel((button:GetFrameLevel() or 1) + 6)
             pip:Show()
-            pip:SetFrameLevel((button:GetFrameLevel() or 1) + 2)
-
-            local filled = active >= i
-            if not TrySetAtlas(pip.ring, filled and filledAtlas or emptyAtlas, false) then
-                pip.ring:SetTexture("Interface\\Minimap\\UI-Minimap-Background")
-                if filled then
-                    pip.ring:SetVertexColor(1, 0.82, 0, 1)
-                else
-                    pip.ring:SetVertexColor(0.35, 0.35, 0.35, 1)
-                end
-            else
-                pip.ring:SetVertexColor(1, 1, 1, 1)
-            end
-            pip.ring:ClearAllPoints()
-            pip.ring:SetAllPoints()
-
-            pip.label:SetText("1")
-            local fontSize = math.max(8, math.floor(pipSize * 0.7))
-            pip.label:SetFont("Fonts\\FRIZQT__.TTF", fontSize, "OUTLINE")
-            if filled then
-                pip.label:SetTextColor(RANK_GOLD[1], RANK_GOLD[2], RANK_GOLD[3], 1)
-                pip.label:Show()
-            else
-                pip.label:Hide()
-            end
         end
     end
 
@@ -709,7 +741,7 @@ function LPL.TalentCanvas:Create(parent, options)
         local maxRank = LPL.TalentTree:GetNodeMaxRanks(nodeInfo)
         state.maxRank = maxRank
         local isSelected = state.activeRank > 0 or state.isGranted
-        local showApexPips = ApplyApexPips(button, state, nodeSize)
+        local showApexPips = ApplyApexPips(button, state, nodeSize, sandbox)
         if showApexPips then
             button.rankText:Hide()
             if button.rankBadge then
@@ -878,7 +910,7 @@ function LPL.TalentCanvas:Create(parent, options)
             heroEmblemReserve = math.max(BASE_NODE_SIZE * HERO_NODE_SCALE, 36) + HERO_EMBLEM_GAP
         end
         local rawWidth = totalCellsX * BASE_COL_WIDTH + CANVAS_PADDING * 2
-        local rawHeight = maxCellsY * BASE_ROW_HEIGHT + CANVAS_PADDING * 2 + heroEmblemReserve + APEX_PIP_RESERVE
+        local rawHeight = maxCellsY * BASE_ROW_HEIGHT + CANVAS_PADDING * 2 + heroEmblemReserve
 
         local viewWidth = self.viewport:GetWidth()
         local viewHeight = self.viewport:GetHeight()
@@ -898,7 +930,7 @@ function LPL.TalentCanvas:Create(parent, options)
         end
 
         local contentWidth = totalCellsX * colWidth + padding * 2
-        local contentHeight = maxCellsY * rowHeight + padding * 2 + emblemReserve + APEX_PIP_RESERVE * fitScale
+        local contentHeight = maxCellsY * rowHeight + padding * 2 + emblemReserve
         self.content:SetSize(contentWidth, contentHeight)
         self.content:SetScale(1)
         self.content:ClearAllPoints()
