@@ -52,6 +52,17 @@ local function MatchesQuery(entry, query)
     return false
 end
 
+local function SetExpandIcon(texture, collapsed)
+    if not texture then
+        return
+    end
+    if texture.SetAtlas then
+        texture:SetAtlas(collapsed and "plus" or "minus")
+        return
+    end
+    texture:SetTexture(collapsed and "Interface\\Buttons\\UI-PlusButton-Up" or "Interface\\Buttons\\UI-MinusButton-Up")
+end
+
 local function AttachKeepHoverTooltip(button, title, body)
     local onEnter = button:GetScript("OnEnter")
     local onLeave = button:GetScript("OnLeave")
@@ -109,7 +120,7 @@ function LPL.KeybindEditor:Create(parent)
     accountButton:SetSize(110, 28)
     accountButton:SetPoint("TOPLEFT", scopeLabel, "BOTTOMLEFT", 0, -8)
     accountButton:SetText("Account")
-    AttachKeepHoverTooltip(accountButton, "Account scope", "Activate writes this profile to account-wide key bindings.")
+    AttachKeepHoverTooltip(accountButton, "Account scope", "Activate writes this profile to account-wide key bindings. Other characters on this WoW account pick it up unless they use Character-specific key bindings.")
 
     local characterButton = LPL:CreateButton(nil, frame)
     characterButton:SetSize(110, 28)
@@ -416,7 +427,6 @@ function LPL.KeybindEditor:Create(parent)
         end
         row:Show()
         local isHeader = entry.kind == "header"
-        row.headerBar:SetShown(isHeader)
         row.expandIcon:SetShown(isHeader)
         row.headerLabel:SetShown(isHeader)
         row.nameLabel:SetShown(not isHeader)
@@ -425,10 +435,13 @@ function LPL.KeybindEditor:Create(parent)
 
         if isHeader then
             local collapsed = frame.collapsed[entry.header] and NormalizeSearch(frame.searchText) == ""
-            row.expandIcon:SetTexture(collapsed and "Interface\\Buttons\\UI-PlusButton-UP" or "Interface\\Buttons\\UI-MinusButton-UP")
+            SetExpandIcon(row.expandIcon, collapsed)
             row.headerLabel:SetText(string.format("%s  (%d)", entry.title or "Other", entry.count or 0))
+            LPL.Theme:ApplyListHeaderBackdrop(row)
             return
         end
+
+        LPL.Theme:ClearListHeaderBackdrop(row)
 
         row.nameLabel:SetText(entry.name or entry.command)
         local listening = frame.listening
@@ -460,24 +473,18 @@ function LPL.KeybindEditor:Create(parent)
                 end
             end)
 
-            local headerBar = row:CreateTexture(nil, "BACKGROUND")
-            headerBar:SetPoint("TOPLEFT", row, "TOPLEFT", 0, -1)
-            headerBar:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", 0, 1)
-            headerBar:SetColorTexture(0.85, 0.7, 0.2, 0.18)
-            headerBar:Hide()
-            row.headerBar = headerBar
-
             local expand = row:CreateTexture(nil, "ARTWORK")
             expand:SetSize(12, 12)
             expand:SetPoint("LEFT", row, "LEFT", 6, 0)
-            expand:SetTexture("Interface\\Buttons\\UI-MinusButton-UP")
+            SetExpandIcon(expand, false)
             row.expandIcon = expand
 
-            local headerLabel = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            local headerLabel = row:CreateFontString(nil, "OVERLAY")
+            headerLabel:SetFontObject(LPL.Theme.fonts.bodyBold)
             headerLabel:SetPoint("LEFT", expand, "RIGHT", 6, 0)
             headerLabel:SetPoint("RIGHT", row, "RIGHT", -8, 0)
             headerLabel:SetJustifyH("LEFT")
-            headerLabel:SetTextColor(1, 0.82, 0)
+            headerLabel:SetTextColor(LPL.Theme:GetColor("textBright"))
             row.headerLabel = headerLabel
 
             local nameLabel = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")

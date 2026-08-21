@@ -42,39 +42,21 @@ local function BindingSetForScope(scope)
     return 1, scope
 end
 
-local function BindingContextForCommand(command)
-    if type(command) ~= "string" or command == "" then
-        return nil
-    end
-    if C_KeyBindings and C_KeyBindings.GetBindingContextForAction then
-        local ok, context = pcall(C_KeyBindings.GetBindingContextForAction, command)
-        if ok then
-            return context
-        end
-    end
-    return nil
-end
-
-local function TrySetBinding(key, command, context)
+-- SetBinding's third argument is binding-set mode (1 = current, 2 = other set),
+-- not C_KeyBindings action context. Always write the currently loaded set.
+local function SetBindingOnCurrentSet(key, command)
     if type(key) ~= "string" or key == "" then
         return false
-    end
-    if context ~= nil then
-        local ok, result = pcall(SetBinding, key, command, context)
-        if ok and result ~= false then
-            return true
-        end
     end
     local ok, result = pcall(SetBinding, key, command)
     return ok and result ~= false
 end
 
-local function UnbindKey(key, context)
+local function UnbindKey(key)
     if type(key) ~= "string" or key == "" then
         return
     end
-    TrySetBinding(key, nil, context)
-    TrySetBinding(key, nil, nil)
+    SetBindingOnCurrentSet(key, nil)
 end
 
 local function CollectBindingKeys(index)
@@ -109,9 +91,8 @@ local function UnbindAllCommands()
     end
     for i = 1, #snapshot do
         local row = snapshot[i]
-        local context = BindingContextForCommand(row.command)
         for k = 1, #row.keys do
-            UnbindKey(row.keys[k], context)
+            UnbindKey(row.keys[k])
         end
         if GetBindingKey then
             for _ = 1, 16 do
@@ -119,7 +100,7 @@ local function UnbindAllCommands()
                 if type(leftover) ~= "string" or leftover == "" then
                     break
                 end
-                UnbindKey(leftover, context)
+                UnbindKey(leftover)
             end
         end
     end
@@ -131,16 +112,15 @@ local function ApplyProfileBindings(bindings)
     local failed = 0
     for command, keys in pairs(bindings) do
         if type(command) == "string" and command ~= "" and type(keys) == "table" then
-            local context = BindingContextForCommand(command)
             if keys.key1 then
-                if TrySetBinding(keys.key1, command, context) then
+                if SetBindingOnCurrentSet(keys.key1, command) then
                     assigned = assigned + 1
                 else
                     failed = failed + 1
                 end
             end
             if keys.key2 then
-                if TrySetBinding(keys.key2, command, context) then
+                if SetBindingOnCurrentSet(keys.key2, command) then
                     assigned = assigned + 1
                 else
                     failed = failed + 1
@@ -169,11 +149,13 @@ local function ApplySetData(setData, setName)
     local scopeLabel = scope == LPL.KeybindStore.SCOPE_CHARACTER and "Character" or "Account"
     setName = setName or setData.name or "Keybinding Profile"
 
-    if GetCurrentBindingSet and LoadBindings and GetCurrentBindingSet() ~= bindingSet then
-        local ok = pcall(LoadBindings, bindingSet)
-        if not ok then
-            return Fail("Could not switch to " .. scopeLabel .. " key bindings.")
-        end
+    -- Load the target set first so SetBinding writes account or character correctly.
+    if not LoadBindings then
+        return Fail("Key binding API is not available.")
+    end
+    local loaded = pcall(LoadBindings, bindingSet)
+    if not loaded then
+        return Fail("Could not switch to " .. scopeLabel .. " key bindings.")
     end
 
     local unbound, unbindErr = UnbindAllCommands()
