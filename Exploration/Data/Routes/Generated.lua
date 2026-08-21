@@ -164,16 +164,21 @@ R["BFA Alliance - Getting There - Alliance Capital"] = {
     class = "path",
     route = {
         { name = "Head to Li Li Stormstout", map = 84, x = 64.2, y = 16.14, travel = true, trigger = { type = "proximity" } },
+        { name = "Talk to Li Li Stormstout", map = 84, x = 64.2, y = 16.14, travel = true, note = "Speak to |cFF87e6e8Li Li Stormstout|r to begin |cFF87e6e8Lorewalking|r.", trigger = { type = "vehicle", entered = true }, action = { label = "Talk to Li Li", macro = "/target Li Li Stormstout" } },
         { name = "Activate Lorewalking", map = 84, x = 64.2, y = 16.14, travel = true, trigger = { type = "buff", spellId = 463943, spell = "Lorewalking", gained = true } },
         { name = "Leave the bench", travel = true, note = "Leave the |cFF87e6e8Lorewalking|r bench.", trigger = { type = "vehicle", entered = false }, action = { label = "Exit Bench", macro = "/leavevehicle" } },
+        { name = "Withdraw a Tortollan Charm from Warband Bank", travel = true, note = "Cast |cFF87e6e8Warband Bank Distance Inhibitor|r then withdraw a |cFF87e6e8Lucky Tortollan Charm|r.", trigger = { type = "cast", spellId = 460905 }, action = { label = "Open Warband Bank", macro = "/cast Warband Bank Distance Inhibitor" } },
         { name = "Use the Tortollan Charm", travel = true, note = "Use the |cFF87e6e8Lucky Tortollan Charm|r to teleport to |cff3dff7eSeeker's Vista|r.", trigger = { type = "zone", map = 942 }, action = { label = "Use Lucky Tortollan Charm", macro = "/use Lucky Tortollan Charm" } },
     },
 }
 R["BFA Alliance - Getting There - Horde Capital"] = {
     class = "path",
     route = {
-        { name = "Activate Lorewalking", map = 85, x = 52.28, y = 50.57, travel = true, note = "Speak to |cFF87e6e8Li Li Stormstout|r and activate |cFF87e6e8Lorewalking|r.", trigger = { type = "buff", spellId = 463943, spell = "Lorewalking", gained = true } },
+        { name = "Head to Li Li Stormstout", map = 85, x = 52.28, y = 50.57, travel = true, trigger = { type = "proximity" } },
+        { name = "Talk to Li Li Stormstout", map = 85, x = 52.28, y = 50.57, travel = true, note = "Speak to |cFF87e6e8Li Li Stormstout|r to begin |cFF87e6e8Lorewalking|r.", trigger = { type = "vehicle", entered = true }, action = { label = "Talk to Li Li", macro = "/target Li Li Stormstout" } },
+        { name = "Activate Lorewalking", map = 85, x = 52.28, y = 50.57, travel = true, note = "Activate |cFF87e6e8Lorewalking|r.", trigger = { type = "buff", spellId = 463943, spell = "Lorewalking", gained = true } },
         { name = "Leave the bench", travel = true, note = "Leave the |cFF87e6e8Lorewalking|r bench.", trigger = { type = "vehicle", entered = false }, action = { label = "Exit Bench", macro = "/leavevehicle" } },
+        { name = "Withdraw a Tortollan Charm from Warband Bank", travel = true, note = "Cast |cFF87e6e8Warband Bank Distance Inhibitor|r then withdraw a |cFF87e6e8Lucky Tortollan Charm|r.", trigger = { type = "cast", spellId = 460905 }, action = { label = "Open Warband Bank", macro = "/cast Warband Bank Distance Inhibitor" } },
         { name = "Use the Tortollan Charm", travel = true, note = "Use the |cFF87e6e8Lucky Tortollan Charm|r to teleport to |cff3dff7eSeeker's Vista|r.", trigger = { type = "zone", map = 942 }, action = { label = "Use Lucky Tortollan Charm", macro = "/use Lucky Tortollan Charm" } },
     },
 }
@@ -202,6 +207,7 @@ R["BFA Alliance - Post Reset - Alliance - Earthen"] = {
         { name = "Teleport to Housing Plot", travel = true, note = "Use |cFF87e6e8Teleport Home|r to reach your housing plot.", trigger = { type = "zone", map = 2352 }, action = { label = "Teleport Home", housingTeleport = true } },
         { name = "Take the portal to Stormwind", map = 2352, x = 57.43, y = 26.65, travel = true, trigger = { type = "zone", map = 84 } },
         { name = "Head to Li Li Stormstout", map = 84, x = 64.2, y = 16.14, travel = true, trigger = { type = "proximity" } },
+        { name = "Talk to Li Li Stormstout", map = 84, x = 64.2, y = 16.14, travel = true, note = "Speak to |cFF87e6e8Li Li Stormstout|r to begin |cFF87e6e8Lorewalking|r.", trigger = { type = "vehicle", entered = true }, action = { label = "Talk to Li Li", macro = "/target Li Li Stormstout" } },
         { name = "Activate Lorewalking", map = 84, x = 64.2, y = 16.14, travel = true, trigger = { type = "buff", spellId = 463943, spell = "Lorewalking", gained = true } },
         { name = "Leave the bench", travel = true, note = "Leave the |cFF87e6e8Lorewalking|r bench.", trigger = { type = "vehicle", entered = false }, action = { label = "Exit Bench", macro = "/leavevehicle" } },
         { name = "Head to the Mage Tower", map = 84, x = 49.35, y = 86.93, travel = true, trigger = { type = "proximity", radius = 5 } },
@@ -244,7 +250,9 @@ R["BFA Alliance - Post Reset - Horde - Earthen"] = {
         -- Dystinct Horde: reverse of the enter pins after housing portal drops you in Pathfinder's Den.
         { name = "Leave the portal lobby", map = 85, x = 55.40, y = 90.13, travel = true, note = "Head toward the stairs out of |cff3dff7ePathfinder's Den|r.", trigger = { type = "proximity" } },
         { name = "Ascend the staircase", map = 85, x = 53.27, y = 90.47, travel = true, note = "Ascend the stairs out of |cff3dff7ePathfinder's Den|r and head to |cFF87e6e8Li Li Stormstout|r.", trigger = { type = "proximity" } },
-        { name = "Activate Lorewalking", map = 85, x = 52.28, y = 50.57, travel = true, note = "Speak to |cFF87e6e8Li Li Stormstout|r and activate |cFF87e6e8Lorewalking|r.", trigger = { type = "buff", spellId = 463943, spell = "Lorewalking", gained = true } },
+        { name = "Head to Li Li Stormstout", map = 85, x = 52.28, y = 50.57, travel = true, trigger = { type = "proximity" } },
+        { name = "Talk to Li Li Stormstout", map = 85, x = 52.28, y = 50.57, travel = true, note = "Speak to |cFF87e6e8Li Li Stormstout|r to begin |cFF87e6e8Lorewalking|r.", trigger = { type = "vehicle", entered = true }, action = { label = "Talk to Li Li", macro = "/target Li Li Stormstout" } },
+        { name = "Activate Lorewalking", map = 85, x = 52.28, y = 50.57, travel = true, note = "Activate |cFF87e6e8Lorewalking|r.", trigger = { type = "buff", spellId = 463943, spell = "Lorewalking", gained = true } },
         { name = "Leave the bench", travel = true, note = "Leave the |cFF87e6e8Lorewalking|r bench.", trigger = { type = "vehicle", entered = false }, action = { label = "Exit Bench", macro = "/leavevehicle" } },
         { name = "Enter the portal building", map = 85, x = 52.44, y = 86.67, travel = true, note = "Enter |cff3dff7ePathfinder's Den|r (left of the main gate).", trigger = { type = "proximity" } },
         { name = "Descend the staircase", map = 85, x = 53.27, y = 90.47, travel = true, note = "Descend the stairs into |cff3dff7ePathfinder's Den|r.", trigger = { type = "proximity" } },
@@ -256,7 +264,9 @@ R["BFA Alliance - Post Reset - Horde - Lorewalk"] = {
     class = "path",
     route = {
         { name = "Exit Lorewalking", travel = true, note = "Exit |cFF87e6e8Lorewalking|r to teleport back to |cff3dff7eOrgrimmar|r.", trigger = { type = "zone", map = 85 } },
-        { name = "Activate Lorewalking", map = 85, x = 52.28, y = 50.57, travel = true, note = "Speak to |cFF87e6e8Li Li Stormstout|r and activate |cFF87e6e8Lorewalking|r.", trigger = { type = "buff", spellId = 463943, spell = "Lorewalking", gained = true } },
+        { name = "Head to Li Li Stormstout", map = 85, x = 52.28, y = 50.57, travel = true, trigger = { type = "proximity" } },
+        { name = "Talk to Li Li Stormstout", map = 85, x = 52.28, y = 50.57, travel = true, note = "Speak to |cFF87e6e8Li Li Stormstout|r to begin |cFF87e6e8Lorewalking|r.", trigger = { type = "vehicle", entered = true }, action = { label = "Talk to Li Li", macro = "/target Li Li Stormstout" } },
+        { name = "Activate Lorewalking", map = 85, x = 52.28, y = 50.57, travel = true, note = "Activate |cFF87e6e8Lorewalking|r.", trigger = { type = "buff", spellId = 463943, spell = "Lorewalking", gained = true } },
         { name = "Leave the bench", travel = true, note = "Leave the |cFF87e6e8Lorewalking|r bench.", trigger = { type = "vehicle", entered = false }, action = { label = "Exit Bench", macro = "/leavevehicle" } },
         { name = "Enter the portal building", map = 85, x = 52.44, y = 86.67, travel = true, note = "Enter |cff3dff7ePathfinder's Den|r (left of the main gate).", trigger = { type = "proximity" } },
         { name = "Descend the staircase", map = 85, x = 53.27, y = 90.47, travel = true, note = "Descend the stairs into |cff3dff7ePathfinder's Den|r.", trigger = { type = "proximity" } },
