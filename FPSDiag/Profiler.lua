@@ -3,12 +3,18 @@ local ADDON_NAME, ns = ...
 local Profiler = {}
 ns.Profiler = Profiler
 
-local SAMPLE_IDLE = 0.50
-local SAMPLE_ACTIVE = 0.25
+-- Blizzard's RecentAverageTime is already a 60-tick rolling average.
+-- Reading it more often does not make it more accurate — it only costs FPS.
+local SAMPLE_IDLE = 1.00
+local SAMPLE_PANEL = 1.00
+local SAMPLE_RECORD = 0.50
 local FRAME_SMOOTH = 0.15
 local HITCH_MS = 50
 local MAX_HITCHES = 20
 local MAX_RECORD_SAMPLES = 480
+local MEM_INTERVAL = 8
+local TOP_OVERLAY = 5
+local TOP_PANEL = 10
 
 local snapshot = {
 	top = {},
@@ -62,7 +68,13 @@ function Profiler:GetRecordSamples()
 	return recordSamples
 end
 
-local function CollectTop(metric, k)
+function Profiler:IsLive()
+	return self.recording
+		or (ns.Overlay and ns.Overlay:IsShown())
+		or (ns.Panel and ns.Panel:IsShown())
+end
+
+local function CollectTop(metric, k, allowScan)
 	local list = {}
 	if C_AddOnProfiler.GetTopKAddOnsForMetric then
 		local ok, results = pcall(C_AddOnProfiler.GetTopKAddOnsForMetric, metric, k)
@@ -81,7 +93,9 @@ local function CollectTop(metric, k)
 		end
 	end
 
-	if not C_AddOns or not C_AddOns.GetNumAddOns then
+	-- Full addon scan is expensive (Titan-style suites have dozens of folders).
+	-- Only do it when the panel is open and GetTopK is missing.
+	if not allowScan or not C_AddOns or not C_AddOns.GetNumAddOns then
 		return list
 	end
 	local num = C_AddOns.GetNumAddOns() or 0
@@ -134,8 +148,94 @@ function Profiler:_AddHitch(addonName, ms, kind)
 	end
 end
 
-function Profiler:Sample()
-	wipe(snapshot.top)
+local function RecycleTop(count)
+	local top = snapshot.top
+	for i = #top, count + 1, -1 do
+		top[i] = nil
+	end
+	return top
+end
+
+local function FillAddonRow(row, name, recent, last, peak, over50, over100, memory)
+	row = row or {}
+	row.name = name
+	row.title = ns.AddonTitle(name)
+	row.recent = recent or 0
+	row.last = last or 0
+	row.peak = peak or 0
+	row.over50 = over50 or 0
+	row.over100 = over100 or 0
+	row.memory = memory or 0
+	row.self = ns.IsSelf(name)
+	row.kind = "addon"
+	return row
+end
+
+local function FillGameRow(row, recent, last)
+	row = row or {}
+	row.name = "GameUI"
+	row.title = ns.GAME_UI_TITLE
+	row.recent = recent or 0
+	row.last = last or 0
+	row.peak = 0
+	row.over50 = 0
+	row.over100 = 0
+	row.memory = 0
+	row.self = false
+	row.kind = "game"
+	return row
+end
+
+function Profiler:_SetHeaviest()
+	local addonRow
+	for i = 1, #snapshot.top do
+		local row = snapshot.top[i]
+		if row and row.kind ~= "game" and not row.self then
+			addonRow = row
+			break
+		end
+	end
+	local gameMs = snapshot.residualMs or 0
+	local addonMs = addonRow and addonRow.recent or 0
+	if addonRow and addonMs >= gameMs then
+		snapshot.heaviest = {
+			kind = "addon",
+			name = addonRow.name,
+			title = addonRow.title,
+			ms = addonMs,
+		}
+	else
+		snapshot.heaviest = {
+			kind = "game",
+			name = "GameUI",
+			title = ns.GAME_UI_TITLE,
+			ms = gameMs,
+		}
+	end
+end
+
+function Profiler:_RankWithGame(addonRows, gameRecent, gameLast)
+	local ranked = {}
+	for i = 1, #addonRows do
+		ranked[i] = addonRows[i]
+	end
+	ranked[#ranked + 1] = FillGameRow({}, gameRecent, gameLast)
+	table.sort(ranked, function(a, b)
+		if a.recent == b.recent then
+			if a.kind == b.kind then
+				return (a.title or "") < (b.title or "")
+			end
+			return a.kind == "addon"
+		end
+		return a.recent > b.recent
+	end)
+	return ranked
+end
+
+function Profiler:Sample(full)
+	local panelOpen = ns.Panel and ns.Panel:IsShown()
+	full = full or panelOpen or self.recording
+
 	snapshot.time = GetTime()
 	snapshot.fps = GetFramerate() or 0
 	snapshot.frameMs = self.frameMs or (snapshot.fps > 0 and (1000 / snapshot.fps) or 16.7)
@@ -176,6 +276,13 @@ function Profiler:Sample()
 		snapshot.over10 = 0
 		snapshot.over50 = 0
 		snapshot.over100 = 0
+		snapshot.top = RecycleTop(0)
+		snapshot.heaviest = {
+			kind = "game",
+			name = "GameUI",
+			title = ns.GAME_UI_TITLE,
+			ms = 0,
+		}
 		return snapshot
 	end
 
@@ -184,46 +291,76 @@ function Profiler:Sample()
 
 	snapshot.addonMs = SafeMetric(C_AddOnProfiler.GetOverallMetric, recentMetric)
 	snapshot.addonLastMs = SafeMetric(C_AddOnProfiler.GetOverallMetric, M.LastTime)
-	snapshot.addonPeakMs = SafeMetric(C_AddOnProfiler.GetOverallMetric, M.PeakTime)
 	snapshot.appMs = SafeMetric(C_AddOnProfiler.GetApplicationMetric, recentMetric)
 	snapshot.appLastMs = SafeMetric(C_AddOnProfiler.GetApplicationMetric, M.LastTime)
-	snapshot.over10 = SafeMetric(C_AddOnProfiler.GetOverallMetric, M.CountTimeOver10Ms)
-	snapshot.over50 = SafeMetric(C_AddOnProfiler.GetOverallMetric, M.CountTimeOver50Ms)
-	snapshot.over100 = SafeMetric(C_AddOnProfiler.GetOverallMetric, M.CountTimeOver100Ms)
 	snapshot.residualMs = math.max(0, snapshot.appMs - snapshot.addonMs)
+	local gameLast = math.max(0, (snapshot.appLastMs or 0) - (snapshot.addonLastMs or 0))
 
-	local ranked = CollectTop(recentMetric, 12)
-	self:_RefreshMemory()
-	for i = 1, #ranked do
-		local name = ranked[i].name
-		snapshot.top[i] = {
-			name = name,
-			title = ns.AddonTitle(name),
-			recent = ranked[i].value,
-			last = SafeAddonMetric(name, M.LastTime),
-			peak = SafeAddonMetric(name, M.PeakTime),
-			over50 = SafeAddonMetric(name, M.CountTimeOver50Ms),
-			over100 = SafeAddonMetric(name, M.CountTimeOver100Ms),
-			memory = self:_AddonMemory(name),
-			self = ns.IsSelf(name),
-		}
+	-- Hitch counts and peak are panel-only; overlay does not need them.
+	if full then
+		snapshot.addonPeakMs = SafeMetric(C_AddOnProfiler.GetOverallMetric, M.PeakTime)
+		snapshot.over10 = SafeMetric(C_AddOnProfiler.GetOverallMetric, M.CountTimeOver10Ms)
+		snapshot.over50 = SafeMetric(C_AddOnProfiler.GetOverallMetric, M.CountTimeOver50Ms)
+		snapshot.over100 = SafeMetric(C_AddOnProfiler.GetOverallMetric, M.CountTimeOver100Ms)
+	else
+		snapshot.addonPeakMs = snapshot.addonPeakMs or 0
+		snapshot.over10 = snapshot.over10 or 0
+		snapshot.over50 = snapshot.over50 or 0
+		snapshot.over100 = snapshot.over100 or 0
 	end
 
-	local worst = snapshot.top[1]
-	if worst and not worst.self and worst.last >= HITCH_MS then
-		self:_AddHitch(worst.name, worst.last, "addon")
+	local want = full and TOP_PANEL or TOP_OVERLAY
+	local ranked = CollectTop(recentMetric, want, full)
+	if full then
+		self:_RefreshMemory()
+	end
+
+	local addonRows = {}
+	for i = 1, #ranked do
+		local name = ranked[i].name
+		local last, peak, over50, over100, memory = 0, 0, 0, 0, 0
+		if full then
+			last = SafeAddonMetric(name, M.LastTime)
+			peak = SafeAddonMetric(name, M.PeakTime)
+			over50 = SafeAddonMetric(name, M.CountTimeOver50Ms)
+			over100 = SafeAddonMetric(name, M.CountTimeOver100Ms)
+			memory = self:_AddonMemory(name)
+		end
+		addonRows[i] = FillAddonRow(addonRows[i], name, ranked[i].value, last, peak, over50, over100, memory)
+	end
+
+	local mixed = self:_RankWithGame(addonRows, snapshot.residualMs, gameLast)
+	local top = RecycleTop(#mixed)
+	for i = 1, #mixed do
+		top[i] = mixed[i]
+	end
+	snapshot.top = top
+	self:_SetHeaviest()
+
+	local worstAddon
+	for i = 1, #snapshot.top do
+		local row = snapshot.top[i]
+		if row and row.kind == "addon" and not row.self then
+			worstAddon = row
+			break
+		end
+	end
+	if full and worstAddon and worstAddon.last >= HITCH_MS then
+		self:_AddHitch(worstAddon.name, worstAddon.last, "addon")
 	elseif snapshot.addonLastMs >= HITCH_MS then
-		self:_AddHitch(worst and worst.name or nil, snapshot.addonLastMs, "addons")
+		self:_AddHitch(worstAddon and worstAddon.name or nil, snapshot.addonLastMs, "addons")
 	end
 
 	if self.recording then
+		local heaviest = snapshot.heaviest
 		recordSamples[#recordSamples + 1] = {
 			time = snapshot.time,
 			fps = snapshot.fps,
 			addonMs = snapshot.addonMs,
 			residualMs = snapshot.residualMs,
-			topName = worst and worst.name or nil,
-			topMs = worst and worst.recent or 0,
+			topName = heaviest and heaviest.name or nil,
+			topTitle = heaviest and heaviest.title or nil,
+			topMs = heaviest and heaviest.ms or 0,
 		}
 		while #recordSamples > MAX_RECORD_SAMPLES do
 			table.remove(recordSamples, 1)
@@ -235,7 +372,7 @@ end
 
 function Profiler:_RefreshMemory()
 	local now = GetTime()
-	if self.lastMemUpdate and (now - self.lastMemUpdate) < 2 then
+	if self.lastMemUpdate and (now - self.lastMemUpdate) < MEM_INTERVAL then
 		return
 	end
 	self.lastMemUpdate = now
@@ -265,14 +402,14 @@ function Profiler:StartRecording()
 	self.recording = true
 	self.recordStarted = GetTime()
 	ns.Print("Recording started. Play normally, then /fps record to stop.")
-	self:Sample()
+	self:Sample(true)
 end
 
 function Profiler:StopRecording()
 	self.recording = false
 	local elapsed = self.recordStarted and (GetTime() - self.recordStarted) or 0
 	ns.Print(string.format("Recording stopped (%.0f seconds, %d samples).", elapsed, #recordSamples))
-	self:Sample()
+	self:Sample(true)
 end
 
 function Profiler:Start()
@@ -284,11 +421,20 @@ function Profiler:Start()
 	local accum = 0
 	local driver = CreateFrame("Frame")
 	driver:SetScript("OnUpdate", function(_, elapsed)
-		self:NoteFrame(elapsed)
+		local live = self:IsLive()
+		if live then
+			self:NoteFrame(elapsed)
+		end
+		if not live then
+			accum = 0
+			return
+		end
 		accum = accum + elapsed
 		local interval = SAMPLE_IDLE
-		if self.recording or (ns.Panel and ns.Panel:IsShown()) then
-			interval = SAMPLE_ACTIVE
+		if self.recording then
+			interval = SAMPLE_RECORD
+		elseif ns.Panel and ns.Panel:IsShown() then
+			interval = SAMPLE_PANEL
 		end
 		if accum >= interval then
 			accum = 0

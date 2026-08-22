@@ -2,7 +2,7 @@
 ## Title: FPSDiag
 ## Notes: Diagnose FPS. Clear addon memory, compact VRAM, and restart audio/video.
 ## Author: Blind Mice Gaming
-## Version: 0.2.0
+## Version: 0.3.0
 ## SavedVariables: FPSDiagDB
 ## IconTexture: Interface\AddOns\FPSDiag\Media\icon
 ## AddonCompartmentFunc: FPSDiag_OnAddonCompartmentClick

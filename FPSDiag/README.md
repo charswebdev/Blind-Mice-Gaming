@@ -1,6 +1,6 @@
 Retail World of Warcraft addon by **Blind Mice Gaming**. It tells you whether **addons** or the **game client** are affecting your FPS, names the heaviest addons, and includes HyperFrame-style maintenance tools.
 
-It uses Blizzard's built-in `C_AddOnProfiler` API. It does not enable the old `scriptProfile` CVar.
+It uses Blizzard's built-in `C_AddOnProfiler` API. It does not enable the old `scriptProfile` CVar. Overlay samples read Blizzard's 60-tick average about once a second and never scan every addon or refresh Lua memory. The ranked panel does the heavier work only while it is open.
 
 In the Blizzard AddOns list it is grouped under **Blind Mice Gaming**, the same category as Accessibility Helper and the other Blind Mice Gaming addons.
 
@@ -35,12 +35,12 @@ In the Blizzard AddOns list it is grouped under **Blind Mice Gaming**, the same 
 
 ## What you will see
 
-The overlay shows current FPS, a cause (`OK`, `Addon`, `Game`, `Lag`, `Settings`), and a one-line detail.
+The overlay shows current FPS, a cause (`OK`, `Addon`, `Game`, `Lag`, `Settings`), and the single heaviest name — an addon title such as `Titan Panel - Alts`, or `Game UI` when the client is using more time than any addon.
 
 The panel shows:
 
 - Addon time vs leftover game-client time
-- Ranked addons (recent, last tick, peak, hitch count over 50 ms, memory)
+- Ranked list with **Game UI** mixed in beside named addons (recent, last tick, peak, hitch count over 50 ms, memory)
 - Zone, combat, nameplate count, latency, CPU-bound flag
 - Recent hitches
 - **Clear Memory**, **Compact VRAM**, and **Restart A/V**

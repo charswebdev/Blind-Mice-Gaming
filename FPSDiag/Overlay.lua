@@ -19,7 +19,7 @@ function Overlay:Create()
 	end
 
 	local f = CreateFrame("Button", "FPSDiagOverlay", UIParent, "BackdropTemplate")
-	f:SetSize(228, 52)
+	f:SetSize(340, 58)
 	f:SetFrameStrata("MEDIUM")
 	f:SetClampedToScreen(true)
 	f:SetMovable(true)
@@ -72,23 +72,31 @@ function Overlay:Create()
 	end)
 
 	local fps = f:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-	fps:SetPoint("TOPLEFT", 10, -8)
+	fps:SetPoint("TOPLEFT", 10, -7)
 	fps:SetText("— FPS")
 
 	local cause = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	cause:SetPoint("TOPRIGHT", -10, -10)
+	cause:SetPoint("TOPRIGHT", -10, -9)
 	cause:SetText("WAIT")
 
-	local detail = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	detail:SetPoint("BOTTOMLEFT", 10, 8)
-	detail:SetPoint("BOTTOMRIGHT", -10, 8)
-	detail:SetJustifyH("LEFT")
-	detail:SetText("Sampling…")
+	local who = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+	who:SetPoint("BOTTOMLEFT", 10, 8)
+	who:SetPoint("BOTTOMRIGHT", f, "BOTTOM", 40, 8)
+	who:SetJustifyH("LEFT")
+	who:SetWordWrap(false)
+	who:SetText("Game UI")
+
+	local cost = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+	cost:SetPoint("BOTTOMRIGHT", -10, 8)
+	cost:SetJustifyH("RIGHT")
+	cost:SetText("—")
 
 	self.frame = f
 	self.fps = fps
 	self.cause = cause
-	self.detail = detail
+	self.who = who
+	self.cost = cost
+	self.detail = who
 	return f
 end
 
@@ -126,17 +134,17 @@ function Overlay:Refresh()
 	self.cause:SetText(string.upper(cause))
 	self.cause:SetTextColor(ns.Classifier.CauseColor(cause))
 
-	local top = ns.Classifier.TopOffender(snap)
-	if cause == "Lag" then
-		self.detail:SetText(string.format("World %dms  Home %dms", snap.latencyWorld or 0, snap.latencyHome or 0))
-	elseif cause == "Settings" then
-		self.detail:SetText(string.format("Render scale %.0f%%", (snap.renderScale or 1) * 100))
-	elseif top and cause == "Addon" then
-		self.detail:SetText(string.format("%s  %s", top.title, ns.FormatMs(top.recent)))
-	elseif cause == "Game" then
-		self.detail:SetText(string.format("Leftover %s  Addons %s", ns.FormatMs(snap.residualMs), ns.FormatMs(snap.addonMs)))
-	else
-		self.detail:SetText(string.format("Addons %s  Leftover %s", ns.FormatMs(snap.addonMs), ns.FormatMs(snap.residualMs)))
+	local heaviest = ns.Classifier.Heaviest(snap)
+	local title = heaviest.title or ns.GAME_UI_TITLE or "Game UI"
+	if strlen(title) > 28 then
+		title = strsub(title, 1, 26) .. ".."
 	end
+	self.who:SetText(title)
+	if heaviest.kind == "game" then
+		self.who:SetTextColor(0.40, 0.70, 1.00)
+	else
+		self.who:SetTextColor(0.95, 0.70, 0.30)
+	end
+	self.cost:SetText(ns.FormatMs(heaviest.ms))
 	self.advice = advice
 end

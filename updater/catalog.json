@@ -54,7 +54,7 @@
       "id": "FPSDiag",
       "name": "FPSDiag",
       "folders": ["FPSDiag"],
-      "version": "0.2.0",
+      "version": "0.3.0",
       "interfaces": [110007, 111000, 111500, 111700, 120000, 120001, 120005, 120100],
       "saved": ["FPSDiagDB"]
     },

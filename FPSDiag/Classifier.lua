@@ -16,11 +16,32 @@ function Classifier.TopOffender(snapshot)
 	end
 	for i = 1, #snapshot.top do
 		local row = snapshot.top[i]
-		if row and not row.self then
+		if row and row.kind ~= "game" and not row.self then
 			return row
 		end
 	end
-	return snapshot.top[1]
+	return nil
+end
+
+function Classifier.Heaviest(snapshot)
+	if snapshot and snapshot.heaviest then
+		return snapshot.heaviest
+	end
+	local top = Classifier.TopOffender(snapshot)
+	if top then
+		return {
+			kind = "addon",
+			name = top.name,
+			title = top.title,
+			ms = top.recent,
+		}
+	end
+	return {
+		kind = "game",
+		name = "GameUI",
+		title = ns.GAME_UI_TITLE or "Game UI",
+		ms = snapshot and snapshot.residualMs or 0,
+	}
 end
 
 function Classifier.CauseColor(cause)

@@ -1,7 +1,8 @@
 local ADDON_NAME, ns = ...
 
 ns.ADDON_NAME = ADDON_NAME
-ns.VERSION = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version") or "0.1.0"
+ns.VERSION = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version") or "0.3.0"
+ns.GAME_UI_TITLE = "Game UI"
 
 ns.defaults = {
 	overlayShown = true,
@@ -38,9 +39,15 @@ function ns.StripText(text)
 	return text
 end
 
+local titleCache = {}
+
 function ns.AddonTitle(name)
 	if not name then
 		return "?"
+	end
+	local cached = titleCache[name]
+	if cached then
+		return cached
 	end
 	local title
 	if C_AddOns.GetAddOnTitle then
@@ -54,6 +61,7 @@ function ns.AddonTitle(name)
 	if title == "" then
 		title = name
 	end
+	titleCache[name] = title
 	return title
 end
 

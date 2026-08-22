@@ -331,13 +331,21 @@ function Panel:Refresh()
 		local data = snap.top and snap.top[i]
 		if data then
 			local suffix = data.self and "  (this addon)" or ""
-			row.name:SetText(data.title .. suffix)
+			row.name:SetText((data.title or data.name) .. suffix)
 			row.recent:SetText(ns.FormatMs(data.recent))
 			row.last:SetText(ns.FormatMs(data.last))
-			row.peak:SetText(ns.FormatMs(data.peak))
-			row.over:SetText(tostring(math.floor(data.over50 or 0)))
-			row.memory:SetText(ns.FormatMem(data.memory))
-			if data.self then
+			if data.kind == "game" then
+				row.peak:SetText("—")
+				row.over:SetText("—")
+				row.memory:SetText("—")
+			else
+				row.peak:SetText(ns.FormatMs(data.peak))
+				row.over:SetText(tostring(math.floor(data.over50 or 0)))
+				row.memory:SetText(ns.FormatMem(data.memory))
+			end
+			if data.kind == "game" then
+				row.name:SetTextColor(0.40, 0.70, 1.00)
+			elseif data.self then
 				row.name:SetTextColor(0.55, 0.55, 0.55)
 			elseif i == 1 then
 				row.name:SetTextColor(0.95, 0.70, 0.30)
