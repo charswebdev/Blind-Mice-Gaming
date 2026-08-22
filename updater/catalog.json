@@ -62,9 +62,17 @@
       "id": "lpl",
       "name": "Light Paws Loadouts",
       "folders": ["lpl"],
-      "version": "1.1.1",
+      "version": "1.1.2",
       "interfaces": [120100, 120007, 120001],
       "saved": ["LPLDB"]
+    },
+    {
+      "id": "lpl-classic-era",
+      "name": "Light Paws Loadouts - Classic Era",
+      "folders": ["lpl-classic-era"],
+      "version": "1.0.0",
+      "interfaces": [11509, 11508],
+      "saved": ["LPLClassicEraDB"]
     },
     {
       "id": "wowgps",

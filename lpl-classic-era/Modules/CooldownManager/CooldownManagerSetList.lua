@@ -1,0 +1,60 @@
+local addonName, LPL = ...
+
+LPL.CooldownManagerSetList = {}
+
+function LPL.CooldownManagerSetList:Create(parent, bottomInset)
+    local list = LPL.SetListView:Create(parent, {
+        bottomInset = bottomInset,
+        listKey = "cooldownmanager",
+        supportedFilters = CopyTable(LPL.SetRestrictions.ALL_LIST_FILTERS),
+        title = "Saved Cooldown Manager Sets",
+        hint = "Universal by default | Use Limits to group by class, spec, or character | Green dot = active on your character | Double-click to edit.",
+        emptyFilterText = "No Cooldown Manager sets match your search or filters.",
+        emptyText = "No Cooldown Manager sets yet.",
+        emptyButtonLabel = "New Cooldown Manager Set",
+        emptyButtonWidth = 220,
+        getItems = function()
+            return LPL.CooldownManagerStore:GetAll()
+        end,
+        getID = function(set)
+            return set.id
+        end,
+        getName = function(set)
+            return set.name
+        end,
+        getFilters = function(set)
+            return set.filters
+        end,
+        getClassKey = function(set)
+            return LPL.CooldownManagerStore:GetEffectiveClassID(set)
+        end,
+        getSpecKey = function(set)
+            return LPL.CooldownManagerStore:GetEffectiveSpecID(set)
+        end,
+        getHeroKey = function(set)
+            return LPL.CooldownManagerStore:GetEffectiveHeroID(set)
+        end,
+        isActive = function(set)
+            return LPL.CooldownManagerActive and LPL.CooldownManagerActive:IsActive(set)
+        end,
+        getSubtitle = function(set)
+            local line = LPL.CooldownManagerStore:GetSummaryLine(set)
+            if set.restrictions and next(set.restrictions) then
+                return line .. " · Restricted"
+            end
+            return line
+        end,
+        getSubtitleColor = function(set)
+            local classID = LPL.CooldownManagerStore:GetEffectiveClassID(set)
+            if classID and LPL.BuildStore then
+                return LPL.BuildStore:GetClassColor(classID)
+            end
+            return LPL.Theme:GetColor("textSecondary")
+        end,
+    })
+
+    list.SetOnNewSet = list.SetOnNew
+    list.SetSelectedSetID = list.SetSelectedID
+
+    return list
+end
