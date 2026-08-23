@@ -256,14 +256,7 @@ local function AddCriteria(rows)
         return
     end
     local stepName, _, numCriteria = AQ:SafeCall(C_Scenario.GetStepInfo)
-    if type(stepName) == "string" and stepName ~= "" then
-        AddRow(rows, {
-            kind = "quest",
-            title = stepName,
-            status = "ACTIVE",
-            speech = stepName .. " ACTIVE",
-        })
-    end
+    local progress
     numCriteria = numCriteria or 0
     for i = 1, numCriteria do
         local criteriaString, completed, quantity, totalQuantity
@@ -288,7 +281,19 @@ local function AddCriteria(rows)
         if not isWeightedProgress and type(totalQuantity) == "number" and totalQuantity >= 100 then
             isWeightedProgress = true
         end
-        if type(criteriaString) == "string" then
+        if isWeightedProgress then
+            progress = {
+                kind = "progress",
+                title = "",
+                finished = completed and true or false,
+                numFulfilled = quantity,
+                numNeeded = totalQuantity or 100,
+                isWeightedProgress = true,
+                quantityString = quantityString,
+                objType = objType,
+                speech = (criteriaString or "Progress") .. (completed and " complete" or ""),
+            }
+        elseif type(criteriaString) == "string" and criteriaString ~= "" then
             local extra = ""
             if quantity and totalQuantity then
                 extra = string.format(" %s/%s", tostring(quantity), tostring(totalQuantity))
@@ -299,13 +304,70 @@ local function AddCriteria(rows)
                 finished = completed and true or false,
                 numFulfilled = quantity,
                 numNeeded = totalQuantity,
-                isWeightedProgress = isWeightedProgress,
                 quantityString = quantityString,
                 objType = objType,
+                goldBullet = true,
                 speech = criteriaString .. extra .. (completed and " complete" or ""),
             })
         end
     end
+    if type(stepName) == "string" and stepName ~= "" and #rows == 0 and not progress then
+        AddRow(rows, {
+            kind = "objective",
+            title = stepName,
+            goldBullet = true,
+            speech = stepName,
+        })
+    end
+    if progress then
+        AddRow(rows, progress)
+    end
+end
+
+local function EnsureProgress(rows)
+    for i = 1, #rows do
+        if rows[i].kind == "progress" then
+            return
+        end
+    end
+    AddRow(rows, {
+        kind = "progress",
+        title = "",
+        numFulfilled = 0,
+        numNeeded = 100,
+        isWeightedProgress = true,
+        speech = "Progress 0 percent",
+    })
+end
+
+local function AddInstanceHeader(rows, spec)
+    AddRow(rows, {
+        kind = "instance",
+        id = spec.id or "scenario-name",
+        title = spec.title,
+        badge = spec.badge,
+        lives = spec.lives,
+        instanceType = spec.instanceType,
+        speech = spec.speech or spec.title,
+        fontSize = 14,
+    })
+end
+
+local function DelveLives(delve)
+    if type(delve) ~= "table" or type(delve.currencies) ~= "table" then
+        return nil
+    end
+    for i = 1, #delve.currencies do
+        local cur = delve.currencies[i]
+        if type(cur) == "table" then
+            local blob = string.lower(tostring(cur.leadingText or "") .. " " .. tostring(cur.tooltip or ""))
+            local amount = tonumber(string.match(tostring(cur.text or ""), "%d+"))
+            if amount and (blob:find("life", 1, true) or blob:find("lives", 1, true) or i == 1) then
+                return amount
+            end
+        end
+    end
+    return nil
 end
 
 local function GetRows()
@@ -333,17 +395,11 @@ local function GetRows()
         local level, affixes, wasEnergized = AQ:SafeCall(C_ChallengeMode.GetActiveKeystoneInfo)
         level = tonumber(level) or 0
         headerKind = "Mythic+"
-        if level > 0 then
-            headerTitle = string.format("Mythic+ %d  %s", level, headerTitle)
-        else
-            headerTitle = "Mythic+  " .. headerTitle
-        end
-        AddRow(rows, {
-            kind = "header",
-            id = "scenario-name",
+        AddInstanceHeader(rows, {
             title = headerTitle,
-            speech = headerTitle,
-            fontSize = 14,
+            badge = level > 0 and level or "M+",
+            instanceType = "mythicplus",
+            speech = level > 0 and string.format("Mythic plus %d %s", level, headerTitle) or ("Mythic plus " .. headerTitle),
         })
         if wasEnergized == false then
             AddRow(rows, {
@@ -392,6 +448,7 @@ local function GetRows()
             rows[1].icons = affixIcons
         end
         AddCriteria(rows)
+        EnsureProgress(rows)
         return rows
     end
 
@@ -404,30 +461,32 @@ local function GetRows()
         if type(delve.headerText) == "string" and delve.headerText ~= "" then
             headerTitle = delve.headerText
         end
-        if tier then
-            headerTitle = string.format("Tier %s  %s", tostring(tier), headerTitle)
-        end
-        AddRow(rows, {
-            kind = "header",
-            id = "scenario-name",
+        AddInstanceHeader(rows, {
             title = headerTitle,
-            speech = headerTitle,
-            fontSize = 14,
+            badge = tier,
+            lives = DelveLives(delve),
+            instanceType = "delve",
+            speech = (tier and ("Tier " .. tostring(tier) .. " ") or "") .. headerTitle,
         })
         if type(delve.currencies) == "table" then
             for i = 1, #delve.currencies do
                 local cur = delve.currencies[i]
                 if type(cur) == "table" then
-                    local label = cur.leadingText or "Lives"
-                    local amount = cur.text or ""
-                    local title = AQ:Trim((label .. "  " .. amount))
-                    AddRow(rows, {
-                        kind = "quest",
-                        title = title,
-                        icon = cur.iconFileID,
-                        detail = cur.tooltip,
-                        speech = title,
-                    })
+                    local blob = string.lower(tostring(cur.leadingText or "") .. " " .. tostring(cur.tooltip or ""))
+                    if blob:find("life", 1, true) or blob:find("lives", 1, true) then
+                        -- lives sit on the instance header
+                    else
+                        local label = cur.leadingText or "Currency"
+                        local amount = cur.text or ""
+                        local title = AQ:Trim((label .. "  " .. amount))
+                        AddRow(rows, {
+                            kind = "quest",
+                            title = title,
+                            icon = cur.iconFileID,
+                            detail = cur.tooltip,
+                            speech = title,
+                        })
+                    end
                 end
             end
         end
@@ -465,32 +524,32 @@ local function GetRows()
             end
         end
         AddCriteria(rows)
+        EnsureProgress(rows)
         return rows
     end
 
     local diffLabel = inst and inst.difficultyName
-    if type(diffLabel) == "string" and diffLabel ~= "" and headerTitle then
-        if inst.instanceType == "raid" then
-            headerTitle = diffLabel .. " Raid  " .. headerTitle
-        elseif inst.instanceType == "party" then
-            headerTitle = diffLabel .. "  " .. headerTitle
-        else
-            headerTitle = diffLabel .. "  " .. headerTitle
-        end
+    local instanceType = "scenario"
+    if inst and inst.instanceType == "raid" then
+        headerKind = "Raid"
+        instanceType = "raid"
+    elseif inst and inst.instanceType == "party" then
+        headerKind = "Dungeon"
+        instanceType = "dungeon"
     end
-    AddRow(rows, {
-        kind = "header",
-        id = "scenario-name",
+    AddInstanceHeader(rows, {
         title = headerTitle,
+        badge = (type(diffLabel) == "string" and diffLabel ~= "" and diffLabel) or nil,
+        instanceType = instanceType,
         speech = headerKind .. " " .. headerTitle,
-        fontSize = 14,
     })
-    if currentStage and numStages then
+    if currentStage and numStages and tonumber(numStages) and tonumber(numStages) > 1 then
         AddRow(rows, {
             kind = "objective",
             title = string.format("Stage %s of %s", tostring(currentStage), tostring(numStages)),
             numFulfilled = tonumber(currentStage),
             numNeeded = tonumber(numStages),
+            goldBullet = true,
             speech = string.format("Stage %s of %s", tostring(currentStage), tostring(numStages)),
         })
     end
@@ -513,12 +572,13 @@ local function GetRows()
     end
 
     AddCriteria(rows)
+    EnsureProgress(rows)
     return rows
 end
 
 AQ.Tracker.RegisterSection({
     id = "scenarios",
-    title = "Scenario",
+    title = "Instance",
     order = 10,
     flavor = "retail",
     GetRows = GetRows,

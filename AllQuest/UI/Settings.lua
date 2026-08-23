@@ -711,7 +711,7 @@ local function BuildTabContent(parent, tabID)
             Place(row)
         end
         y = y - 16
-        Note("Right-click a tracker row for Super Track, quest log, map, share, abandon, Wowhead, TomTom, and BtWQuests.", 60)
+        Note("Left-click a quest, pet, or rare to set a TomTom arrow. Right-click a tracker row for Super Track, quest log, map, share, abandon, Wowhead, TomTom, and BtWQuests.", 72)
     elseif tabID == "general" then
         Section("Display")
         RowCheck("Show minimap button", "minimapButtonEnabled")
@@ -848,8 +848,8 @@ local function BuildTabContent(parent, tabID)
                 desc = "Quests waiting at an NPC. Left-click the tracker row to accept or complete.",
             },
             scenarios = {
-                title = "Scenario",
-                desc = "Dungeon, scenario, Mythic+, and delve objectives while you are inside. Shows affixes, delve lives, Bountiful/Nemesis icons, difficulty or tier, and timers.",
+                title = "Instance",
+                desc = "Delve, dungeon, raid, scenario, and Mythic+ block while you are inside. Title, tier or difficulty, lives, gold-bullet objectives, and a progress bar.",
             },
             campaigns = {
                 title = "Campaigns",
@@ -881,11 +881,11 @@ local function BuildTabContent(parent, tabID)
             },
             rares = {
                 title = "Rares",
-                desc = "Rares RareScanner or SilverDragon just found. Needs those plugins.",
+                desc = "Nearby rares from the map. Left-click sets a TomTom arrow. RareScanner and SilverDragon add extra finds if those plugins are on.",
             },
             pets = {
                 title = "Pets",
-                desc = "Battle pets in this zone. Needs PetTracker or Battle Pet Completionist.",
+                desc = "Battle pets in this zone. Left-click sets a TomTom arrow. PetTracker or Battle Pet Completionist add extra zone lists if those plugins are on.",
             },
             questcompletist = {
                 title = "QuestCompletist",

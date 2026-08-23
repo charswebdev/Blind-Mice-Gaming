@@ -1,10 +1,97 @@
 --[[
-  AllQuest — rares from RareScanner and SilverDragon
+  AllQuest — nearby rares in the tracker
+  Native map vignettes, plus RareScanner and SilverDragon.
   Lua 5.1 only.
 ]]
 
 AllQuest = AllQuest or {}
 local AQ = AllQuest
+
+local function PlayerMap()
+    if AQ.Compat and AQ.Compat.GetPlayerMapPosition then
+        return AQ.Compat.GetPlayerMapPosition()
+    end
+    if C_Map and C_Map.GetBestMapForUnit then
+        return AQ:SafeCall(C_Map.GetBestMapForUnit, "player")
+    end
+    return nil
+end
+
+local function LooksLikeRare(info)
+    if type(info) ~= "table" then
+        return false
+    end
+    local name = string.lower(tostring(info.name or ""))
+    local atlas = string.lower(tostring(info.atlasName or ""))
+    if name == "" then
+        return false
+    end
+    if atlas:find("pet", 1, true) or name:find("battle pet", 1, true) then
+        return false
+    end
+    if atlas:find("treasure", 1, true) or name:find("treasure", 1, true) then
+        return false
+    end
+    if atlas:find("rare", 1, true) or atlas:find("elite", 1, true) or atlas:find("vignettekill", 1, true) then
+        return true
+    end
+    if info.isDead then
+        return true
+    end
+    local vtype = info.type or info.vignetteType
+    local E = Enum and Enum.VignetteType
+    if E then
+        if E.Normal and vtype == E.Normal and (atlas:find("vignette", 1, true) or atlas:find("kill", 1, true)) then
+            return true
+        end
+        if E.Rare and vtype == E.Rare then
+            return true
+        end
+    end
+    if atlas:find("vignette", 1, true) then
+        return true
+    end
+    return false
+end
+
+local function RowsFromVignettes()
+    local rows = {}
+    if not (C_VignetteInfo and C_VignetteInfo.GetVignettes) then
+        return rows
+    end
+    local mapID = PlayerMap()
+    local guids = AQ:SafeCall(C_VignetteInfo.GetVignettes)
+    if type(guids) ~= "table" then
+        return rows
+    end
+    local seen = {}
+    for i = 1, #guids do
+        local guid = guids[i]
+        local info = C_VignetteInfo.GetVignetteInfo and AQ:SafeCall(C_VignetteInfo.GetVignetteInfo, guid)
+        if LooksLikeRare(info) and not seen[info.name] then
+            seen[info.name] = true
+            local x, y
+            if type(mapID) == "number" and C_VignetteInfo.GetVignettePosition then
+                local pos = AQ:SafeCall(C_VignetteInfo.GetVignettePosition, guid, mapID)
+                if pos and pos.GetXY then
+                    x, y = pos:GetXY()
+                end
+            end
+            rows[#rows + 1] = {
+                kind = "quest",
+                title = info.name,
+                status = info.isDead and "DONE" or "ACTIVE",
+                indent = 8,
+                rareTarget = info.name,
+                rareMapID = mapID,
+                rareX = x,
+                rareY = y,
+                speech = "Rare " .. info.name .. (info.isDead and " dead" or ""),
+            }
+        end
+    end
+    return rows
+end
 
 local function RowsFromRareScanner()
     local rows = {}
@@ -65,19 +152,24 @@ local function RowsFromSilverDragon()
     return rows
 end
 
-local function GetRows()
-    local rows = RowsFromRareScanner()
+local function MergeRows(base, extra)
     local seen = {}
-    for i = 1, #rows do
-        seen[rows[i].title] = true
+    for i = 1, #base do
+        seen[base[i].title] = true
     end
-    local extra = RowsFromSilverDragon()
     for i = 1, #extra do
         if not seen[extra[i].title] then
-            rows[#rows + 1] = extra[i]
+            base[#base + 1] = extra[i]
             seen[extra[i].title] = true
         end
     end
+    return base
+end
+
+local function GetRows()
+    local rows = RowsFromVignettes()
+    rows = MergeRows(rows, RowsFromRareScanner())
+    rows = MergeRows(rows, RowsFromSilverDragon())
     return rows
 end
 
@@ -86,6 +178,15 @@ AQ.Tracker.RegisterSection({
     title = "Rares",
     order = 65,
     flavor = "all",
-    requiresAnyPlugin = { "RareScanner", "SilverDragon" },
     GetRows = GetRows,
 })
+
+local function RefreshRares()
+    if AQ.Tracker then
+        AQ.Tracker.Refresh()
+    end
+end
+
+AQ.Events.Register("VIGNETTES_UPDATED", RefreshRares)
+AQ.Events.Register("VIGNETTE_MINIMAP_UPDATED", RefreshRares)
+AQ.Events.Register("PLAYER_TARGET_CHANGED", RefreshRares)

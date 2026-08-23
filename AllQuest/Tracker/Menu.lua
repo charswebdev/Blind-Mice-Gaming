@@ -245,8 +245,21 @@ local function BuildItems(data)
             Menu.ShowURL(AQ.Compat.WowheadURL("quest", id))
         end)
         if TomTom and AQ.Plugins and AQ.Plugins.IsEnabled("TomTom") and AQ.TomTom and AQ.TomTom.WaypointForQuest then
-            Add(items, "TomTom Waypoint", function()
+            Add(items, "TomTom Arrow", function()
                 AQ.TomTom.WaypointForQuest(id, name)
+            end)
+        end
+        return items
+    end
+
+    if (data.rareMapID and data.rareX and data.rareY) or (data.petMapID and data.petX and data.petY) then
+        if TomTom and AQ.Plugins and AQ.Plugins.IsEnabled("TomTom") and AQ.TomTom and AQ.TomTom.AddPoint then
+            Add(items, "TomTom Arrow", function()
+                if data.rareMapID then
+                    AQ.TomTom.AddPoint(data.rareMapID, data.rareX, data.rareY, name)
+                else
+                    AQ.TomTom.AddPoint(data.petMapID, data.petX, data.petY, name)
+                end
             end)
         end
     end

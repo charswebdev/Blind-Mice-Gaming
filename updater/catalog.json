@@ -1,14 +1,103 @@
 {
   "repo": "charswebdev/Blind-Mice-Gaming",
   "branch": "main",
-  "updaterVersion": "1.1.5",
-  "setupUrl": "https://github.com/charswebdev/Blind-Mice-Gaming/releases/latest/download/BMG-Updater-Setup-1.1.5.exe",
+  "updaterVersion": "1.1.6",
+  "setupUrl": "https://github.com/charswebdev/Blind-Mice-Gaming/releases/download/v1.1.6/BMG-Updater-Setup-1.1.6.exe",
+  "apps": [
+    {
+      "id": "lptm-retail",
+      "name": "Light Paws Talent Manager - Retail",
+      "kind": "desktop",
+      "flavor": "Retail",
+      "version": "1.0.9",
+      "status": "shipped",
+      "setupUrl": "https://github.com/charswebdev/Blind-Mice-Gaming/releases/download/lptm-1.0.9/LPTM-Setup-1.0.9.exe",
+      "updated": "2026-08-20",
+      "installName": "Light Paws Talent Manager",
+      "exePrefix": "LPTM-"
+    },
+    {
+      "id": "lplm-retail",
+      "name": "Light Paws Loadout Manager - Retail",
+      "kind": "desktop",
+      "flavor": "Retail",
+      "version": "1.0.2",
+      "status": "shipped",
+      "setupUrl": "https://github.com/charswebdev/Blind-Mice-Gaming/releases/download/lplm-1.0.2/LPLM-Setup-1.0.2.exe",
+      "updated": "2026-08-22",
+      "installName": "Light Paws Loadout Manager",
+      "exePrefix": "LPLM-"
+    },
+    {
+      "id": "lptm-classic-era",
+      "name": "Light Paws Talent Manager - Classic Era",
+      "kind": "desktop",
+      "flavor": "Classic Era",
+      "version": "1.0.0",
+      "status": "shipped",
+      "setupUrl": "https://github.com/charswebdev/Blind-Mice-Gaming/releases/download/lptm-classic-era-1.0.0/LPTM-Classic-Era-Setup-1.0.0.exe",
+      "updated": "2026-08-23",
+      "installName": "Light Paws Talent Manager - Classic Era",
+      "exePrefix": "LPTM-Classic-Era-"
+    },
+    {
+      "id": "lplm-classic-era",
+      "name": "Light Paws Loadout Manager - Classic Era",
+      "kind": "desktop",
+      "flavor": "Classic Era",
+      "version": "—",
+      "status": "planned",
+      "installName": "Light Paws Loadout Manager - Classic Era",
+      "exePrefix": "LPLM-Classic-Era-"
+    },
+    {
+      "id": "lptm-anniversary",
+      "name": "Light Paws Talent Manager - Anniversary",
+      "kind": "desktop",
+      "flavor": "Anniversary",
+      "version": "—",
+      "status": "planned",
+      "installName": "Light Paws Talent Manager - Anniversary",
+      "exePrefix": "LPTM-Anniversary-"
+    },
+    {
+      "id": "lplm-anniversary",
+      "name": "Light Paws Loadout Manager - Anniversary",
+      "kind": "desktop",
+      "flavor": "Anniversary",
+      "version": "—",
+      "status": "planned",
+      "installName": "Light Paws Loadout Manager - Anniversary",
+      "exePrefix": "LPLM-Anniversary-"
+    },
+    {
+      "id": "lptm-classic",
+      "name": "Light Paws Talent Manager - Classic (MoP)",
+      "kind": "desktop",
+      "flavor": "Classic (MoP)",
+      "version": "—",
+      "status": "planned",
+      "installName": "Light Paws Talent Manager - Classic",
+      "exePrefix": "LPTM-Classic-"
+    },
+    {
+      "id": "lplm-classic",
+      "name": "Light Paws Loadout Manager - Classic (MoP)",
+      "kind": "desktop",
+      "flavor": "Classic (MoP)",
+      "version": "—",
+      "status": "planned",
+      "installName": "Light Paws Loadout Manager - Classic",
+      "exePrefix": "LPLM-Classic-"
+    }
+  ],
   "addons": [
     {
       "id": "AccessibilityHelper",
       "name": "Accessibility Helper",
       "folders": ["AccessibilityHelper"],
       "version": "3.0.0",
+      "updated": "2026-08-15",
       "interfaces": [120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508],
       "saved": ["AccessibilityHelperDB"]
     },
@@ -30,7 +119,8 @@
         "AllQuest_Data_WoD",
         "AllQuest_Data_Wrath"
       ],
-      "version": "1.0.5",
+      "version": "1.0.6",
+      "updated": "2026-08-23",
       "interfaces": [120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508],
       "saved": ["AllQuestDB", "AllQuestCharDB"]
     },
@@ -39,6 +129,7 @@
       "name": "Cooldown Assist",
       "folders": ["CooldownAssist"],
       "version": "1.1.0",
+      "updated": "2026-08-18",
       "interfaces": [120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508],
       "saved": ["CooldownAssistDB"]
     },
@@ -47,6 +138,7 @@
       "name": "Exploration",
       "folders": ["Exploration"],
       "version": "2.0.2",
+      "updated": "2026-08-21",
       "interfaces": [120100],
       "saved": ["ExplorationDB"]
     },
@@ -55,6 +147,7 @@
       "name": "FPSDiag",
       "folders": ["FPSDiag"],
       "version": "0.3.0",
+      "updated": "2026-08-22",
       "interfaces": [110007, 111000, 111500, 111700, 120000, 120001, 120005, 120100],
       "saved": ["FPSDiagDB"]
     },
@@ -63,6 +156,7 @@
       "name": "Light Paws Loadouts",
       "folders": ["lpl"],
       "version": "1.1.2",
+      "updated": "2026-08-22",
       "interfaces": [120100, 120007, 120001],
       "saved": ["LPLDB"]
     },
@@ -71,14 +165,34 @@
       "name": "Light Paws Loadouts - Classic Era",
       "folders": ["lpl-classic-era"],
       "version": "1.0.0",
+      "updated": "2026-08-22",
       "interfaces": [11509, 11508],
       "saved": ["LPLClassicEraDB"]
+    },
+    {
+      "id": "lpl-anniversary",
+      "name": "Light Paws - Anniversary",
+      "folders": ["lpl-anniversary"],
+      "version": "—",
+      "status": "planned",
+      "interfaces": [20506],
+      "saved": ["LPLAnniversaryDB"]
+    },
+    {
+      "id": "lpl-classic",
+      "name": "Light Paws Classic (MoP)",
+      "folders": ["lpl-classic"],
+      "version": "—",
+      "status": "planned",
+      "interfaces": [50504],
+      "saved": ["LPLClassicDB"]
     },
     {
       "id": "wowgps",
       "name": "WowGPS",
       "folders": ["wowgps"],
       "version": "1.0.0",
+      "updated": "2026-08-21",
       "interfaces": [120100, 120007, 120005, 120001, 50504, 50503, 40402, 30405, 20506, 20505, 11509, 11508],
       "saved": ["WowGPSDB"]
     }

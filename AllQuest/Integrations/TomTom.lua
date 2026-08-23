@@ -1,5 +1,5 @@
 --[[
-  AllQuest — optional TomTom waypoints from tracker / journal
+  AllQuest — TomTom crazy arrow from tracker / journal
   Lua 5.1 only.
 ]]
 
@@ -24,8 +24,18 @@ local function NormalizeXY(x, y)
     return x, y
 end
 
-function AQ.TomTom.AddPoint(mapID, x, y, title)
+local function TomTomReady()
     if not TomTom or type(TomTom.AddWaypoint) ~= "function" then
+        return false
+    end
+    if AQ.Plugins and AQ.Plugins.IsEnabled and not AQ.Plugins.IsEnabled("TomTom") then
+        return false
+    end
+    return true
+end
+
+function AQ.TomTom.AddPoint(mapID, x, y, title)
+    if not TomTomReady() then
         return false
     end
     if type(mapID) ~= "number" then
@@ -43,7 +53,13 @@ function AQ.TomTom.AddPoint(mapID, x, y, title)
         world = true,
         crazy = true,
     })
-    return ok and uid and true or ok
+    if ok and uid then
+        if AQ.Speech then
+            AQ.Speech.Say("TomTom arrow set for " .. (title or "point"))
+        end
+        return true
+    end
+    return ok and true or false
 end
 
 function AQ.TomTom.WaypointForQuest(questID, title)
@@ -57,9 +73,6 @@ function AQ.TomTom.WaypointForQuest(questID, title)
         mapID, x, y = AQ.Compat.GetQuestLocation(questID)
     end
     if type(mapID) == "number" and x and y and AQ.TomTom.AddPoint(mapID, x, y, title) then
-        if AQ.Speech then
-            AQ.Speech.Say("TomTom waypoint set for " .. (title or "quest"))
-        end
         return true
     end
     if not TomTom then
@@ -79,7 +92,7 @@ AQ:RegisterPlugin({
     kind = "integration",
     optionalAddon = "TomTom",
     onEnable = function()
-        AQ:Print("TomTom: shift-right-click a tracker quest, use the row menu, or /aqtomtom.")
+        AQ:Print("TomTom: left-click a tracker quest, pet, or rare for an arrow. Shift-right-click and /aqtomtom also work.")
     end,
 })
 

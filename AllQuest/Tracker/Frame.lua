@@ -242,8 +242,18 @@ local function HoverSpeechText(data)
         title = title:gsub("^%- ", "")
         return title
     end
-    if data.kind == "header" then
-        return StripHeaderPrefix(data.title or "")
+    if data.kind == "header" or data.kind == "instance" then
+        local title = StripHeaderPrefix(data.title or "")
+        if data.badge then
+            title = title .. ". " .. tostring(data.badge)
+        end
+        if data.lives then
+            title = title .. ". " .. tostring(data.lives) .. " lives"
+        end
+        return title
+    end
+    if data.kind == "progress" then
+        return data.speech or "Progress"
     end
     return StripHeaderPrefix(data.title or data.speech or "")
 end
@@ -323,6 +333,7 @@ local function MakeRow(i)
             return
         end
         if data.speciesId then
+            SetTomTomArrow(data)
             if ToggleCollectionsJournal then
                 pcall(ToggleCollectionsJournal, COLLECTIONS_JOURNAL_TAB_INDEX_PETS or 2)
             end
@@ -331,19 +342,16 @@ local function MakeRow(i)
             end
             return
         end
-        if data.rareTarget then
-            if (not InCombatLockdown or not InCombatLockdown()) and TargetUnit then
+        if data.rareTarget or data.rareMapID then
+            if data.rareTarget and (not InCombatLockdown or not InCombatLockdown()) and TargetUnit then
                 pcall(TargetUnit, data.rareTarget)
             end
-            if data.rareMapID and data.rareX and data.rareY
-                and AQ.TomTom and AQ.TomTom.AddPoint
-                and AQ.Plugins and AQ.Plugins.IsEnabled("TomTom") then
-                AQ.TomTom.AddPoint(data.rareMapID, data.rareX, data.rareY, data.title)
-            end
+            SetTomTomArrow(data)
             return
         end
         if data.questID then
             AQ.Compat.SuperTrackQuest(data.questID)
+            SetTomTomArrow(data)
         end
     end)
     row:SetScript("OnEnter", function(self)
@@ -451,6 +459,156 @@ local function EnsureBar(row)
     bar.AQBg = bg
     row.Bar = bar
     return bar
+end
+
+local function HideInstanceChrome(row)
+    if row.Badge then
+        row.Badge:Hide()
+    end
+    if row.Heart then
+        row.Heart:Hide()
+    end
+    if row.Lives then
+        row.Lives:Hide()
+    end
+    if row.SegBar then
+        row.SegBar:Hide()
+    end
+end
+
+local function EnsureBadge(row)
+    if row.Badge then
+        return row.Badge
+    end
+    local badge = CreateFrame("Frame", nil, row)
+    badge:SetSize(28, 18)
+    local edge = badge:CreateTexture(nil, "BACKGROUND")
+    edge:SetPoint("TOPLEFT", -1, 1)
+    edge:SetPoint("BOTTOMRIGHT", 1, -1)
+    edge:SetColorTexture(0.82, 0.62, 0.22, 0.95)
+    local bg = badge:CreateTexture(nil, "BORDER")
+    bg:SetAllPoints()
+    bg:SetColorTexture(0.42, 0.28, 0.12, 0.95)
+    local text = AQ.Widgets.TrackerFontString(badge, 11, 1, 0.92, 0.75)
+    text:SetPoint("CENTER", 0, 0)
+    text:SetJustifyH("CENTER")
+    badge.Text = text
+    row.Badge = badge
+    return badge
+end
+
+local function EnsureLives(row)
+    if not row.Heart then
+        local heart = row:CreateTexture(nil, "ARTWORK")
+        heart:SetSize(12, 12)
+        local used
+        if heart.SetAtlas then
+            used = pcall(heart.SetAtlas, heart, "auctionhouse-icon-favorite", true)
+            if not used then
+                used = pcall(heart.SetAtlas, heart, "UI-HUD-Heart", true)
+            end
+        end
+        if not used then
+            heart:SetColorTexture(0.85, 0.12, 0.16, 1)
+        end
+        heart:SetVertexColor(1, 0.15, 0.18, 1)
+        row.Heart = heart
+    end
+    if not row.Lives then
+        row.Lives = AQ.Widgets.TrackerFontString(row, 11, 1, 0.85, 0.2)
+        row.Lives:SetJustifyH("LEFT")
+    end
+    return row.Heart, row.Lives
+end
+
+local function EnsureSegBar(row)
+    if row.SegBar then
+        return row.SegBar
+    end
+    local bar = CreateFrame("Frame", nil, row)
+    bar:SetHeight(16)
+    local border = bar:CreateTexture(nil, "BACKGROUND")
+    border:SetAllPoints()
+    border:SetColorTexture(0.72, 0.55, 0.18, 1)
+    local inner = bar:CreateTexture(nil, "BORDER")
+    inner:SetPoint("TOPLEFT", 1, -1)
+    inner:SetPoint("BOTTOMRIGHT", -1, 1)
+    inner:SetColorTexture(0.08, 0.08, 0.08, 1)
+    bar.Segs = {}
+    bar.Gaps = {}
+    for i = 1, 4 do
+        local seg = bar:CreateTexture(nil, "ARTWORK")
+        seg:SetColorTexture(0.82, 0.62, 0.18, 0.95)
+        bar.Segs[i] = seg
+    end
+    local label = AQ.Widgets.TrackerFontString(bar, 11, 1, 0.92, 0.7)
+    label:SetPoint("CENTER", 0, 0)
+    label:SetJustifyH("CENTER")
+    bar.Label = label
+    row.SegBar = bar
+    return bar
+end
+
+local function LayoutSegBar(bar, pct)
+    pct = tonumber(pct) or 0
+    if pct < 0 then
+        pct = 0
+    elseif pct > 1 then
+        pct = 1
+    end
+    local w = bar:GetWidth()
+    if type(w) ~= "number" or w < 20 then
+        w = 180
+    end
+    local innerW = w - 4
+    local innerH = 12
+    local gap = 2
+    local segW = (innerW - gap * 3) / 4
+    local filled = pct * 4
+    for i = 1, 4 do
+        local seg = bar.Segs[i]
+        local x = 2 + (i - 1) * (segW + gap)
+        seg:ClearAllPoints()
+        seg:SetPoint("LEFT", bar, "LEFT", x, 0)
+        seg:SetSize(math.max(segW, 2), innerH)
+        local part = filled - (i - 1)
+        if part >= 1 then
+            seg:SetColorTexture(0.82, 0.62, 0.18, 0.95)
+            seg:SetWidth(segW)
+            seg:Show()
+        elseif part > 0 then
+            seg:SetColorTexture(0.82, 0.62, 0.18, 0.95)
+            seg:SetWidth(math.max(segW * part, 1))
+            seg:Show()
+        else
+            seg:SetColorTexture(0.16, 0.14, 0.08, 0.9)
+            seg:SetWidth(segW)
+            seg:Show()
+        end
+    end
+    bar.Label:SetText(string.format("%d%%", math.floor(pct * 100 + 0.5)))
+    bar.Label:Show()
+    bar:Show()
+end
+
+local function SetTomTomArrow(data)
+    if not data or not AQ.TomTom then
+        return false
+    end
+    local tomtomOn = (not AQ.Plugins) or AQ.Plugins.IsEnabled("TomTom")
+    if not tomtomOn then
+        return false
+    end
+    if data.questID and AQ.TomTom.WaypointForQuest then
+        return AQ.TomTom.WaypointForQuest(data.questID, data.title)
+    end
+    if data.rareMapID and data.rareX and data.rareY and AQ.TomTom.AddPoint then
+        return AQ.TomTom.AddPoint(data.rareMapID, data.rareX, data.rareY, data.title)
+    end
+    if data.petMapID and data.petX and data.petY and AQ.TomTom.AddPoint then
+        return AQ.TomTom.AddPoint(data.petMapID, data.petX, data.petY, data.title)
+    end
+    return false
 end
 
 local function UpdateTimerRow(row)
@@ -587,21 +745,27 @@ local function Layout()
         row.data = data
         local isSectionHeader = data.kind == "header" and type(data.id) == "string" and string.sub(data.id, 1, 8) == "section:"
         local isSubHeader = data.kind == "header" and not isSectionHeader
+        local isInstance = data.kind == "instance"
+        local isProgress = data.kind == "progress"
         local indent = 2
         if isSubHeader then
             indent = data.indent or 14
-        elseif data.kind == "header" then
+        elseif data.kind == "header" or isInstance then
             indent = 2
         elseif data.kind == "quest" or data.kind == "timer" then
             indent = 16
-        elseif data.kind == "objective" then
+        elseif data.kind == "objective" or isProgress then
             indent = 28
         end
-        local wrap = data.kind == "header" or data.kind == "quest" or data.kind == "objective"
-        local isPercent = data.kind == "objective" and AQ.Theme.IsPercentObjective and AQ.Theme.IsPercentObjective(data)
+        local wrap = data.kind == "header" or data.kind == "quest" or data.kind == "objective" or isInstance
+        local isPercent = (data.kind == "objective" or isProgress) and AQ.Theme.IsPercentObjective and AQ.Theme.IsPercentObjective(data)
         local h = 18
-        if data.kind == "objective" then
+        if isProgress then
+            h = 22
+        elseif data.kind == "objective" then
             h = 18
+        elseif isInstance then
+            h = data.lives and 36 or 28
         elseif data.kind == "header" then
             h = 20
         elseif data.kind == "timer" then
@@ -624,7 +788,7 @@ local function Layout()
         if isSectionHeader then
             showBg = true
             col = th.section or th.focus
-        elseif isSubHeader then
+        elseif isSubHeader or isInstance then
             showBg = true
             col = th.subheader or th.section or th.focus
         elseif i == focused then
@@ -649,6 +813,7 @@ local function Layout()
         if row.Rule then
             row.Rule:Hide()
         end
+        HideInstanceChrome(row)
         HideExtraIcons(row)
         row:SetScript("OnUpdate", nil)
 
@@ -706,8 +871,15 @@ local function Layout()
             title = title:gsub("%s*%d+%s*/%s*%d+%s*$", "")
             title = title:gsub("^%d+%s*/%s*%d+%s+", "")
             if not data.clickComplete then
-                title = "-  " .. title
+                if data.goldBullet then
+                    title = "•  " .. title
+                else
+                    title = "-  " .. title
+                end
             end
+        end
+        if isProgress then
+            title = ""
         end
         row.Text:SetText(title)
         local fs = data.fontSize or (data.kind == "objective" and 11 or 12)
@@ -790,7 +962,9 @@ local function Layout()
         if statusLabel then
             row.Status:SetPoint("TOPRIGHT", -6 - itemW - extraW, textY)
         end
-        if data.kind == "header" then
+        if isInstance then
+            row.Text:SetTextColor(1, 1, 1, 1)
+        elseif data.kind == "header" then
             local a = th.header
             row.Text:SetTextColor(a[1], a[2], a[3], 1)
         elseif data.kind == "timer" then
@@ -855,7 +1029,7 @@ local function Layout()
                 row:SetHeight(h)
             end
         end
-        if isPercent then
+        if isPercent and not isProgress then
             local pct = 0
             if AQ.Theme.ObjectivePercent then
                 pct = AQ.Theme.ObjectivePercent(data)
@@ -883,10 +1057,6 @@ local function Layout()
             row.Status:ClearAllPoints()
             row.Status:SetPoint("TOPRIGHT", row.Text, "BOTTOMRIGHT", 0, -6)
             row.Status:Show()
-            local sw = row.Status.GetStringWidth and row.Status:GetStringWidth() or 36
-            if type(sw) ~= "number" or sw < 8 then
-                sw = 36
-            end
             local bar = EnsureBar(row)
             bar:ClearAllPoints()
             bar:SetHeight(7)
@@ -897,10 +1067,69 @@ local function Layout()
             bar:SetStatusBarColor(barCol[1], barCol[2], barCol[3], 0.95)
             bar:Show()
         end
+        if isInstance then
+            local rightW = 0
+            if data.badge ~= nil and tostring(data.badge) ~= "" then
+                local badge = EnsureBadge(row)
+                badge.Text:SetText(tostring(data.badge))
+                local bw = 28
+                if badge.Text.GetStringWidth then
+                    local sw = badge.Text:GetStringWidth()
+                    if type(sw) == "number" then
+                        bw = math.max(24, math.ceil(sw + 10))
+                    end
+                end
+                badge:SetWidth(bw)
+                badge:ClearAllPoints()
+                badge:SetPoint("TOPRIGHT", -4, -2)
+                badge:Show()
+                rightW = bw + 8
+            end
+            if type(data.lives) == "number" then
+                local heart, lives = EnsureLives(row)
+                heart:ClearAllPoints()
+                lives:ClearAllPoints()
+                lives:SetText(tostring(data.lives))
+                if rightW > 0 and row.Badge then
+                    heart:SetPoint("TOPRIGHT", row.Badge, "BOTTOMRIGHT", -14, -2)
+                else
+                    heart:SetPoint("TOPRIGHT", -20, -18)
+                end
+                lives:SetPoint("LEFT", heart, "RIGHT", 2, 0)
+                heart:Show()
+                lives:Show()
+            end
+            row.Text:ClearAllPoints()
+            row.Text:SetPoint("TOPLEFT", 6, -4)
+            row.Text:SetPoint("TOPRIGHT", -(10 + rightW), -4)
+            row.Status:Hide()
+            AQ.Widgets.SetTrackerFont(row.Text, data.fontSize or 14)
+            h = data.lives and 36 or 26
+            row:SetHeight(h)
+        end
+        if isProgress then
+            local pct = 0
+            if AQ.Theme.ObjectivePercent then
+                pct = AQ.Theme.ObjectivePercent(data)
+            end
+            row.Status:Hide()
+            row.Text:SetText("")
+            local bar = EnsureSegBar(row)
+            bar:ClearAllPoints()
+            bar:SetPoint("LEFT", 4 + indent, 0)
+            bar:SetPoint("RIGHT", -8, 0)
+            bar:SetHeight(16)
+            h = 22
+            row:SetHeight(h)
+            LayoutSegBar(bar, pct)
+        end
+        if data.kind == "objective" and data.goldBullet and not (data.finished or data.clickComplete) then
+            row.Text:SetTextColor(0.85, 0.7, 0.28, 1)
+        end
         y = y + h
-        if isSubHeader then
+        if isSubHeader or isInstance then
             y = y + 6
-        elseif data.kind == "objective" then
+        elseif data.kind == "objective" or isProgress then
             y = y + 5
         elseif data.kind == "quest" or data.kind == "timer" then
             y = y + 3
@@ -912,6 +1141,7 @@ local function Layout()
         rows[i].data = nil
         rows[i]:SetScript("OnUpdate", nil)
         HideExtraIcons(rows[i])
+        HideInstanceChrome(rows[i])
         if rows[i].Bar then
             rows[i].Bar:Hide()
         end
