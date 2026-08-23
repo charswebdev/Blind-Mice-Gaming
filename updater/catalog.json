@@ -1,8 +1,8 @@
 {
   "repo": "charswebdev/Blind-Mice-Gaming",
   "branch": "main",
-  "updaterVersion": "1.1.7",
-  "setupUrl": "https://github.com/charswebdev/Blind-Mice-Gaming/releases/download/v1.1.7/BMG-Updater-Setup-1.1.7.exe",
+  "updaterVersion": "1.1.8",
+  "setupUrl": "https://github.com/charswebdev/Blind-Mice-Gaming/releases/download/v1.1.8/BMG-Updater-Setup-1.1.8.exe",
   "apps": [
     {
       "id": "lptm-retail",
