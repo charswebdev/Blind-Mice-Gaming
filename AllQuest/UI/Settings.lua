@@ -45,7 +45,50 @@ local function DB()
 end
 
 local function T()
+    if AQ.Theme.TrackerTheme then
+        return AQ.Theme.TrackerTheme()
+    end
     return AQ.Theme.Tracker
+end
+
+local function ShowColorPicker(r, g, b, onChange)
+    r = r or 1
+    g = g or 1
+    b = b or 1
+    local function apply()
+        local nr, ng, nb
+        if ColorPickerFrame and ColorPickerFrame.GetColorRGB then
+            nr, ng, nb = ColorPickerFrame:GetColorRGB()
+        end
+        if type(nr) == "number" then
+            onChange(nr, ng, nb)
+        end
+    end
+    if ColorPickerFrame and ColorPickerFrame.SetupColorPickerAndShow then
+        ColorPickerFrame:SetupColorPickerAndShow({
+            r = r,
+            g = g,
+            b = b,
+            hasOpacity = false,
+            swatchFunc = apply,
+            cancelFunc = function()
+                onChange(r, g, b)
+            end,
+        })
+        return
+    end
+    if not ColorPickerFrame then
+        return
+    end
+    ColorPickerFrame.func = apply
+    ColorPickerFrame.swatchFunc = apply
+    ColorPickerFrame.cancelFunc = function()
+        onChange(r, g, b)
+    end
+    if ColorPickerFrame.SetColorRGB then
+        ColorPickerFrame:SetColorRGB(r, g, b)
+    end
+    ColorPickerFrame:Show()
 end
 
 local function Rebuild()
@@ -736,6 +779,7 @@ local function BuildTabContent(parent, tabID)
         RowCheck("Show accept / complete / turn-in messages", "autoQuestNotify")
         RowCheck("Show completed objectives", "trackerShowCompletedObjectives")
         Section("Colors")
+        Note("Section titles use a colored underline and a + / - on the right. Quest titles stay gold unless you color them by difficulty. The super-tracked quest is pink. AllQuest icons stay on the left. Click a swatch to pick a color.", 72)
         RowCheck(
             "Color objectives by progress",
             "trackerObjectiveProgressColors",
@@ -750,8 +794,64 @@ local function BuildTabContent(parent, tabID)
             nil,
             nil,
             nil,
-            "Grey, green, yellow, orange, and red like the quest log."
+            "Grey, green, yellow, orange, and red like the quest log. Tracked quests stay the tracked color."
         )
+        do
+            local COLOR_ROWS = {
+                { key = "header", label = "Section titles" },
+                { key = "rule", label = "Section underline" },
+                { key = "title", label = "Quest titles" },
+                { key = "tracked", label = "Tracked quest" },
+                { key = "objective", label = "Objectives" },
+                { key = "complete", label = "Completed" },
+                { key = "collapse", label = "Collapse + / -" },
+                { key = "bg", label = "Background" },
+            }
+            local function ColorRow(spec)
+                local row = CreateFrame("Button", nil, inner)
+                row:SetHeight(ROW_H)
+                HoverRow(row)
+                local swatch = row:CreateTexture(nil, "ARTWORK")
+                swatch:SetSize(18, 18)
+                swatch:SetPoint("LEFT", 16, 0)
+                local c = AQ.Theme.GetTrackerColor and AQ.Theme.GetTrackerColor(spec.key) or { 1, 1, 1, 1 }
+                swatch:SetColorTexture(c[1], c[2], c[3], 1)
+                local edge = row:CreateTexture(nil, "BORDER")
+                edge:SetPoint("TOPLEFT", swatch, -1, 1)
+                edge:SetPoint("BOTTOMRIGHT", swatch, 1, -1)
+                edge:SetColorTexture(1, 1, 1, 0.35)
+                local fs = AQ.Widgets.TrackerFontString(row, 13, TitleCol())
+                fs:SetPoint("LEFT", swatch, "RIGHT", 10, 0)
+                fs:SetPoint("RIGHT", -16, 0)
+                fs:SetText(spec.label)
+                row:SetScript("OnClick", function()
+                    local cur = AQ.Theme.GetTrackerColor(spec.key)
+                    ShowColorPicker(cur[1], cur[2], cur[3], function(nr, ng, nb)
+                        AQ.Theme.SetTrackerColor(spec.key, nr, ng, nb, cur[4] or 1)
+                        swatch:SetColorTexture(nr, ng, nb, 1)
+                        RefreshUI()
+                    end)
+                end)
+                HoverSpeak(row, spec.label .. " color")
+                Place(row)
+            end
+            for i = 1, #COLOR_ROWS do
+                ColorRow(COLOR_ROWS[i])
+            end
+            local resetRow = CreateFrame("Frame", nil, inner)
+            resetRow:SetHeight(34)
+            local reset = ActionButton(resetRow, "Reset colors", 140)
+            reset:SetPoint("LEFT", 16, 0)
+            reset:SetScript("OnClick", function()
+                if AQ.Theme.ResetTrackerColors then
+                    AQ.Theme.ResetTrackerColors()
+                end
+                RefreshUI()
+                Rebuild()
+            end)
+            HoverSpeak(reset, "Reset tracker colors")
+            Place(resetRow)
+        end
         Section("Sounds")
         RowCheck(
             "Play a sound when a quest is complete",

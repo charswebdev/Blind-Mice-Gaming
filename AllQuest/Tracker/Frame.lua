@@ -24,11 +24,24 @@ local MIN_TRACKER_W = 220
 local MIN_TRACKER_H = 90
 local MAX_TRACKER_W = 720
 local MAX_TRACKER_H = 1000
-local PLUS = "|TInterface\\Buttons\\UI-PlusButton-Up:12:12:0:0|t "
-local MINUS = "|TInterface\\Buttons\\UI-MinusButton-Up:12:12:0:0|t "
-
 local function TrackerTheme()
+    if AQ.Theme.TrackerTheme then
+        return AQ.Theme.TrackerTheme()
+    end
     return AQ.Theme.Tracker
+end
+
+local function IsSuperTrackedQuest(data)
+    if not data or data.kind ~= "quest" or type(data.questID) ~= "number" then
+        return false
+    end
+    if C_SuperTrack and C_SuperTrack.GetSuperTrackedQuestID then
+        return C_SuperTrack.GetSuperTrackedQuestID() == data.questID
+    end
+    if GetSuperTrackedQuestID then
+        return GetSuperTrackedQuestID() == data.questID
+    end
+    return false
 end
 
 local function StripHeaderPrefix(title)
@@ -474,6 +487,31 @@ local function HideInstanceChrome(row)
     if row.SegBar then
         row.SegBar:Hide()
     end
+    if row.IconGlow then
+        row.IconGlow:Hide()
+    end
+end
+
+local function EnsureRule(row)
+    if row.Rule then
+        return row.Rule
+    end
+    local rule = row:CreateTexture(nil, "ARTWORK")
+    rule:SetHeight(1)
+    rule:SetColorTexture(1, 1, 1, 1)
+    row.Rule = rule
+    return rule
+end
+
+local function EnsureGlow(row)
+    if row.IconGlow then
+        return row.IconGlow
+    end
+    local glow = row:CreateTexture(nil, "BACKGROUND")
+    glow:SetSize(22, 22)
+    glow:SetColorTexture(1, 0.85, 0.2, 0.4)
+    row.IconGlow = glow
+    return glow
 end
 
 local function EnsureBadge(row)
@@ -682,9 +720,10 @@ local function CollectRows()
                     out[#out + 1] = {
                         kind = "header",
                         id = "section:" .. sectionId,
-                        title = (collapsed and PLUS or MINUS) .. (spec.title or spec.id),
+                        title = spec.title or spec.id,
+                        collapsed = collapsed,
                         speech = (spec.title or spec.id) .. (collapsed and " collapsed" or " expanded"),
-                        fontSize = 13,
+                        fontSize = 14,
                     }
                     if not collapsed then
                         local skipBody = false
@@ -693,8 +732,8 @@ local function CollectRows()
                             if row.kind == "header" then
                                 local hid = row.id
                                 skipBody = hid and HeaderCollapsed(hid) or false
-                                local title = StripHeaderPrefix(row.title)
-                                row.title = (skipBody and PLUS or MINUS) .. title
+                                row.title = StripHeaderPrefix(row.title)
+                                row.collapsed = skipBody
                                 row.speech = row.speech or ((row.title or "Header") .. (skipBody and " collapsed" or " expanded"))
                                 out[#out + 1] = row
                             elseif not skipBody then
@@ -749,16 +788,17 @@ local function Layout()
         local isProgress = data.kind == "progress"
         local indent = 2
         if isSubHeader then
-            indent = data.indent or 14
+            indent = data.indent or 4
         elseif data.kind == "header" or isInstance then
             indent = 2
         elseif data.kind == "quest" or data.kind == "timer" then
-            indent = 16
+            indent = 8
         elseif data.kind == "objective" or isProgress then
             indent = 28
         end
         local wrap = data.kind == "header" or data.kind == "quest" or data.kind == "objective" or isInstance
         local isPercent = (data.kind == "objective" or isProgress) and AQ.Theme.IsPercentObjective and AQ.Theme.IsPercentObjective(data)
+        local tracked = IsSuperTrackedQuest(data) or (data.kind == "quest" and i == focused)
         local h = 18
         if isProgress then
             h = 22
@@ -766,15 +806,17 @@ local function Layout()
             h = 18
         elseif isInstance then
             h = data.lives and 36 or 28
+        elseif isSectionHeader then
+            h = 22
         elseif data.kind == "header" then
             h = 20
         elseif data.kind == "timer" then
             h = 26
         end
         if isSectionHeader and i > 1 then
-            y = y + 10
+            y = y + 12
         elseif isSubHeader then
-            y = y + 8
+            y = y + 6
         end
         row:SetHeight(h)
         row:ClearAllPoints()
@@ -786,11 +828,12 @@ local function Layout()
         local showBg = false
         local col = th.focus
         if isSectionHeader then
-            showBg = true
-            col = th.section or th.focus
+            showBg = false
         elseif isSubHeader or isInstance then
+            showBg = false
+        elseif tracked then
             showBg = true
-            col = th.subheader or th.section or th.focus
+            col = th.focus
         elseif i == focused then
             showBg = true
             col = th.focus
@@ -831,10 +874,21 @@ local function Layout()
             end
             if shown then
                 row.Icon:ClearAllPoints()
-                row.Icon:SetSize(14, 14)
+                row.Icon:SetSize(16, 16)
                 row.Icon:SetPoint("LEFT", 4 + indent, wrap and 2 or 0)
                 row.Icon:Show()
-                iconW = 18
+                iconW = 20
+                if tracked then
+                    local glow = EnsureGlow(row)
+                    glow:ClearAllPoints()
+                    glow:SetPoint("CENTER", row.Icon, "CENTER", 0, 0)
+                    glow:SetColorTexture(1, 0.85, 0.2, 0.45)
+                    glow:Show()
+                elseif row.IconGlow then
+                    row.IconGlow:Hide()
+                end
+            elseif row.IconGlow then
+                row.IconGlow:Hide()
             end
         end
 
@@ -863,19 +917,14 @@ local function Layout()
         end
 
         local title = data.title or ""
-        if data.kind == "quest" and data.level then
-            title = string.format("[%d] %s", data.level, title)
-        end
         if data.kind == "objective" then
             title = title:gsub("^%s+", ""):gsub(" %(complete%)$", "")
-            title = title:gsub("%s*%d+%s*/%s*%d+%s*$", "")
-            title = title:gsub("^%d+%s*/%s*%d+%s+", "")
-            if not data.clickComplete then
-                if data.goldBullet then
-                    title = "•  " .. title
-                else
-                    title = "-  " .. title
-                end
+            if data.finished or data.clickComplete then
+                title = "✓  " .. title
+            elseif data.goldBullet then
+                title = "•  " .. title
+            else
+                title = "-  " .. title
             end
         end
         if isProgress then
@@ -897,30 +946,21 @@ local function Layout()
         local itemW = hasItem and 16 or 0
         local statusLabel = nil
         local statusCol = th.complete
-        if data.kind == "timer" then
+        if data.kind == "header" then
+            statusLabel = data.collapsed and "+" or "-"
+            statusCol = th.collapse or th.complete
+        elseif data.kind == "timer" then
             statusLabel = "0:00"
             statusCol = th.header
-        elseif st == "DONE" then
-            statusLabel = "Complete"
-            statusCol = th.complete
-        elseif st == "FAILED" then
+        elseif data.kind == "quest" and st == "FAILED" then
             statusLabel = "Failed"
             statusCol = th.failed
-        elseif st == "READY" then
+        elseif data.kind == "quest" and st == "READY" then
             statusLabel = "Ready"
             statusCol = th.header
-        elseif st == "LOCKED" then
+        elseif data.kind == "quest" and st == "LOCKED" then
             statusLabel = "Locked"
             statusCol = th.tag
-        elseif not isPercent and type(data.numNeeded) == "number" and data.numNeeded > 0 then
-            statusLabel = string.format("%d/%d", tonumber(data.numFulfilled) or 0, data.numNeeded)
-            if data.finished or data.clickComplete then
-                statusCol = th.complete
-            elseif AQ.Theme.ObjectiveProgressColor then
-                statusCol = AQ.Theme.ObjectiveProgressColor(data)
-            else
-                statusCol = th.objective
-            end
         end
         row.Status:ClearAllPoints()
         row.Text:ClearAllPoints()
@@ -964,8 +1004,11 @@ local function Layout()
         end
         if isInstance then
             row.Text:SetTextColor(1, 1, 1, 1)
-        elseif data.kind == "header" then
+        elseif isSectionHeader then
             local a = th.header
+            row.Text:SetTextColor(a[1], a[2], a[3], 1)
+        elseif isSubHeader then
+            local a = th.subheader or th.header
             row.Text:SetTextColor(a[1], a[2], a[3], 1)
         elseif data.kind == "timer" then
             local a = th.header
@@ -976,17 +1019,17 @@ local function Layout()
         elseif data.kind == "quest" and st == "FAILED" then
             local a = th.failed
             row.Text:SetTextColor(a[1], a[2], a[3], 1)
+        elseif data.kind == "quest" and tracked then
+            local a = th.tracked or th.header
+            row.Text:SetTextColor(a[1], a[2], a[3], 1)
         elseif data.kind == "quest" and AQ.DB.Get().trackerDifficultyColors ~= false and type(data.level) == "number" then
             local a = AQ.Theme.QuestDifficultyColor(data.level)
             row.Text:SetTextColor(a[1], a[2], a[3], a[4] or 1)
-        elseif data.kind == "quest" and i == focused then
-            local a = th.header
+        elseif data.kind == "quest" then
+            local a = th.title
             row.Text:SetTextColor(a[1], a[2], a[3], 1)
         elseif data.kind == "objective" and (data.finished or data.clickComplete) then
             local a = th.complete
-            if AQ.DB.Get().trackerObjectiveProgressColors ~= false and AQ.Theme.ObjectiveProgressColor then
-                a = AQ.Theme.ObjectiveProgressColor(data)
-            end
             row.Text:SetTextColor(a[1], a[2], a[3], a[4] or 1)
         elseif data.kind == "objective" then
             local a = th.objective
@@ -997,6 +1040,15 @@ local function Layout()
         else
             local a = th.title
             row.Text:SetTextColor(a[1], a[2], a[3], 1)
+        end
+        if isSectionHeader then
+            local rule = EnsureRule(row)
+            local rc = th.rule
+            rule:SetColorTexture(rc[1], rc[2], rc[3], rc[4] or 1)
+            rule:ClearAllPoints()
+            rule:SetPoint("BOTTOMLEFT", 2, 0)
+            rule:SetPoint("BOTTOMRIGHT", -2, 0)
+            rule:Show()
         end
         if data.kind == "timer" then
             local bar = EnsureBar(row)
@@ -1148,6 +1200,12 @@ local function Layout()
         if rows[i].ItemTag then
             rows[i].ItemTag:Hide()
         end
+        if rows[i].Rule then
+            rows[i].Rule:Hide()
+        end
+        if rows[i].IconGlow then
+            rows[i].IconGlow:Hide()
+        end
     end
     if not sizing then
         frame:SetWidth(width)
@@ -1222,6 +1280,18 @@ end
 UpdateChrome = function()
     if not frame then
         return
+    end
+    if AQ.Widgets.ApplyTrackerBackdrop then
+        AQ.Widgets.ApplyTrackerBackdrop(frame)
+    end
+    local th = TrackerTheme()
+    if frame.Title then
+        local a = th.header
+        frame.Title:SetTextColor(a[1], a[2], a[3], 1)
+    end
+    if frame.HeaderRule then
+        local rc = th.rule
+        frame.HeaderRule:SetColorTexture(rc[1], rc[2], rc[3], rc[4] or 1)
     end
     local locked = DB().trackerLocked and true or false
     frame:SetMovable(not locked)

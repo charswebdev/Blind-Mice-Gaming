@@ -28,6 +28,7 @@ local defaults = {
     trackerShowClosestItem = true,
     trackerObjectiveProgressColors = true,
     trackerDifficultyColors = true,
+    trackerColors = {},
     soundQuest = true,
     soundQuestComplete = "Default",
     soundChannel = "Master",

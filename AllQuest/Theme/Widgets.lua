@@ -124,7 +124,7 @@ function W.ApplyTrackerBackdrop(frame)
     if not frame then
         return
     end
-    local t = AQ.Theme.Tracker
+    local t = AQ.Theme.TrackerTheme and AQ.Theme.TrackerTheme() or AQ.Theme.Tracker
     local bg = t.bg
     local border = t.border
     if frame.SetBackdrop then
