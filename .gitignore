@@ -29,5 +29,14 @@ updater/launch-error.txt
 talent-manager/*
 !talent-manager/catalog.json
 !talent-manager/community-builds.json
+
+# Classic Era Talent Manager — same rule as Retail LPTM.
+talent-manager-classic-era/*
+!talent-manager-classic-era/catalog.json
+!talent-manager-classic-era/community-builds.json
+
+# Loadout Manager source stays local; players only need catalog.json.
+loadout-manager/*
+!loadout-manager/catalog.json
 **/community-token.txt
 **/.env
