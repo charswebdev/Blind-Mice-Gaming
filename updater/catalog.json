@@ -21,10 +21,10 @@
       "name": "Light Paws Loadout Manager - Retail",
       "kind": "desktop",
       "flavor": "Retail",
-      "version": "1.0.2",
+      "version": "1.0.3",
       "status": "shipped",
-      "setupUrl": "https://github.com/charswebdev/Blind-Mice-Gaming/releases/download/lplm-1.0.2/LPLM-Setup-1.0.2.exe",
-      "updated": "2026-08-22",
+      "setupUrl": "https://github.com/charswebdev/Blind-Mice-Gaming/releases/download/lplm-1.0.3/LPLM-Setup-1.0.3.exe",
+      "updated": "2026-08-23",
       "installName": "Light Paws Loadout Manager",
       "exePrefix": "LPLM-"
     },
