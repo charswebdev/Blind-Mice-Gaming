@@ -355,8 +355,22 @@ local function MakeRow(i)
             end
             return
         end
+        if data.areaPoiID then
+            if C_SuperTrack and C_SuperTrack.SetSuperTrackedMapPin and Enum and Enum.SuperTrackingMapPinType then
+                pcall(C_SuperTrack.SetSuperTrackedMapPin, Enum.SuperTrackingMapPinType.AreaPOI, data.areaPoiID)
+            end
+            if data.eventMapID then
+                if OpenWorldMap then
+                    pcall(OpenWorldMap, data.eventMapID)
+                elseif C_Map and C_Map.OpenWorldMap then
+                    pcall(C_Map.OpenWorldMap, data.eventMapID)
+                end
+            end
+            SetTomTomArrow(data)
+            return
+        end
         if data.rareTarget or data.rareMapID then
-            if data.rareTarget and (not InCombatLockdown or not InCombatLockdown()) and TargetUnit then
+            if data.findKind ~= "treasure" and data.rareTarget and (not InCombatLockdown or not InCombatLockdown()) and TargetUnit then
                 pcall(TargetUnit, data.rareTarget)
             end
             SetTomTomArrow(data)
@@ -421,6 +435,9 @@ local function ApplyIconTex(tex, icon, atlas)
     tex:SetVertexColor(1, 1, 1, 1)
     if type(atlas) == "string" and atlas ~= "" and tex.SetAtlas then
         local ok = pcall(tex.SetAtlas, tex, atlas, true)
+        if not ok then
+            ok = pcall(tex.SetAtlas, tex, atlas, false)
+        end
         if ok then
             return true
         end
@@ -645,6 +662,9 @@ local function SetTomTomArrow(data)
     end
     if data.petMapID and data.petX and data.petY and AQ.TomTom.AddPoint then
         return AQ.TomTom.AddPoint(data.petMapID, data.petX, data.petY, data.title)
+    end
+    if data.eventMapID and data.eventX and data.eventY and AQ.TomTom.AddPoint then
+        return AQ.TomTom.AddPoint(data.eventMapID, data.eventX, data.eventY, data.title)
     end
     return false
 end
@@ -917,6 +937,13 @@ local function Layout()
         end
 
         local title = data.title or ""
+        if data.pet then
+            if st == "DONE" then
+                title = "✓  " .. title
+            else
+                title = "✕  " .. title
+            end
+        end
         if data.kind == "objective" then
             title = title:gsub("^%s+", ""):gsub(" %(complete%)$", "")
             if data.finished or data.clickComplete then
@@ -1012,6 +1039,12 @@ local function Layout()
             row.Text:SetTextColor(a[1], a[2], a[3], 1)
         elseif data.kind == "timer" then
             local a = th.header
+            row.Text:SetTextColor(a[1], a[2], a[3], 1)
+        elseif data.pet and st == "DONE" then
+            local a = th.complete
+            row.Text:SetTextColor(a[1], a[2], a[3], 1)
+        elseif data.pet then
+            local a = th.failed
             row.Text:SetTextColor(a[1], a[2], a[3], 1)
         elseif data.kind == "quest" and st == "DONE" then
             local a = th.complete

@@ -18,14 +18,14 @@ local TAB_H = 32
 local TAB_GAP = 6
 
 local TABS = {
-    { id = "commands", label = "Commands" },
-    { id = "general", label = "General" },
-    { id = "speech", label = "Speech" },
-    { id = "tracker", label = "Tracker" },
-    { id = "modules", label = "Modules" },
-    { id = "plugins", label = "Plugins" },
-    { id = "journal", label = "Journal" },
-    { id = "profiles", label = "Profiles" },
+    { id = "commands", label = "Commands", hint = "Slash commands you can type in chat to control AllQuest." },
+    { id = "general", label = "General", hint = "Minimap button, Blizzard tracker, and text size." },
+    { id = "speech", label = "Speech", hint = "Text to speech for the tracker, journal, and quest updates." },
+    { id = "tracker", label = "Tracker", hint = "Window, automation, objectives, colors, sounds, items, and filters." },
+    { id = "modules", label = "Modules", hint = "Which tracker blocks are shown and the order they appear." },
+    { id = "plugins", label = "Plugins", hint = "Optional addon integrations such as TomTom and RareScanner." },
+    { id = "journal", label = "Journal", hint = "Questline journal controls and expansion data packs." },
+    { id = "profiles", label = "Profiles", hint = "Save, switch, export, and import AllQuest settings." },
 }
 
 local COMMAND_ROWS = {
@@ -484,14 +484,14 @@ end
 local function AddRule(parent, y)
     local rule = parent:CreateTexture(nil, "ARTWORK")
     local rc = T().rule
-    rule:SetColorTexture(rc[1], rc[2], rc[3], rc[4] or 0.35)
-    rule:SetHeight(1)
+    rule:SetColorTexture(rc[1], rc[2], rc[3], rc[4] or 1)
+    rule:SetHeight(2)
     rule:SetPoint("TOPLEFT", 16, y)
     rule:SetPoint("TOPRIGHT", -16, y)
-    return y - 14
+    return y - 12
 end
 
-local function HoverRow(row)
+local function HoverRow(row, title, desc)
     local bg = row:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints()
     bg:Hide()
@@ -500,21 +500,30 @@ local function HoverRow(row)
         local h = T().hover
         self.Hover:SetColorTexture(h[1], h[2], h[3], h[4] or 0.1)
         self.Hover:Show()
+        if title then
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:AddLine(title, 1, 0.82, 0)
+            if type(desc) == "string" and desc ~= "" then
+                GameTooltip:AddLine(desc, 0.85, 0.85, 0.85, true)
+            end
+            GameTooltip:Show()
+        end
     end)
     row:SetScript("OnLeave", function(self)
         self.Hover:Hide()
+        GameTooltip:Hide()
     end)
 end
 
 local function MakeCheck(parent, label, key, getter, setter, disabled, hint)
-    local hasHint = type(hint) == "string" and hint ~= ""
+    hint = hint or "Turns this option on or off."
     local row = CreateFrame("Button", nil, parent)
-    row:SetHeight(hasHint and 52 or ROW_H)
-    HoverRow(row)
+    row:SetHeight(58)
+    HoverRow(row, label, hint)
 
     local box = row:CreateTexture(nil, "ARTWORK")
     box:SetSize(16, 16)
-    box:SetPoint("LEFT", 16, hasHint and 6 or 0)
+    box:SetPoint("LEFT", 16, 8)
     box:SetColorTexture(0.08, 0.08, 0.08, 0.55)
     row.Box = box
 
@@ -533,27 +542,22 @@ local function MakeCheck(parent, label, key, getter, setter, disabled, hint)
     row.Mark = mark
 
     local fs = AQ.Widgets.TrackerFontString(row, 13, TitleCol())
-    fs:SetPoint("LEFT", 44, hasHint and 8 or 0)
+    fs:SetPoint("LEFT", 44, 10)
     fs:SetPoint("RIGHT", -16, 0)
     fs:SetText(label)
     row.Label = fs
 
-    if hasHint then
-        local hintFS = AQ.Widgets.TrackerFontString(row, 11, ObjCol())
-        hintFS:SetPoint("TOPLEFT", fs, "BOTTOMLEFT", 0, -2)
-        hintFS:SetPoint("RIGHT", -16, 0)
-        hintFS:SetWordWrap(true)
-        if hintFS.SetMaxLines then
-            hintFS:SetMaxLines(2)
-        end
-        hintFS:SetText(hint)
-        row.Hint = hintFS
-        if disabled then
-            hintFS:SetTextColor(0.45, 0.45, 0.45, 1)
-        end
+    local hintFS = AQ.Widgets.TrackerFontString(row, 11, ObjCol())
+    hintFS:SetPoint("TOPLEFT", fs, "BOTTOMLEFT", 0, -2)
+    hintFS:SetPoint("RIGHT", -16, 0)
+    hintFS:SetWordWrap(true)
+    if hintFS.SetMaxLines then
+        hintFS:SetMaxLines(2)
     end
-
+    hintFS:SetText(hint)
+    row.Hint = hintFS
     if disabled then
+        hintFS:SetTextColor(0.45, 0.45, 0.45, 1)
         row.Label:SetTextColor(0.5, 0.5, 0.5, 1)
         row.Edge:SetColorTexture(0.28, 0.28, 0.28, 1)
         row.Box:SetColorTexture(0.05, 0.05, 0.05, 0.4)
@@ -594,11 +598,7 @@ local function MakeCheck(parent, label, key, getter, setter, disabled, hint)
         if disabled then
             state = "unavailable"
         end
-        local text = label .. ". " .. state
-        if hasHint then
-            text = text .. ". " .. hint
-        end
-        return text
+        return label .. ". " .. state .. ". " .. hint
     end)
     row.Sync = Sync
     Sync()
@@ -615,13 +615,57 @@ local function Clamp(v, lo, hi)
     return v
 end
 
-local function MakeStepper(parent, label, getter, setter, minV, maxV, step, fmt)
+local function AddHintText(parent, anchor, text, rightPad)
+    local hintFS = AQ.Widgets.TrackerFontString(parent, 11, ObjCol())
+    hintFS:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -2)
+    hintFS:SetPoint("RIGHT", parent, "RIGHT", -(rightPad or 16), 0)
+    hintFS:SetWordWrap(true)
+    if hintFS.SetMaxLines then
+        hintFS:SetMaxLines(2)
+    end
+    hintFS:SetText(text or "")
+    return hintFS
+end
+
+local function BindTip(frame, title, desc)
+    if not frame then
+        return
+    end
+    local prevEnter = frame:GetScript("OnEnter")
+    local prevLeave = frame:GetScript("OnLeave")
+    frame:SetScript("OnEnter", function(self, ...)
+        if prevEnter then
+            prevEnter(self, ...)
+        end
+        if title then
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:AddLine(title, 1, 0.82, 0)
+            if type(desc) == "string" and desc ~= "" then
+                GameTooltip:AddLine(desc, 0.85, 0.85, 0.85, true)
+            end
+            GameTooltip:Show()
+        end
+    end)
+    frame:SetScript("OnLeave", function(self, ...)
+        if prevLeave then
+            prevLeave(self, ...)
+        end
+        GameTooltip:Hide()
+    end)
+end
+
+local function MakeStepper(parent, label, getter, setter, minV, maxV, step, fmt, hint)
+    hint = hint or "Adjust this value."
     local row = CreateFrame("Frame", nil, parent)
-    row:SetHeight(48)
+    row:SetHeight(58)
+    row:EnableMouse(true)
+    HoverRow(row, label, hint)
 
     local name = AQ.Widgets.TrackerFontString(row, 13, TitleCol())
-    name:SetPoint("LEFT", 16, 0)
+    name:SetPoint("TOPLEFT", 16, -8)
+    name:SetPoint("RIGHT", -200, 0)
     name:SetText(label)
+    AddHintText(row, name, hint, 200)
 
     local function StyleStep(btn)
         local fill = btn:CreateTexture(nil, "BACKGROUND")
@@ -633,16 +677,18 @@ local function MakeStepper(parent, label, getter, setter, minV, maxV, step, fmt)
         end
     end
 
-    local plus = AQ.Widgets.TrackerButton(row, "+", 40, 40, 22)
+    local plus = AQ.Widgets.TrackerButton(row, "+", 36, 32, 20)
     plus:SetPoint("RIGHT", -16, 0)
     StyleStep(plus)
-    local valueFS = AQ.Widgets.TrackerFontString(row, 18, Gold())
-    valueFS:SetWidth(72)
+    local valueFS = AQ.Widgets.TrackerFontString(row, 16, Gold())
+    valueFS:SetWidth(56)
     valueFS:SetJustifyH("CENTER")
-    valueFS:SetPoint("RIGHT", plus, "LEFT", -10, 0)
-    local minus = AQ.Widgets.TrackerButton(row, "-", 40, 40, 22)
-    minus:SetPoint("RIGHT", valueFS, "LEFT", -10, 0)
+    valueFS:SetPoint("RIGHT", plus, "LEFT", -8, 0)
+    local minus = AQ.Widgets.TrackerButton(row, "-", 36, 32, 20)
+    minus:SetPoint("RIGHT", valueFS, "LEFT", -8, 0)
     StyleStep(minus)
+    BindTip(minus, "Decrease " .. label, hint)
+    BindTip(plus, "Increase " .. label, hint)
 
     local function Sync()
         valueFS:SetText(string.format(fmt or "%s", getter()))
@@ -658,7 +704,7 @@ local function MakeStepper(parent, label, getter, setter, minV, maxV, step, fmt)
         RefreshUI()
     end)
     HoverSpeak(row, function()
-        return label .. ". " .. string.format(fmt or "%s", getter())
+        return label .. ". " .. string.format(fmt or "%s", getter()) .. ". " .. hint
     end)
     HoverSpeak(minus, function()
         return "Decrease " .. label .. ". " .. string.format(fmt or "%s", getter())
@@ -683,22 +729,28 @@ local function BuildTabContent(parent, tabID)
     inner:SetPoint("TOPRIGHT")
     parent.Inner = inner
 
-    local y = -12
+    local y = -8
+    local firstSection = true
     local function Place(row)
         row:SetPoint("TOPLEFT", 0, y)
         row:SetPoint("RIGHT", inner, "RIGHT", 0, 0)
-        y = y - ((row.GetHeight and row:GetHeight() or ROW_H) + 6)
+        y = y - ((row.GetHeight and row:GetHeight() or ROW_H) + 4)
     end
-    local function Section(text)
-        y = y - 18
+    local function Section(text, hint)
+        if not firstSection then
+            y = y - 14
+        end
+        firstSection = false
+        hint = hint or ("Related settings in the " .. text .. " group.")
         local wrap = CreateFrame("Frame", nil, inner)
-        wrap:SetHeight(22)
+        wrap:SetHeight(24)
         wrap:EnableMouse(true)
-        local fs = AQ.Widgets.TrackerFontString(wrap, 14, Gold())
+        HoverRow(wrap, text, hint)
+        local fs = AQ.Widgets.TrackerFontString(wrap, 15, Gold())
         fs:SetPoint("TOPLEFT", 16, 0)
         fs:SetPoint("RIGHT", -16, 0)
         fs:SetText(text)
-        HoverSpeak(wrap, text .. " heading")
+        HoverSpeak(wrap, text .. " heading. " .. hint)
         Place(wrap)
         y = AddRule(inner, y)
     end
@@ -706,6 +758,7 @@ local function BuildTabContent(parent, tabID)
         local wrap = CreateFrame("Frame", nil, inner)
         wrap:SetHeight(height or 56)
         wrap:EnableMouse(true)
+        HoverRow(wrap, "Note", text)
         local fs = AQ.Widgets.TrackerFontString(wrap, 12, ObjCol())
         fs:SetPoint("TOPLEFT", 16, 0)
         fs:SetPoint("TOPRIGHT", -16, 0)
@@ -720,8 +773,57 @@ local function BuildTabContent(parent, tabID)
     local function RowCheck(label, key, getter, setter, disabled, hint)
         Place(MakeCheck(inner, label, key, getter, setter, disabled, hint))
     end
-    local function RowStepper(label, getter, setter, minV, maxV, step, fmt)
-        Place(MakeStepper(inner, label, getter, setter, minV, maxV, step, fmt))
+    local function RowStepper(label, getter, setter, minV, maxV, step, fmt, hint)
+        Place(MakeStepper(inner, label, getter, setter, minV, maxV, step, fmt, hint))
+    end
+    local function RowChoice(label, hint, items, getValue, setValue, extra)
+        local wrap = CreateFrame("Frame", nil, inner)
+        wrap:SetHeight(58)
+        wrap:EnableMouse(true)
+        HoverRow(wrap, label, hint)
+        local rightPad = extra and 280 or 230
+        local name = AQ.Widgets.TrackerFontString(wrap, 13, TitleCol())
+        name:SetPoint("TOPLEFT", 16, -8)
+        name:SetPoint("RIGHT", -rightPad, 0)
+        name:SetText(label)
+        AddHintText(wrap, name, hint, rightPad)
+        if extra then
+            extra:SetParent(wrap)
+            extra:ClearAllPoints()
+            extra:SetPoint("RIGHT", -16, 0)
+        end
+        local drop = AQ.Widgets.Dropdown(wrap, { width = 200, height = 32, placeholder = label })
+        if extra then
+            drop:SetPoint("RIGHT", extra, "LEFT", -8, 0)
+        else
+            drop:SetPoint("RIGHT", -16, 0)
+        end
+        drop:SetItems(items)
+        drop:SetValue(getValue())
+        drop:SetCallback(setValue)
+        HoverSpeak(wrap, function()
+            return label .. ". " .. tostring(getValue()) .. ". " .. hint
+        end)
+        Place(wrap)
+        return wrap, drop
+    end
+    local function RowAction(label, hint, onClick, width, buttonText)
+        local wrap = CreateFrame("Button", nil, inner)
+        wrap:SetHeight(58)
+        HoverRow(wrap, label, hint)
+        local name = AQ.Widgets.TrackerFontString(wrap, 13, TitleCol())
+        name:SetPoint("TOPLEFT", 16, -8)
+        name:SetPoint("RIGHT", -160, 0)
+        name:SetText(label)
+        AddHintText(wrap, name, hint, 160)
+        local btn = ActionButton(wrap, buttonText or label, width or 120)
+        btn:SetPoint("RIGHT", -16, 0)
+        wrap:SetScript("OnClick", onClick)
+        btn:SetScript("OnClick", onClick)
+        BindTip(btn, buttonText or label, hint)
+        HoverSpeak(wrap, label .. ". " .. hint)
+        Place(wrap)
+        return wrap, btn
     end
     local function FilterGet(key)
         return function()
@@ -737,49 +839,128 @@ local function BuildTabContent(parent, tabID)
     end
 
     if tabID == "commands" then
-        Section("Slash commands")
+        Section("Slash commands", "Type these in chat to open windows, read rows, or stop speech.")
         for i = 1, #COMMAND_ROWS do
+            local spec = COMMAND_ROWS[i]
             local row = CreateFrame("Frame", nil, inner)
-            row:SetHeight(ROW_H)
-            local cmd = AQ.Widgets.TrackerFontString(row, 13, Gold())
-            cmd:SetPoint("LEFT", 16, 0)
-            cmd:SetWidth(130)
-            cmd:SetText(COMMAND_ROWS[i][1])
-            local desc = AQ.Widgets.TrackerFontString(row, 13, TitleCol())
-            desc:SetPoint("LEFT", 154, 0)
-            desc:SetPoint("RIGHT", -16, 0)
-            desc:SetText(COMMAND_ROWS[i][2])
+            row:SetHeight(52)
             row:EnableMouse(true)
-            HoverSpeak(row, COMMAND_ROWS[i][1] .. ". " .. COMMAND_ROWS[i][2])
+            HoverRow(row, spec[1], spec[2])
+            local cmd = AQ.Widgets.TrackerFontString(row, 13, Gold())
+            cmd:SetPoint("TOPLEFT", 16, -8)
+            cmd:SetWidth(130)
+            cmd:SetText(spec[1])
+            local desc = AQ.Widgets.TrackerFontString(row, 11, ObjCol())
+            desc:SetPoint("TOPLEFT", cmd, "BOTTOMLEFT", 0, -2)
+            desc:SetPoint("RIGHT", -16, 0)
+            desc:SetWordWrap(true)
+            desc:SetText(spec[2])
+            HoverSpeak(row, spec[1] .. ". " .. spec[2])
             Place(row)
         end
-        y = y - 16
+        Section("Mouse shortcuts", "Tracker click actions that do not need a slash command.")
         Note("Left-click a quest, pet, or rare to set a TomTom arrow. Right-click a tracker row for Super Track, quest log, map, share, abandon, Wowhead, TomTom, and BtWQuests.", 72)
     elseif tabID == "general" then
-        Section("Display")
-        RowCheck("Show minimap button", "minimapButtonEnabled")
-        RowCheck("Hide Blizzard objective tracker", "hideBlizzardTracker")
+        Section("Display", "Minimap button and the default Blizzard tracker.")
+        RowCheck(
+            "Show minimap button",
+            "minimapButtonEnabled",
+            nil,
+            nil,
+            nil,
+            "Shows the AllQuest icon around the minimap. Click it to open settings."
+        )
+        RowCheck(
+            "Hide Blizzard objective tracker",
+            "hideBlizzardTracker",
+            nil,
+            nil,
+            nil,
+            "Hides the default Blizzard tracker so only AllQuest is on screen."
+        )
+        Section("Text", "Font size for AllQuest windows.")
         RowStepper("UI font scale", function()
             return DB().fontScale or 1
         end, function(v)
             DB().fontScale = v
-        end, 0.8, 2.0, 0.1, "%.1f")
-        y = y - 16
-        Note("AllQuest is a custom tracker. It does not skin Blizzard frames.", 48)
+        end, 0.8, 2.0, 0.1, "%.1f", "Scales text in the tracker, journal, and settings. Default is 1.0.")
+        Note("AllQuest is a custom tracker. It does not skin Blizzard frames.", 40)
     elseif tabID == "tracker" then
-        Section("Window")
-        RowCheck("Enable tracker", "trackerEnabled")
-        RowCheck("Lock tracker position and size", "trackerLocked")
-        RowCheck("Hide tracker when empty", "trackerHideEmpty")
-        RowCheck("Collapse tracker in instances", "trackerCollapseInInstance")
-        Section("Quests")
-        RowCheck("Auto-watch accepted quests", "trackerAutoWatch")
-        RowCheck("Auto-accept quests from NPCs", "autoQuestAccept")
-        RowCheck("Auto-turn-in quests at NPCs", "autoQuestTurnIn")
-        RowCheck("Show accept / complete / turn-in messages", "autoQuestNotify")
-        RowCheck("Show completed objectives", "trackerShowCompletedObjectives")
-        Section("Colors")
-        Note("Section titles use a colored underline and a + / - on the right. Quest titles stay gold unless you color them by difficulty. The super-tracked quest is pink. AllQuest icons stay on the left. Click a swatch to pick a color.", 72)
+        Section("Window", "Show, lock, hide, and collapse the tracker window.")
+        RowCheck(
+            "Enable tracker",
+            "trackerEnabled",
+            nil,
+            nil,
+            nil,
+            "Shows the AllQuest tracker window. Turn this off to hide the tracker completely."
+        )
+        RowCheck(
+            "Lock tracker position and size",
+            "trackerLocked",
+            nil,
+            nil,
+            nil,
+            "Prevents dragging and resizing. Unlock to move the tracker or drag the bottom-right corner."
+        )
+        RowCheck(
+            "Hide tracker when empty",
+            "trackerHideEmpty",
+            nil,
+            nil,
+            nil,
+            "Hides the tracker window when no quests or other blocks are showing."
+        )
+        RowCheck(
+            "Collapse tracker in instances",
+            "trackerCollapseInInstance",
+            nil,
+            nil,
+            nil,
+            "Automatically collapses the tracker when you enter a dungeon, raid, delve, or scenario."
+        )
+        Section("Automation", "Auto-watch, auto-accept, and auto-turn-in.")
+        RowCheck(
+            "Auto-watch accepted quests",
+            "trackerAutoWatch",
+            nil,
+            nil,
+            nil,
+            "Adds newly accepted quests to the tracker so you do not have to watch them by hand."
+        )
+        RowCheck(
+            "Auto-accept quests from NPCs",
+            "autoQuestAccept",
+            nil,
+            nil,
+            nil,
+            "Accepts quests when you talk to an NPC. Hold Shift to skip this once."
+        )
+        RowCheck(
+            "Auto-turn-in quests at NPCs",
+            "autoQuestTurnIn",
+            nil,
+            nil,
+            nil,
+            "Turns in completed quests when you talk to an NPC. Hold Shift to skip this once."
+        )
+        RowCheck(
+            "Show accept / complete / turn-in messages",
+            "autoQuestNotify",
+            nil,
+            nil,
+            nil,
+            "Prints a chat message when AllQuest accepts, completes, or turns in a quest."
+        )
+        Section("Objectives", "Completed lines and progress or difficulty colors.")
+        RowCheck(
+            "Show completed objectives",
+            "trackerShowCompletedObjectives",
+            nil,
+            nil,
+            nil,
+            "Keeps finished objectives on the tracker with a check mark. Turn off to hide them."
+        )
         RowCheck(
             "Color objectives by progress",
             "trackerObjectiveProgressColors",
@@ -794,26 +975,27 @@ local function BuildTabContent(parent, tabID)
             nil,
             nil,
             nil,
-            "Grey, green, yellow, orange, and red like the quest log. Tracked quests stay the tracked color."
+            "Grey, green, yellow, orange, and red like the quest log. The super-tracked quest stays pink."
         )
+        Section("Appearance", "Tracker colors. Click a swatch to pick a color.")
         do
             local COLOR_ROWS = {
-                { key = "header", label = "Section titles" },
-                { key = "rule", label = "Section underline" },
-                { key = "title", label = "Quest titles" },
-                { key = "tracked", label = "Tracked quest" },
-                { key = "objective", label = "Objectives" },
-                { key = "complete", label = "Completed" },
-                { key = "collapse", label = "Collapse + / -" },
-                { key = "bg", label = "Background" },
+                { key = "header", label = "Section titles", hint = "Golden yellow for Campaign, Quests, Achievements, and other section headers." },
+                { key = "rule", label = "Section lines", hint = "Bright orange underline under each section header." },
+                { key = "title", label = "Quest titles", hint = "Default color for quest names when difficulty coloring is off." },
+                { key = "tracked", label = "Tracked quest", hint = "Pink color for the super-tracked quest and its glow." },
+                { key = "objective", label = "Objectives", hint = "Default color for incomplete objective lines." },
+                { key = "complete", label = "Completed", hint = "Color for finished objectives and check marks." },
+                { key = "collapse", label = "Collapse + / -", hint = "Color for the expand and collapse buttons on section headers." },
+                { key = "bg", label = "Background", hint = "Dark glass behind the tracker window." },
             }
             local function ColorRow(spec)
                 local row = CreateFrame("Button", nil, inner)
-                row:SetHeight(ROW_H)
-                HoverRow(row)
+                row:SetHeight(58)
+                HoverRow(row, spec.label, spec.hint)
                 local swatch = row:CreateTexture(nil, "ARTWORK")
                 swatch:SetSize(18, 18)
-                swatch:SetPoint("LEFT", 16, 0)
+                swatch:SetPoint("LEFT", 16, 8)
                 local c = AQ.Theme.GetTrackerColor and AQ.Theme.GetTrackerColor(spec.key) or { 1, 1, 1, 1 }
                 swatch:SetColorTexture(c[1], c[2], c[3], 1)
                 local edge = row:CreateTexture(nil, "BORDER")
@@ -821,9 +1003,10 @@ local function BuildTabContent(parent, tabID)
                 edge:SetPoint("BOTTOMRIGHT", swatch, 1, -1)
                 edge:SetColorTexture(1, 1, 1, 0.35)
                 local fs = AQ.Widgets.TrackerFontString(row, 13, TitleCol())
-                fs:SetPoint("LEFT", swatch, "RIGHT", 10, 0)
+                fs:SetPoint("TOPLEFT", swatch, "TOPRIGHT", 10, 2)
                 fs:SetPoint("RIGHT", -16, 0)
                 fs:SetText(spec.label)
+                AddHintText(row, fs, spec.hint, 16)
                 row:SetScript("OnClick", function()
                     local cur = AQ.Theme.GetTrackerColor(spec.key)
                     ShowColorPicker(cur[1], cur[2], cur[3], function(nr, ng, nb)
@@ -832,34 +1015,28 @@ local function BuildTabContent(parent, tabID)
                         RefreshUI()
                     end)
                 end)
-                HoverSpeak(row, spec.label .. " color")
+                HoverSpeak(row, spec.label .. " color. " .. spec.hint)
                 Place(row)
             end
             for i = 1, #COLOR_ROWS do
                 ColorRow(COLOR_ROWS[i])
             end
-            local resetRow = CreateFrame("Frame", nil, inner)
-            resetRow:SetHeight(34)
-            local reset = ActionButton(resetRow, "Reset colors", 140)
-            reset:SetPoint("LEFT", 16, 0)
-            reset:SetScript("OnClick", function()
+            RowAction("Reset colors", "Restore golden yellow titles, bright orange section lines, and the other default tracker colors.", function()
                 if AQ.Theme.ResetTrackerColors then
                     AQ.Theme.ResetTrackerColors()
                 end
                 RefreshUI()
                 Rebuild()
-            end)
-            HoverSpeak(reset, "Reset tracker colors")
-            Place(resetRow)
+            end, 90, "Reset")
         end
-        Section("Sounds")
+        Section("Sounds", "Quest complete voice and which mixer channel it uses.")
         RowCheck(
             "Play a sound when a quest is complete",
             "soundQuest",
             nil,
             nil,
             nil,
-            "Uses the complete voices listed under Media."
+            "Plays the selected complete voice when you finish a quest."
         )
         do
             local soundItems = {}
@@ -867,80 +1044,88 @@ local function BuildTabContent(parent, tabID)
             for i = 1, #sounds do
                 soundItems[i] = { text = sounds[i].id, value = sounds[i].id }
             end
-            local soundWrap = CreateFrame("Frame", nil, inner)
-            soundWrap:SetHeight(22)
-            soundWrap:EnableMouse(true)
-            local soundLabel = AQ.Widgets.TrackerFontString(soundWrap, 13, Gold())
-            soundLabel:SetPoint("LEFT", 16, 0)
-            soundLabel:SetText("Complete sound")
-            HoverSpeak(soundWrap, "Complete sound heading")
-            Place(soundWrap)
-
-            local soundRow = CreateFrame("Frame", nil, inner)
-            soundRow:SetHeight(34)
-            local play = ActionButton(soundRow, "Play", 56)
-            play:SetPoint("RIGHT", -16, 0)
-            local soundDrop = AQ.Widgets.Dropdown(soundRow, { width = 240, height = 32, placeholder = "Complete sound" })
-            soundDrop:SetPoint("LEFT", 16, 0)
-            soundDrop:SetPoint("RIGHT", play, "LEFT", -8, 0)
-            soundDrop:SetItems(soundItems)
-            soundDrop:SetValue(DB().soundQuestComplete or "Default")
-            soundDrop:SetCallback(function(value)
-                DB().soundQuestComplete = value
-                if AQ.Sounds and AQ.Sounds.Play then
-                    AQ.Sounds.Play(value, DB().soundChannel or "Master")
-                end
-            end)
+            local play = ActionButton(inner, "Play", 56)
             play:SetScript("OnClick", function()
                 if AQ.Sounds and AQ.Sounds.Play then
                     AQ.Sounds.Play(DB().soundQuestComplete or "Default", DB().soundChannel or "Master")
                 end
             end)
-            HoverSpeak(soundDrop, function()
-                return "Complete sound. " .. tostring(DB().soundQuestComplete or "Default")
-            end)
-            Place(soundRow)
+            BindTip(play, "Play", "Preview the selected complete sound.")
+            HoverSpeak(play, "Play complete sound")
+            RowChoice("Complete sound", "Voice played when a quest is finished. Click Play to preview it.", soundItems, function()
+                return DB().soundQuestComplete or "Default"
+            end, function(value)
+                DB().soundQuestComplete = value
+                if AQ.Sounds and AQ.Sounds.Play then
+                    AQ.Sounds.Play(value, DB().soundChannel or "Master")
+                end
+            end, play)
 
             local chanItems = {}
             local chans = AQ.Sounds and AQ.Sounds.Channels and AQ.Sounds.Channels() or {}
             for i = 1, #chans do
                 chanItems[i] = { text = chans[i].label, value = chans[i].id }
             end
-            local chanWrap = CreateFrame("Frame", nil, inner)
-            chanWrap:SetHeight(22)
-            chanWrap:EnableMouse(true)
-            local chanLabel = AQ.Widgets.TrackerFontString(chanWrap, 13, Gold())
-            chanLabel:SetPoint("LEFT", 16, 0)
-            chanLabel:SetText("Sound channel")
-            HoverSpeak(chanWrap, "Sound channel heading")
-            Place(chanWrap)
-
-            local chanRow = CreateFrame("Frame", nil, inner)
-            chanRow:SetHeight(34)
-            local chanDrop = AQ.Widgets.Dropdown(chanRow, { width = 240, height = 32, placeholder = "Sound channel" })
-            chanDrop:SetPoint("LEFT", 16, 0)
-            chanDrop:SetItems(chanItems)
-            chanDrop:SetValue(DB().soundChannel or "Master")
-            chanDrop:SetCallback(function(value)
+            RowChoice("Sound channel", "Which WoW sound mixer this complete voice uses. Master is the default.", chanItems, function()
+                return DB().soundChannel or "Master"
+            end, function(value)
                 DB().soundChannel = value
             end)
-            HoverSpeak(chanDrop, function()
-                return "Sound channel. " .. tostring(DB().soundChannel or "Master")
-            end)
-            Place(chanRow)
         end
-        Section("Items")
-        RowCheck("Show quest item buttons", "trackerShowItemButtons")
-        RowCheck("Show closest-quest extra item button", "trackerShowClosestItem")
-        Section("Filters")
-        RowCheck("Hide completed quests", "hideComplete", FilterGet("hideComplete"), FilterSet("hideComplete"))
-        RowCheck("Hide daily quests", "hideDaily", FilterGet("hideDaily"), FilterSet("hideDaily"))
-        RowCheck("Hide weekly quests", "hideWeekly", FilterGet("hideWeekly"), FilterSet("hideWeekly"))
-        y = y - 16
-        Note("Unlock the tracker to drag it, or drag the bottom-right corner to resize. Hold Shift at an NPC to skip auto-accept and auto-turn-in.", 72)
+        Section("Items", "Usable quest item buttons on the tracker.")
+        RowCheck(
+            "Show quest item buttons",
+            "trackerShowItemButtons",
+            nil,
+            nil,
+            nil,
+            "Shows usable quest items next to the quest they belong to."
+        )
+        RowCheck(
+            "Show closest-quest extra item button",
+            "trackerShowClosestItem",
+            nil,
+            nil,
+            nil,
+            "Shows an extra item button for the closest quest that has a usable item."
+        )
+        Section("Events", "Scheduled world events from the Blizzard event scheduler.")
+        RowCheck(
+            "Show long events",
+            "trackerShowLongEvents",
+            nil,
+            nil,
+            nil,
+            "Also show events that last a day or more, and ongoing events. Short events always show."
+        )
+        Section("Filters", "Hide completed, daily, or weekly quests from the tracker.")
+        RowCheck(
+            "Hide completed quests",
+            "hideComplete",
+            FilterGet("hideComplete"),
+            FilterSet("hideComplete"),
+            nil,
+            "Removes finished quests from the tracker until you turn this off."
+        )
+        RowCheck(
+            "Hide daily quests",
+            "hideDaily",
+            FilterGet("hideDaily"),
+            FilterSet("hideDaily"),
+            nil,
+            "Hides daily quests from the tracker."
+        )
+        RowCheck(
+            "Hide weekly quests",
+            "hideWeekly",
+            FilterGet("hideWeekly"),
+            FilterSet("hideWeekly"),
+            nil,
+            "Hides weekly quests from the tracker."
+        )
     elseif tabID == "modules" then
-        Section("Tracker blocks")
-        Note("Each checkbox is a block in the AllQuest tracker. Uncheck a block to hide it. Empty blocks hide themselves. Use Up and Down to change the order they appear. Other addons are turned on in the Plugins tab.", 96)
+        Section("Tracker blocks", "Turn blocks on or off and change the order they appear.")
+        Note("Each checkbox is a block in the AllQuest tracker. Uncheck a block to hide it. Empty blocks hide themselves. Use Up and Down to change the order. Other addons are turned on in the Plugins tab.", 72)
 
         local MODULE_HELP = {
             popups = {
@@ -975,17 +1160,21 @@ local function BuildTabContent(parent, tabID)
                 title = "Activities",
                 desc = "Tracked activities such as delves and other content goals.",
             },
+            events = {
+                title = "Events",
+                desc = "Active scheduled world events, like Kaliel's Tracker. Shows the event name, zone, and time left. Left-click opens the map and sets a TomTom arrow.",
+            },
             collectibles = {
                 title = "Collectibles",
                 desc = "Tracked collectible items and appearances.",
             },
             rares = {
                 title = "Rares",
-                desc = "Nearby rares from the map. Left-click sets a TomTom arrow. RareScanner and SilverDragon add extra finds if those plugins are on.",
+                desc = "Nearby rares and treasures. AllQuest watches map vignettes, nameplates, and area POIs. RareScanner and SilverDragon add their alerts. Left-click a rare to target it and set a TomTom arrow. Treasures only set an arrow.",
             },
             pets = {
                 title = "Pets",
-                desc = "Battle pets in this zone. Left-click sets a TomTom arrow. PetTracker or Battle Pet Completionist add extra zone lists if those plugins are on.",
+                desc = "Nearby battle pets from nameplates, the map, and your target. PetTracker or Battle Pet Completionist add the rest of the zone list if those plugins are on. Left-click sets a TomTom arrow and opens the pet journal.",
             },
             questcompletist = {
                 title = "QuestCompletist",
@@ -1066,12 +1255,16 @@ local function BuildTabContent(parent, tabID)
             end
 
             local wrap = CreateFrame("Frame", nil, inner)
-            wrap:SetHeight(52)
+            wrap:SetHeight(58)
+            wrap:EnableMouse(true)
+            HoverRow(wrap, label, hint)
 
             local down = OrderBtn(wrap, "Down")
             down:SetPoint("RIGHT", -16, 0)
+            BindTip(down, "Move down", "Move this block one step lower in the tracker.")
             local up = OrderBtn(wrap, "Up")
             up:SetPoint("RIGHT", down, "LEFT", -6, 0)
+            BindTip(up, "Move up", "Move this block one step higher in the tracker.")
             SetOrderBtn(up, index > 1)
             SetOrderBtn(down, index < total)
             up:SetScript("OnClick", function()
@@ -1113,24 +1306,30 @@ local function BuildTabContent(parent, tabID)
             AddModule(list[i], i, #list)
         end
 
-        local resetRow = CreateFrame("Frame", nil, inner)
-        resetRow:SetHeight(36)
-        local reset = OrderBtn(resetRow, "Reset order")
-        reset:SetWidth(120)
-        reset:SetPoint("LEFT", 16, 0)
-        reset:SetScript("OnClick", function()
+        Section("Order", "Restore the default block order.")
+        RowAction("Reset order", "Put tracker blocks back in the default order: accept popups, instance, campaigns, quests, then the rest.", function()
             if AQ.Tracker and AQ.Tracker.ResetModuleOrder then
                 AQ.Tracker.ResetModuleOrder()
             end
             RefreshUI()
             Rebuild()
-        end)
-        Place(resetRow)
-        y = y - 8
-        Note("Plugin blocks stay greyed out until that addon is installed and loaded. You can still move them in the list.", 56)
+        end, 90, "Reset")
+        Note("Plugin blocks stay greyed out until that addon is installed and loaded. You can still move them in the list.", 48)
     elseif tabID == "plugins" then
-        Section("Optional plugins")
-        Note("Install an addon to enable its plugin. Missing addons stay greyed out. Turning a plugin on or off reloads the UI.", 56)
+        Section("Optional plugins", "Integrations with other addons. Changing a plugin reloads the UI.")
+        Note("Install an addon to enable its plugin. Missing addons stay greyed out. Turning a plugin on or off reloads the UI.", 48)
+        local PLUGIN_HELP = {
+            TomTom = "Sets a waypoint arrow when you click a quest, pet, or rare. Also used by /aqtomtom.",
+            Masque = "Skins AllQuest quest-item buttons with your Masque skin.",
+            PetTracker = "Adds the rest of this zone's battle pets from PetTracker. Nearby pets still come from AllQuest.",
+            RareScanner = "Adds rares and treasures RareScanner identifies to the Rares tracker block.",
+            BattlePetCompletionist = "Adds pets from Battle Pet Completionist to the Pets block.",
+            SilverDragon = "Adds rares and treasures SilverDragon identifies to the Rares tracker block.",
+            QuestCompletist = "Shows incomplete zone quests from QuestCompletist in their own block.",
+            AllTheThings = "Uses All The Things for extra collectible and quest data.",
+            ZygorGuidesViewer = "Uses Zygor waypoint and quest data when that addon is loaded.",
+            BtWQuests = "Opens the super-tracked quest in BtWQuests from the tracker menu or /aqbtw.",
+        }
         local list = AQ.Plugins and AQ.Plugins.List and AQ.Plugins.List() or {}
         for i = 1, #list do
             local spec = list[i]
@@ -1149,6 +1348,10 @@ local function BuildTabContent(parent, tabID)
                         label = display .. "  (not installed)"
                     end
                 end
+                local hint = PLUGIN_HELP[id] or ("Turns the " .. display .. " integration on or off. Changing this reloads the UI.")
+                if not available then
+                    hint = hint .. " Install and enable the addon to use this plugin."
+                end
                 RowCheck(label, "plugins:" .. id, function()
                     if not available then
                         return false
@@ -1163,14 +1366,14 @@ local function BuildTabContent(parent, tabID)
                         return
                     end
                     ReloadForPlugin(id, v)
-                end, not available)
+                end, not available, hint)
             end
         end
     elseif tabID == "journal" then
-        Section("Questline journal")
+        Section("How to use", "Open the journal, browse zones, and hear status words.")
         Note("Open with /aqline or the book icon on the tracker. Toolbar icons: Home, Back, Search, Grid/List, Here (jump to your zone), Zone dropdown, Close. Hover an icon or cover to hear its name. Keyboard: Up/Down select, Enter open, Backspace back. Escape backs up a folder, or closes at Home. Questlines stay a list. Status is spoken as DONE, ACTIVE, READY, LOCKED, or FAILED.", 140)
-        Section("Expansion data")
-        Note("Load questline packs the same way BtWQuests Auto Load works. Turning a pack on or off reloads the UI so the data can populate. Packs that are missing, disabled, or not for this client stay greyed out.", 72)
+        Section("Expansion data", "Questline packs to load. Changing a pack reloads the UI.")
+        Note("Load questline packs the same way BtWQuests Auto Load works. Turning a pack on or off reloads the UI. Packs that are missing, disabled, or not for this client stay greyed out.", 56)
         local packs = AQ.Data and AQ.Data.ListPacks and AQ.Data.ListPacks() or {}
         for i = 1, #packs do
             local pack = packs[i]
@@ -1188,6 +1391,10 @@ local function BuildTabContent(parent, tabID)
             else
                 label = label .. "  (not loaded)"
             end
+            local hint = "Load questline data for " .. (pack.name or addon) .. ". Turning a pack on or off reloads the UI."
+            if not available then
+                hint = hint .. " This pack is not available on this client."
+            end
             RowCheck(label, "datapack:" .. addon, function()
                 if not available then
                     return false
@@ -1204,30 +1411,48 @@ local function BuildTabContent(parent, tabID)
                     return
                 end
                 ReloadForPack(addon, v)
-            end, not available)
+            end, not available, hint)
         end
     elseif tabID == "speech" then
-        Section("Speech")
-        RowCheck("Enable AllQuest speech", "speechEnabled")
-        RowCheck("Speak tracker quests on hover", "speechOnSelect")
-        RowCheck("Speak quest progress updates", "speechOnQuestProgress")
+        Section("Voice", "What AllQuest reads aloud.")
+        RowCheck(
+            "Enable AllQuest speech",
+            "speechEnabled",
+            nil,
+            nil,
+            nil,
+            "Turns AllQuest text to speech on or off. Other speech options do nothing while this is off."
+        )
+        RowCheck(
+            "Speak tracker quests on hover",
+            "speechOnSelect",
+            nil,
+            nil,
+            nil,
+            "Reads the quest, pet, or rare under the mouse. The tracker does not read the whole list."
+        )
+        RowCheck(
+            "Speak quest progress updates",
+            "speechOnQuestProgress",
+            nil,
+            nil,
+            nil,
+            "Announces objective progress and quest complete as they happen."
+        )
+        Section("Voice controls", "How fast and how loud AllQuest speaks.")
         RowStepper("Speech rate", function()
             return DB().ttsRate or 0
         end, function(v)
             DB().ttsRate = v
-        end, -10, 10, 1, "%d")
+        end, -10, 10, 1, "%d", "How fast AllQuest speaks. 0 is the default. Negative is slower, positive is faster.")
         RowStepper("Speech volume", function()
             return DB().ttsVolume or 100
         end, function(v)
             DB().ttsVolume = v
-        end, 0, 100, 10, "%d")
-        y = y - 16
-        Note("The tracker reads only the quest under the mouse, not the whole list. The journal still speaks the selected row. If Accessibility Helper is loaded, AllQuest uses its speech queue. Otherwise AllQuest uses Blizzard Text to Speech.", 72)
+        end, 0, 100, 10, "%d", "How loud AllQuest speech is, from 0 to 100.")
+        Note("The journal speaks the selected row. If Accessibility Helper is loaded, AllQuest uses its speech queue. Otherwise AllQuest uses Blizzard Text to Speech.", 56)
     elseif tabID == "profiles" then
-        Section("Profiles")
         local current = AQ.DB.GetActiveName and AQ.DB.GetActiveName() or "Default"
-        Note("A profile stores your AllQuest settings. Each character can use a different profile. Switching profiles reloads the UI.", 72)
-
         local names = AQ.DB.ListProfiles and AQ.DB.ListProfiles() or { current }
         local profileItems = {}
         for i = 1, #names do
@@ -1239,25 +1464,11 @@ local function BuildTabContent(parent, tabID)
             profileItems[i] = { text = text, value = name }
         end
 
-        local pickWrap = CreateFrame("Frame", nil, inner)
-        pickWrap:SetHeight(22)
-        pickWrap:EnableMouse(true)
-        local pickLabel = AQ.Widgets.TrackerFontString(pickWrap, 13, Gold())
-        pickLabel:SetPoint("LEFT", 16, 0)
-        pickLabel:SetText("Active profile")
-        HoverSpeak(pickWrap, "Active profile heading")
-        Place(pickWrap)
-
-        local dropRow = CreateFrame("Frame", nil, inner)
-        dropRow:SetHeight(34)
-        local profileDrop = AQ.Widgets.Dropdown(dropRow, { width = 280, height = 32, placeholder = "Select profile" })
-        profileDrop:SetPoint("LEFT", 16, 0)
-        profileDrop:SetItems(profileItems)
-        profileDrop:SetValue(current)
-        HoverSpeak(profileDrop, function()
-            return "Active profile dropdown. " .. tostring(current)
-        end)
-        profileDrop:SetCallback(function(name)
+        Section("Active profile", "The settings profile this character is using.")
+        Note("A profile stores your AllQuest settings, including tracker colors. Each character can use a different profile. Switching profiles reloads the UI.", 56)
+        RowChoice("Active profile", "The profile this character is using. Changing it reloads the UI.", profileItems, function()
+            return current
+        end, function(name)
             if name == current then
                 return
             end
@@ -1265,14 +1476,9 @@ local function BuildTabContent(parent, tabID)
                 AQ.DB.UseProfile(name)
             end)
         end)
-        Place(dropRow)
-        y = y - 4
 
-        local actions = CreateFrame("Frame", nil, inner)
-        actions:SetHeight(36)
-        local createBtn = ActionButton(actions, "Create Profile", 130)
-        createBtn:SetPoint("LEFT", 16, 0)
-        createBtn:SetScript("OnClick", function()
+        Section("Manage", "Create a copy of the current profile or import a shared string.")
+        RowAction("Create profile", "Makes a copy of the profile you are using and asks for a new name.", function()
             AskProfileName("Name for the new profile:", "", function(typed)
                 local ok, result = AQ.DB.CreateProfile(typed)
                 if not ok then
@@ -1289,40 +1495,42 @@ local function BuildTabContent(parent, tabID)
                 RefreshUI()
                 Rebuild()
             end)
-        end)
-        local importBtn = ActionButton(actions, "Import Profile", 130)
-        importBtn:SetPoint("LEFT", createBtn, "RIGHT", 8, 0)
-        importBtn:SetScript("OnClick", function()
+        end, 90, "Create")
+        RowAction("Import profile", "Paste an AllQuest profile string from another player. Import never overwrites an existing name.", function()
             ShowImport()
-        end)
-        Place(actions)
+        end, 90, "Import")
 
-        Section("Saved profiles")
+        Section("Saved profiles", "Rename, export, delete, or switch to a saved profile.")
         for i = 1, #names do
             local name = names[i]
             local inUse = name == current
+            local hint = inUse
+                and "This is the profile in use. Use Actions to rename or export it."
+                or "Use Actions to switch to this profile, rename it, export it, or delete it."
             local wrap = CreateFrame("Frame", nil, inner)
-            wrap:SetHeight(40)
+            wrap:SetHeight(58)
             wrap:EnableMouse(true)
-            HoverRow(wrap)
+            HoverRow(wrap, name, hint)
             HoverSpeak(wrap, function()
                 if inUse then
-                    return name .. ". in use"
+                    return name .. ". in use. " .. hint
                 end
-                return name
+                return name .. ". " .. hint
             end)
 
             local label = AQ.Widgets.TrackerFontString(wrap, 13, inUse and Gold() or TitleCol())
-            label:SetPoint("LEFT", 16, 0)
+            label:SetPoint("TOPLEFT", 16, -8)
             label:SetPoint("RIGHT", -150, 0)
             if inUse then
                 label:SetText(name .. "  (in use)")
             else
                 label:SetText(name)
             end
+            AddHintText(wrap, label, hint, 150)
 
             local actDrop = AQ.Widgets.Dropdown(wrap, { width = 128, height = 30, fixedLabel = "Actions" })
             actDrop:SetPoint("RIGHT", -16, 0)
+            BindTip(actDrop, "Actions", hint)
             HoverSpeak(actDrop, "Actions menu for " .. name)
             local actItems = {
                 { text = "Use this profile", value = "use", disabled = inUse },
@@ -1401,8 +1609,6 @@ local function BuildTabContent(parent, tabID)
             end)
             Place(wrap)
         end
-        y = y - 8
-        Note("Create copies the profile you are using. Import never overwrites an existing name.", 48)
     end
 
     inner:SetHeight(math.max(20 - y, 80))
@@ -1416,7 +1622,7 @@ local function Ensure()
         return frame
     end
     frame = CreateFrame("Frame", FRAME_NAME, UIParent, "BackdropTemplate")
-    frame:SetSize(640, 560)
+    frame:SetSize(740, 620)
     frame:SetPoint("CENTER")
     frame:SetFrameStrata("DIALOG")
     frame:SetClampedToScreen(true)
@@ -1461,6 +1667,7 @@ local function Ensure()
         end
     end)
     HoverSpeak(close, "Close settings")
+    BindTip(close, "Close", "Close the AllQuest settings window.")
     frame.Close = close
 
     local logo = header:CreateTexture(nil, "ARTWORK")
@@ -1478,15 +1685,15 @@ local function Ensure()
 
     local rule = header:CreateTexture(nil, "ARTWORK")
     local rc = T().rule
-    rule:SetColorTexture(rc[1], rc[2], rc[3], rc[4] or 0.4)
-    rule:SetHeight(1)
+    rule:SetColorTexture(rc[1], rc[2], rc[3], rc[4] or 1)
+    rule:SetHeight(2)
     rule:SetPoint("BOTTOMLEFT", 0, -6)
     rule:SetPoint("BOTTOMRIGHT", 0, -6)
 
     local tabBar = CreateFrame("Frame", nil, frame)
     tabBar:SetPoint("TOPLEFT", 16, -52)
     tabBar:SetPoint("BOTTOMLEFT", 16, 16)
-    tabBar:SetWidth(136)
+    tabBar:SetWidth(148)
     frame.TabBar = tabBar
 
     local divider = frame:CreateTexture(nil, "ARTWORK")
@@ -1502,7 +1709,7 @@ local function Ensure()
     frame.Scroll = scroll
 
     local content = scroll.Child
-    content:SetWidth(450)
+    content:SetWidth(530)
     frame.Content = content
     function content.UpdateScroll()
         local h = content.Inner and content.Inner:GetHeight() or 80
@@ -1535,7 +1742,7 @@ local function Ensure()
         b:SetHeight(TAB_H)
         b:SetPoint("TOPLEFT", 0, -((i - 1) * (TAB_H + TAB_GAP)))
         b:SetPoint("RIGHT", 0, 0)
-        HoverRow(b)
+        HoverRow(b, TABS[i].label, TABS[i].hint)
         local bar = b:CreateTexture(nil, "ARTWORK")
         bar:SetWidth(2)
         bar:SetPoint("TOPLEFT", 0, -6)
@@ -1552,7 +1759,7 @@ local function Ensure()
         b:SetScript("OnClick", function()
             Select(i)
         end)
-        HoverSpeak(b, TABS[i].label .. " tab")
+        HoverSpeak(b, TABS[i].label .. " tab. " .. (TABS[i].hint or ""))
         tabButtons[i] = b
     end
 

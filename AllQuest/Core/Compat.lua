@@ -587,6 +587,15 @@ function Compat.GetQuestIconSpec(data)
     if data.pet then
         return { file = "Interface\\Minimap\\Tracking\\StableMaster" }
     end
+    if data.areaPoiID or data.eventMapID then
+        return { atlas = data.atlas or "VignetteEvent", file = "Interface\\Minimap\\POIIcons" }
+    end
+    if data.findKind == "treasure" then
+        return { atlas = data.atlas or "VignetteLoot", file = "Interface\\Minimap\\ObjectIcons" }
+    end
+    if data.findKind == "rare" or data.rareTarget or data.rareMapID then
+        return { atlas = data.atlas or "VignetteKill", file = "Interface\\Minimap\\ObjectIcons" }
+    end
     if data.popupType == "OFFER" then
         return { file = "Interface\\GossipFrame\\AvailableQuestIcon" }
     end

@@ -14,7 +14,7 @@ Theme.bg = { 0, 0, 0, 1 }
 Theme.border = { 1, 1, 1, 1 }
 Theme.text = { 1, 1, 1, 1 }
 Theme.accent = { 1, 0.92, 0.4, 1 }
-Theme.header = { 1, 0.92, 0.4, 1 }
+Theme.header = { 1, 0.82, 0, 1 }
 Theme.hint = { 0.85, 0.85, 0.85, 1 }
 Theme.rowBg = { 0.08, 0.08, 0.08, 0.55 }
 Theme.rowBgAlt = { 0.14, 0.14, 0.14, 0.55 }
@@ -45,28 +45,32 @@ Theme.barDone = { 0.55, 0.8, 0.95, 1 }
 Theme.barFailed = { 1, 0.45, 0.45, 1 }
 Theme.barHeader = { 1, 0.92, 0.4, 1 }
 Theme.barIdle = { 0.22, 0.22, 0.22, 0.7 }
-Theme.rule = { 0.45, 0.4, 0.12, 1 }
+Theme.rule = { 1.00, 0.48, 0.04, 1 }
 
--- Tracker / journal / settings. Players can override these in Settings → Tracker.
-Theme.TrackerDefaults = {
-    bg = { 0.04, 0.04, 0.05, 0.94 },
-    border = { 0.16, 0.16, 0.18, 1 },
-    header = { 0.25, 0.88, 0.82, 1 },
-    rule = { 0.85, 0.22, 0.78, 1 },
-    section = { 0.25, 0.88, 0.82, 0.06 },
-    subheader = { 0.42, 0.78, 0.80, 1 },
-    title = { 1.00, 0.82, 0.20, 1 },
-    tracked = { 1.00, 0.42, 0.72, 1 },
-    objective = { 0.82, 0.82, 0.82, 1 },
-    complete = { 0.15, 1.00, 0.22, 1 },
-    collapse = { 0.20, 0.95, 0.28, 1 },
-    failed = { 1, 0.15, 0.15, 1 },
-    tag = { 0.62, 0.62, 0.62, 1 },
-    hover = { 1, 0.82, 0, 0.08 },
-    focus = { 1, 0.42, 0.72, 0.10 },
-    btnHover = { 1, 1, 1, 1 },
-}
-Theme.Tracker = Theme.TrackerDefaults
+local function FactoryTrackerColors()
+    return {
+        bg = { 0.04, 0.04, 0.05, 0.94 },
+        border = { 0.16, 0.16, 0.18, 1 },
+        header = { 1.00, 0.82, 0.00, 1 },
+        rule = { 1.00, 0.48, 0.04, 1 },
+        section = { 1.00, 0.82, 0.00, 0.08 },
+        subheader = { 1.00, 0.72, 0.22, 1 },
+        title = { 1.00, 0.86, 0.20, 1 },
+        tracked = { 1.00, 0.42, 0.72, 1 },
+        objective = { 0.82, 0.82, 0.82, 1 },
+        complete = { 0.15, 1.00, 0.22, 1 },
+        collapse = { 0.20, 0.95, 0.28, 1 },
+        failed = { 1, 0.15, 0.15, 1 },
+        tag = { 0.62, 0.62, 0.62, 1 },
+        hover = { 1, 0.82, 0, 0.08 },
+        focus = { 1, 0.42, 0.72, 0.10 },
+        btnHover = { 1, 1, 1, 1 },
+    }
+end
+
+-- Tracker / journal / settings. Separate tables so a picker cannot mutate defaults.
+Theme.TrackerDefaults = FactoryTrackerColors()
+Theme.Tracker = FactoryTrackerColors()
 
 function Theme.CopyColor(c)
     if type(c) ~= "table" then
@@ -95,9 +99,16 @@ function Theme.SetTrackerColor(key, r, g, b, a)
 end
 
 function Theme.ResetTrackerColors()
+    Theme.TrackerDefaults = FactoryTrackerColors()
+    Theme.Tracker = FactoryTrackerColors()
+    Theme.header = { 1.00, 0.82, 0.00, 1 }
+    Theme.rule = { 1.00, 0.48, 0.04, 1 }
     local db = AQ.DB and AQ.DB.Get and AQ.DB.Get()
     if db then
         db.trackerColors = {}
+    end
+    if ColorPickerFrame and ColorPickerFrame.Hide then
+        ColorPickerFrame:Hide()
     end
 end
 

@@ -1,7 +1,7 @@
 ## Interface: 120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508
 ## Title: AllQuest
 ## Notes: High-contrast quest tracker and questline journal. Custom tracker, plugins, and original chain data for every WoW client.
-## Version: 1.0.7
+## Version: 1.0.8
 ## Author: Blind Mice Gaming
 ## Category-enUS: Blind Mice Gaming
 ## IconTexture: Interface\AddOns\AllQuest\Media\AllQuestLogo
@@ -37,6 +37,7 @@ Tracker\Sections\Campaigns.lua
 Tracker\Sections\Achievements.lua
 Tracker\Sections\Recipes.lua
 Tracker\Sections\Activities.lua
+Tracker\Sections\Events.lua
 Tracker\Sections\Collectibles.lua
 Tracker\Sections\Pets.lua
 Tracker\Sections\Rares.lua
