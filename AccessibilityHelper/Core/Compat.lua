@@ -48,12 +48,9 @@ function Compat.IsSecretValue(v)
     return ok and secret and true or false
 end
 
---- True if we may do arithmetic/compare on v (non-secret, or secret we can access).
-function Compat.CanUseNumber(v)
-    if type(v) ~= "number" then
-        return false
-    end
-    if not Compat.IsSecretValue(v) then
+--- True if we may compare, concatenate, or do logic on v.
+function Compat.CanUseValue(v)
+    if v == nil or not Compat.IsSecretValue(v) then
         return true
     end
     if canaccessvalue then
@@ -61,6 +58,14 @@ function Compat.CanUseNumber(v)
         return ok and access and true or false
     end
     return false
+end
+
+--- True if we may do arithmetic/compare on v (non-secret, or secret we can access).
+function Compat.CanUseNumber(v)
+    if type(v) ~= "number" then
+        return false
+    end
+    return Compat.CanUseValue(v)
 end
 
 function Compat.GetSystemTtsVoiceID()

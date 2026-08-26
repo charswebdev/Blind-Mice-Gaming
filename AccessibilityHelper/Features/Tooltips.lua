@@ -141,31 +141,70 @@ local function TooltipIsUsable(tip)
 end
 
 --- FontString line gather (Classic + fallback).
+-- Uses both named globals (GameTooltipTextLeft1) and tooltip fields (tip.TextLeft1).
+local function LeftFS(tip, i)
+    local field = tip and tip["TextLeft" .. i]
+    if field then
+        return field
+    end
+    local name = tip and tip.GetName and tip:GetName()
+    if type(name) == "string" and name ~= "" then
+        return _G[name .. "TextLeft" .. i]
+    end
+    return nil
+end
+
+local function RightFS(tip, i)
+    local field = tip and tip["TextRight" .. i]
+    if field then
+        return field
+    end
+    local name = tip and tip.GetName and tip:GetName()
+    if type(name) == "string" and name ~= "" then
+        return _G[name .. "TextRight" .. i]
+    end
+    return nil
+end
+
 local function GatherFromFontStrings(tip)
     local parts = {}
-    local name = tip.GetName and tip:GetName()
-    if not name then
+    if not tip then
         return parts, false
     end
-    local okNum, num = pcall(function()
+    local num = 0
+    local okNum, n = pcall(function()
         return tip:NumLines() or 0
     end)
-    if not okNum or type(num) ~= "number" or num < 1 then
-        return parts, false
+    if okNum and type(n) == "number" then
+        num = n
+    end
+    if num < 1 then
+        num = 20
+    else
+        num = math.max(num, 8)
     end
     local any = false
+    local emptyRun = 0
     for i = 1, num do
-        local lt = FsText(_G[name .. "TextLeft" .. i])
-        local rt = FsText(_G[name .. "TextRight" .. i])
+        local lt = FsText(LeftFS(tip, i))
+        local rt = FsText(RightFS(tip, i))
         if lt and rt then
             parts[#parts + 1] = lt .. ", " .. rt
             any = true
+            emptyRun = 0
         elseif lt then
             parts[#parts + 1] = lt
             any = true
+            emptyRun = 0
         elseif rt then
             parts[#parts + 1] = rt
             any = true
+            emptyRun = 0
+        else
+            emptyRun = emptyRun + 1
+            if num == 20 and emptyRun >= 3 and i >= 3 then
+                break
+            end
         end
     end
     return parts, any
@@ -175,8 +214,29 @@ local function ExtractLineFromTooltipDataLine(line)
     if type(line) ~= "table" then
         return NonEmpty(line)
     end
-    local lt = NonEmpty(line.leftText or line.LeftText or line.textLeft or line.leftString)
+    local lt = NonEmpty(
+        line.leftText
+            or line.LeftText
+            or line.textLeft
+            or line.leftString
+            or line.text
+            or line.label
+            or line.title
+    )
     local rt = NonEmpty(line.rightText or line.RightText or line.textRight or line.rightString)
+    if not lt and type(line.args) == "table" then
+        for i = 1, #line.args do
+            local a = line.args[i]
+            if type(a) == "table" then
+                lt = NonEmpty(a.stringVal or a.leftText or a.text or a.overrideName)
+            elseif type(a) == "string" or type(a) == "number" then
+                lt = NonEmpty(a)
+            end
+            if lt then
+                break
+            end
+        end
+    end
     if lt and rt then
         return lt .. ", " .. rt
     end
@@ -201,13 +261,21 @@ local function GatherFromTooltipData(tip)
     end
     local any = false
     local secretBlocked = false
-    for i = 1, #lines do
-        local okLine, chunk = pcall(ExtractLineFromTooltipDataLine, lines[i])
+    local function takeLine(line)
+        local okLine, chunk = pcall(ExtractLineFromTooltipDataLine, line)
         if okLine and chunk then
             parts[#parts + 1] = chunk
             any = true
         elseif not okLine then
             secretBlocked = true
+        end
+    end
+    for i = 1, #lines do
+        takeLine(lines[i])
+    end
+    if not any then
+        for _, line in pairs(lines) do
+            takeLine(line)
         end
     end
     -- Also try hyperlink title if lines empty but hyperlink present.
@@ -342,24 +410,44 @@ local function JoinParts(parts)
     return table.concat(parts, ". ")
 end
 
+local function MergePartLists(lists)
+    local out = {}
+    local seen = {}
+    for li = 1, #lists do
+        local parts = lists[li]
+        if type(parts) == "table" then
+            for i = 1, #parts do
+                local s = parts[i]
+                if type(s) == "string" and s ~= "" and not seen[s] then
+                    seen[s] = true
+                    out[#out + 1] = s
+                end
+            end
+        end
+    end
+    return out
+end
+
 local function GatherOneTooltip(tip)
-    local parts, any, secretBlocked = GatherFromTooltipData(tip)
-    if any then
-        return JoinParts(parts), "data", secretBlocked
-    end
+    local dparts, dany, secretBlocked = GatherFromTooltipData(tip)
     local fparts, fany = GatherFromFontStrings(tip)
-    if fany then
-        return JoinParts(fparts), "font", secretBlocked
-    end
     local qparts, qany = GatherFromLibQTip(tip)
-    if qany then
-        return JoinParts(qparts), "qtip", secretBlocked
-    end
     local rparts, rany = GatherFromRegions(tip)
-    if rany then
-        return JoinParts(rparts), "regions", secretBlocked
+    local merged = MergePartLists({ dparts, fparts, qparts, rparts })
+    if #merged == 0 then
+        return "", "none", secretBlocked
     end
-    return "", "none", secretBlocked
+    local src = "merged"
+    if dany then
+        src = "data"
+    elseif fany then
+        src = "font"
+    elseif qany then
+        src = "qtip"
+    elseif rany then
+        src = "regions"
+    end
+    return JoinParts(merged), src, secretBlocked
 end
 
 local function GetCompareTooltips(mainTip)
@@ -429,6 +517,188 @@ local function MouseFrames()
     return list
 end
 
+local function NameFromSpellID(id)
+    if type(id) ~= "number" then
+        return nil
+    end
+    if C_Spell and C_Spell.GetSpellName then
+        local ok, n = pcall(C_Spell.GetSpellName, id)
+        if ok then
+            n = NonEmpty(n)
+            if n then
+                return n
+            end
+        end
+    end
+    if GetSpellInfo then
+        local ok, n = pcall(GetSpellInfo, id)
+        if ok then
+            return NonEmpty(n)
+        end
+    end
+    return nil
+end
+
+local function NameFromDefinitionID(id)
+    if type(id) ~= "number" or not (C_Traits and C_Traits.GetDefinitionInfo) then
+        return nil
+    end
+    local ok, info = pcall(C_Traits.GetDefinitionInfo, id)
+    if not ok or type(info) ~= "table" then
+        return nil
+    end
+    local n = NonEmpty(info.overrideName)
+    if n then
+        return n
+    end
+    return NameFromSpellID(info.spellID)
+end
+
+local function NameFromMouseFocus()
+    local foci = MouseFrames()
+    for i = 1, #foci do
+        local f = foci[i]
+        local guard = 0
+        while f and guard < 10 do
+            guard = guard + 1
+            local n = FsText(f.Name) or FsText(f.Label) or FsText(f.Title)
+            if n then
+                return n
+            end
+            n = NonEmpty(f.name) or NonEmpty(f.talentName) or NonEmpty(f.spellName) or NonEmpty(f.overrideName)
+            if n and (n:find("Frame", 1, true) or n:find("Button", 1, true) or n:find(".", 1, true)) then
+                n = nil
+            end
+            if n then
+                return n
+            end
+            if f.GetSpellID then
+                local ok, id = pcall(f.GetSpellID, f)
+                if ok then
+                    n = NameFromSpellID(id)
+                    if n then
+                        return n
+                    end
+                end
+            end
+            n = NameFromSpellID(f.spellID) or NameFromDefinitionID(f.definitionID)
+            if not n and type(f.entryInfo) == "table" then
+                n = NonEmpty(f.entryInfo.overrideName) or NameFromDefinitionID(f.entryInfo.definitionID)
+            end
+            if not n and type(f.nodeInfo) == "table" then
+                n = NameFromDefinitionID(f.nodeInfo.definitionID)
+            end
+            if n then
+                return n
+            end
+            local ok, parent = pcall(function()
+                return f.GetParent and f:GetParent()
+            end)
+            if not ok then
+                break
+            end
+            f = parent
+        end
+    end
+    return nil
+end
+
+local function GetTooltipTitle(tip)
+    if not tip then
+        return nil
+    end
+    if tip.GetSpell then
+        local ok, name, _, spellID = pcall(function()
+            return tip:GetSpell()
+        end)
+        if ok then
+            local n = NonEmpty(name) or NameFromSpellID(spellID)
+            if n then
+                return n
+            end
+        end
+    end
+    if TooltipUtil and TooltipUtil.GetDisplayedSpell then
+        local ok, spellID = pcall(TooltipUtil.GetDisplayedSpell, tip)
+        if ok then
+            local n = NameFromSpellID(spellID)
+            if n then
+                return n
+            end
+            if type(spellID) == "table" then
+                n = NameFromSpellID(spellID.spellID or spellID.id) or NonEmpty(spellID.name)
+                if n then
+                    return n
+                end
+            end
+        end
+    end
+    if tip.GetItem then
+        local ok, name = pcall(function()
+            return tip:GetItem()
+        end)
+        if ok then
+            local n = NonEmpty(name)
+            if n then
+                return n
+            end
+        end
+    end
+    if tip.GetUnit then
+        local ok, name = pcall(function()
+            return tip:GetUnit()
+        end)
+        if ok then
+            local n = NonEmpty(name)
+            if n then
+                return n
+            end
+        end
+    end
+    if tip.GetTooltipData then
+        local ok, data = pcall(function()
+            return tip:GetTooltipData()
+        end)
+        if ok and type(data) == "table" then
+            local n = NonEmpty(data.name) or NameFromSpellID(data.id) or NameFromDefinitionID(data.id)
+            if n then
+                return n
+            end
+            if type(data.hyperlink) == "string" then
+                n = NonEmpty((data.hyperlink:match("%[(.-)%]")))
+                if n then
+                    return n
+                end
+            end
+        end
+    end
+    return NameFromMouseFocus()
+end
+
+local function PrependTitle(text, title)
+    if type(title) ~= "string" or title == "" then
+        return text or ""
+    end
+    if type(text) ~= "string" or text == "" then
+        return title
+    end
+    if text == title then
+        return text
+    end
+    local start = text:sub(1, #title)
+    if start == title then
+        return text
+    end
+    local ltext, ltitle = text:lower(), title:lower()
+    if ltext:sub(1, #ltitle) == ltitle then
+        return text
+    end
+    if ltext:find(ltitle, 1, true) then
+        return text
+    end
+    return title .. ". " .. text
+end
+
 local function IsTitanRelatedFrame(frame)
     local guard = 0
     while frame and guard < 12 do
@@ -483,6 +753,40 @@ local function CandidateTooltips()
     add(EmbeddedItemTooltip)
     if GameTooltip and GameTooltip.ItemTooltip then
         add(GameTooltip.ItemTooltip.Tooltip)
+    end
+    add(PrimaryTooltip)
+    add(ShoppingTooltip1)
+    add(ShoppingTooltip2)
+    local foci = MouseFrames()
+    for i = 1, #foci do
+        local f = foci[i]
+        local guard = 0
+        while f and guard < 8 do
+            guard = guard + 1
+            if f ~= UIParent and f ~= WorldFrame then
+                local nm = ""
+                if f.GetName then
+                    local ok, n = pcall(function()
+                        return f:GetName()
+                    end)
+                    if ok and type(n) == "string" then
+                        nm = n
+                    end
+                end
+                if nm:find("Tooltip", 1, true) or f.GetTooltipData or f.TextLeft1 or (f.NumLines and f.GetTooltipData) then
+                    add(f)
+                elseif f.NumLines then
+                    add(f)
+                end
+            end
+            local ok, parent = pcall(function()
+                return f.GetParent and f:GetParent()
+            end)
+            if not ok then
+                break
+            end
+            f = parent
+        end
     end
     if TitanTipsEnabled() then
         add(TitanPanelTooltip)
@@ -606,9 +910,43 @@ local function ResolveTipText(tip)
     local text, source, secretBlocked = GatherOneTooltip(tip)
     local addonText = GetAddonSpeakText(tip)
     if (text == "" or secretBlocked) and addonText then
-        return addonText, "addon", false
+        text = addonText
+        source = "addon"
+        secretBlocked = false
     end
+    text = PrependTitle(text or "", GetTooltipTitle(tip))
     return text or "", source or "none", secretBlocked and true or false
+end
+
+local function BuildSpeakText(tip, allowCache)
+    local text, _, secretBlocked = "", nil, false
+    if tip then
+        text, _, secretBlocked = ResolveTipText(tip)
+    end
+    if text == "" and allowCache ~= false then
+        local cached = GetCachedTipText()
+        if cached then
+            text = cached
+            secretBlocked = false
+        end
+    end
+    if text == "" then
+        return "", secretBlocked
+    end
+    local full = text
+    if tip and CompareEnabled() then
+        local compares = GetCompareTooltips(tip)
+        for i = 1, #compares do
+            local ctip = compares[i]
+            if ctip ~= tip and TooltipIsUsable(ctip) then
+                local ctext = ResolveTipText(ctip)
+                if ctext ~= "" then
+                    full = full .. ". Compared to: " .. ctext
+                end
+            end
+        end
+    end
+    return full, false
 end
 
 local function RefreshCacheFromTip(tip)
@@ -689,6 +1027,17 @@ end
 
 InstallTipHooks()
 
+--- Current tooltip text under the mouse, without speaking. Empty if none is showing.
+function Tooltips.GetHoveredText()
+    InstallTipHooks()
+    local tip = PickPrimaryTooltip()
+    if not tip or not TooltipIsUsable(tip) then
+        return ""
+    end
+    local full = BuildSpeakText(tip, false)
+    return full or ""
+end
+
 --- Read the hovered / shown tooltip via TTS (full text).
 -- Re-press while a tooltip read is speaking cancels it.
 function Tooltips.ReadHovered()
@@ -716,21 +1065,8 @@ function Tooltips.ReadHovered()
     end
 
     local tip = PickPrimaryTooltip()
-    local text, source, secretBlocked = "", "none", false
-    if tip then
-        text, source, secretBlocked = ResolveTipText(tip)
-    end
-
-    if text == "" then
-        local cached = GetCachedTipText()
-        if cached then
-            text = cached
-            source = "cache"
-            secretBlocked = false
-        end
-    end
-
-    if text == "" then
+    local full, secretBlocked = BuildSpeakText(tip)
+    if full == "" then
         if secretBlocked then
             if AH.Speech then
                 AH.Speech.Say("Tooltip text is unavailable right now.", AH.Speech.PRIORITY_NAV)
@@ -741,21 +1077,6 @@ function Tooltips.ReadHovered()
             end
         end
         return
-    end
-
-    local full = text
-
-    if tip and CompareEnabled() then
-        local compares = GetCompareTooltips(tip)
-        for i = 1, #compares do
-            local ctip = compares[i]
-            if ctip ~= tip and TooltipIsUsable(ctip) then
-                local ctext = ResolveTipText(ctip)
-                if ctext ~= "" then
-                    full = full .. ". Compared to: " .. ctext
-                end
-            end
-        end
     end
 
     CacheTipText(full)

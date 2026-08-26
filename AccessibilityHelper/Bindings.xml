@@ -5,6 +5,9 @@
     <Binding name="ACCESSIBILITYHELPER_READTOOLTIP" description="Read hovered tooltip with in-game Text to Speech." category="Accessibility Helper">
         AccessibilityHelper_ReadTooltipBinding();
     </Binding>
+    <Binding name="ACCESSIBILITYHELPER_READUNDERMOUSE" description="Read visible UI text under the mouse. Tooltips use the other tooltip keybind." category="Accessibility Helper">
+        AccessibilityHelper_ReadUnderMouseBinding();
+    </Binding>
     <Binding name="CLICK AccessibilityHelperTomTomReadBindProxy:LeftButton" description="Read TomTom crazy-arrow distance with Text to Speech." category="Accessibility Helper"></Binding>
     <Binding name="CLICK AccessibilityHelperZygorReadBindProxy:LeftButton" description="Read Zygor Guides waypoint arrow with Text to Speech." category="Accessibility Helper"></Binding>
     <!-- New binds (safe to add; do not rename after users bind them). -->

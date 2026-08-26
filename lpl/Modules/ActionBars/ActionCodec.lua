@@ -12,6 +12,90 @@ local function Trim(text)
     return text:match("^%s*(.-)%s*$") or ""
 end
 
+local function NormalizeMacroBody(text)
+    if type(text) ~= "string" then
+        return ""
+    end
+    text = text:gsub("\r\n", "\n"):gsub("\r", "\n")
+    return Trim(text)
+end
+
+local function SafeMacroInfo(indexOrName)
+    if indexOrName == nil or indexOrName == 0 or indexOrName == "" then
+        return nil, nil, ""
+    end
+    local name, icon, body
+    if GetMacroInfo then
+        local ok, n, i, b = pcall(GetMacroInfo, indexOrName)
+        if ok then
+            name, icon, body = n, i, b
+        end
+    end
+    if (type(body) ~= "string" or body == "") and GetMacroBody then
+        local ok, b = pcall(GetMacroBody, indexOrName)
+        if ok and type(b) == "string" then
+            body = b
+        end
+    end
+    if type(name) ~= "string" or name == "" then
+        name = nil
+    end
+    return name, icon, NormalizeMacroBody(body)
+end
+
+local function GetSlotMacroName(slot)
+    if GetActionText then
+        local ok, text = pcall(GetActionText, slot)
+        if ok and type(text) == "string" then
+            text = Trim(text)
+            if text ~= "" then
+                return text
+            end
+        end
+    end
+    if C_ActionBar and C_ActionBar.GetActionText then
+        local ok, text = pcall(C_ActionBar.GetActionText, slot)
+        if ok and type(text) == "string" then
+            text = Trim(text)
+            if text ~= "" then
+                return text
+            end
+        end
+    end
+    return nil
+end
+
+function LPL.ActionBarCodec:FindMacroIndex(macroText, macroName)
+    if type(macroName) == "string" and macroName ~= "" and GetMacroIndexByName then
+        local ok, idx = pcall(GetMacroIndexByName, macroName)
+        if ok and type(idx) == "number" and idx > 0 then
+            return idx
+        end
+    end
+
+    local want = NormalizeMacroBody(macroText)
+    if want == "" or not GetNumMacros then
+        return nil
+    end
+
+    local numAccount, numCharacter = GetNumMacros()
+    numAccount = numAccount or 0
+    numCharacter = numCharacter or 0
+    local charStart = (MAX_ACCOUNT_MACROS or 120) + 1
+
+    local function scan(startIndex, count)
+        for index = startIndex, startIndex + count - 1 do
+            local _, _, body = SafeMacroInfo(index)
+            if body ~= "" and body == want then
+                return index
+            end
+        end
+        return nil
+    end
+
+    return scan(1, numAccount) or scan(charStart, numCharacter)
+end
+
 local SWITCH_FLIGHT_STYLE = 436854
 local WARBAND_DISTANCE_INHIBITOR = 460905
 local TELEPORT_HOME = 1233637
@@ -285,9 +369,11 @@ function LPL.ActionBarCodec:GetActionInfoFromSlot(slot)
     end
 
     local actionType, id, subType = GetActionInfo(slot)
+    local macroName = GetSlotMacroName(slot)
     if not actionType then
-        -- Some utility buttons still expose a spell id via C_ActionBar.
-        if C_ActionBar and C_ActionBar.GetSpell then
+        if macroName then
+            actionType = "macro"
+        elseif C_ActionBar and C_ActionBar.GetSpell then
             local barSpell = tonumber((C_ActionBar.GetSpell(slot)))
             if barSpell and barSpell > 0 then
                 actionType = "spell"
@@ -307,22 +393,39 @@ function LPL.ActionBarCodec:GetActionInfoFromSlot(slot)
         actionType = "spell"
     end
 
-    -- Normalize only known utility overrides. Talent replacements keep their live spell id.
+    -- GetActionText is the macro name. #showtooltip macros often report as spells.
+    local looksLikeMacro = actionType == "macro"
+        or (macroName and (actionType == "spell" or actionType == "companion"))
+    if looksLikeMacro then
+        local index
+        if actionType == "macro" and type(id) == "number" and id > 0 then
+            index = id
+        end
+        if (not index or index == 0) and macroName then
+            index = self:FindMacroIndex(nil, macroName)
+        end
+        local name, icon, body = SafeMacroInfo(index or macroName)
+        name = name or macroName
+        if (not icon or icon == 0) and GetActionTexture then
+            icon = GetActionTexture(slot)
+        end
+        if name or body ~= "" or actionType == "macro" then
+            return {
+                type = "macro",
+                id = index,
+                icon = icon,
+                name = name or "Macro",
+                macroText = body,
+            }
+        end
+        if actionType == "macro" then
+            return nil
+        end
+    end
+
     if actionType == "spell" and id then
         id = self:ResolveStoredSpellID(id, slot)
         subType = subType or "spell"
-    elseif actionType == "macro" and id and id ~= 0 then
-        local macroText = Trim(GetMacroBody and GetMacroBody(id) or "")
-        local name, icon = GetMacroInfo and GetMacroInfo(id)
-        return {
-            type = "macro",
-            id = id,
-            icon = icon,
-            name = name,
-            macroText = macroText,
-        }
-    elseif actionType == "macro" and (not id or id == 0) then
-        return nil
     end
 
     local icon = GetActionTexture and GetActionTexture(slot)
@@ -516,8 +619,7 @@ function LPL.ActionBarCodec:BuildActionTableFromCursor()
         return { type = "equipmentset", id = id, icon = icon, name = name }
     elseif cursorType == "macro" then
         local id = a2
-        local macroText = Trim(GetMacroBody and GetMacroBody(id) or "")
-        local name, icon = GetMacroInfo and GetMacroInfo(id)
+        local name, icon, macroText = SafeMacroInfo(id)
         return { type = "macro", id = id, icon = icon, name = name, macroText = macroText }
     elseif cursorType == "flyout" then
         return { type = "flyout", id = a2, icon = a3 }
@@ -631,23 +733,6 @@ function LPL.ActionBarCodec:BuildPetActionTableFromCursor()
     return nil
 end
 
-local function FindMacroIndexByText(macroText)
-    macroText = Trim(macroText)
-    if macroText == "" then
-        return nil
-    end
-
-    local maxGlobal = MAX_ACCOUNT_MACROS or 120
-    local maxChar = MAX_CHARACTER_MACROS or 12
-    for index = 1, maxGlobal + maxChar do
-        local body = GetMacroBody and GetMacroBody(index)
-        if body and Trim(body) == macroText then
-            return index
-        end
-    end
-    return nil
-end
-
 function LPL.ActionBarCodec:IsSlotIgnored(draftSet, slotID, isPet)
     if not draftSet or not slotID then
         return false
@@ -700,10 +785,12 @@ function LPL.ActionBarCodec:ResolveActionDisplay(action, ignored)
         name = spellName or name
         icon = spellIcon or icon
     elseif action.type == "macro" then
-        local index = FindMacroIndexByText(action.macroText)
-        if index and GetMacroInfo then
-            name, icon = GetMacroInfo(index)
-        elseif not ignored then
+        local index = self:FindMacroIndex(action.macroText, action.name)
+        if index then
+            local liveName, liveIcon = SafeMacroInfo(index)
+            name = liveName or name
+            icon = liveIcon or icon
+        elseif not ignored and (not name or name == "") and (not icon or icon == 0) then
             errorText = "Macro missing"
             name = name or action.name or "Macro"
         end

@@ -40,8 +40,22 @@ local function Say(msg)
     end
 end
 
+local VITAL_KEYS = {
+    stateHealthLow = true,
+    stateBreath = true,
+    stateFatigue = true,
+    stateDead = true,
+    stateGhost = true,
+    stateCombat = true,
+    stateResurrected = true,
+}
+
 local function Announce(key, msg)
     if not On(key) then
+        return
+    end
+    if VITAL_KEYS[key] and AH.Alerts and AH.Alerts.Announce then
+        AH.Alerts.Announce("vital", msg, AH.Speech and AH.Speech.PRIORITY_STATUS, key)
         return
     end
     Say(msg)
@@ -648,7 +662,9 @@ local function SpeakHealthLow()
     if not On("stateHealthLow") then
         return
     end
-    if AH.Speech and AH.Speech.Say then
+    if AH.Alerts and AH.Alerts.Announce then
+        AH.Alerts.Announce("vital", "Health below 35%", AH.Speech and AH.Speech.PRIORITY_CRITICAL, "stateHealthLow")
+    elseif AH.Speech and AH.Speech.Say then
         AH.Speech.Say("Health below 35%", AH.Speech.PRIORITY_CRITICAL)
     else
         Say("Health below 35%")

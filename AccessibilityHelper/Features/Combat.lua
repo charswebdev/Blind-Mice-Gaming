@@ -49,25 +49,37 @@ local function ForSpeech(text)
     return text
 end
 
-local function SayCritical(msg)
-    if AH.Speech and AH.Speech.Say then
+local function SayCritical(msg, itemKey)
+    if AH.Alerts and AH.Alerts.Announce then
+        AH.Alerts.Announce("loc", msg, AH.Speech and AH.Speech.PRIORITY_CRITICAL, itemKey)
+    elseif AH.Speech and AH.Speech.Say then
         AH.Speech.Say(msg, AH.Speech.PRIORITY_CRITICAL)
     else
         print("|cff66ccff[Helper]|r " .. tostring(msg))
     end
 end
 
-local function SayBuff(msg)
-    if AH.Speech and AH.Speech.Say then
+local function SayBuff(msg, itemKey)
+    if AH.Alerts and AH.Alerts.Announce then
+        AH.Alerts.Announce("buff", msg, AH.Speech and AH.Speech.PRIORITY_STATUS, itemKey)
+    elseif AH.Speech and AH.Speech.Say then
         AH.Speech.Say(msg, AH.Speech.PRIORITY_STATUS)
     else
         print("|cff66ccff[Helper]|r " .. tostring(msg))
     end
 end
 
+local function SayDebuff(msg, itemKey)
+    if AH.Alerts and AH.Alerts.Announce then
+        AH.Alerts.Announce("debuff", msg, AH.Speech and AH.Speech.PRIORITY_CRITICAL, itemKey)
+    else
+        SayCritical(msg, itemKey)
+    end
+end
+
 -- Back-compat alias used by LoC / debuffs.
-local function Say(msg)
-    SayCritical(msg)
+local function Say(msg, itemKey)
+    SayCritical(msg, itemKey)
 end
 
 local function SafeCall(fn, ...)
@@ -116,6 +128,8 @@ local LOC_MAP = {
     SHACKLE_UNDEAD = { key = "combatLocIncap", label = "Shackled" },
 }
 
+local FormatDurationSeconds
+
 local function NormalizeLocType(locType)
     if type(locType) ~= "string" then
         return nil
@@ -143,11 +157,18 @@ local function AnnounceLoC()
                 local lastAt = lastLoc[locType or label] or 0
                 if (now - lastAt) >= LOC_COOLDOWN then
                     lastLoc[locType or label] = now
+                    local rem = data.timeRemaining or data.duration
+                    local remText = FormatDurationSeconds(rem)
+                    local line
                     if On("combatAnnounceSpellNames") and type(data.displayText) == "string" and data.displayText ~= "" then
-                        Say(label .. ": " .. data.displayText .. ".")
+                        line = label .. ": " .. data.displayText
                     else
-                        Say(label .. ".")
+                        line = label
                     end
+                    if remText then
+                        line = line .. ". " .. remText
+                    end
+                    Say(line .. ".", key)
                 end
             end
         end
@@ -212,9 +233,9 @@ local function AnnounceDebuffChanges()
         local prev = lastDebuffCounts[dtype] or 0
         if cur > prev and On(key) then
             if cur == 1 then
-                Say(dtype .. " debuff.")
+                SayDebuff(dtype .. " debuff.", key)
             else
-                Say(string.format("%s debuffs: %d.", dtype, cur))
+                SayDebuff(string.format("%s debuffs: %d.", dtype, cur), key)
             end
         end
         lastDebuffCounts[dtype] = cur
@@ -312,7 +333,7 @@ local function SnapshotHelpfulBuffs()
     return snap
 end
 
-local function FormatDurationSeconds(sec)
+FormatDurationSeconds = function(sec)
     if not CanUseNumber(sec) or sec <= 0 then
         return nil
     end
@@ -400,18 +421,22 @@ local function AnnounceBuffChanges()
     end
 
     local snap = SnapshotHelpfulBuffs()
-    local lines = {}
+    local applyLines = {}
+    local stackLines = {}
+    local fadeLines = {}
 
     -- New or updated (stack change). Pure duration refreshes stay quiet.
     for key, entry in pairs(snap) do
         local prev = knownBuffs[key]
         if not prev then
             if On("combatBuffsApply") then
-                lines[#lines + 1] = FormatBuffApplyOrUpdate(entry)
+                applyLines[#applyLines + 1] = FormatBuffApplyOrUpdate(entry)
             end
         elseif entry.stacks ~= prev.stacks then
-            if On("combatBuffsStacks") or On("combatBuffsApply") then
-                lines[#lines + 1] = FormatBuffApplyOrUpdate(entry)
+            if On("combatBuffsStacks") then
+                stackLines[#stackLines + 1] = FormatBuffApplyOrUpdate(entry)
+            elseif On("combatBuffsApply") then
+                applyLines[#applyLines + 1] = FormatBuffApplyOrUpdate(entry)
             end
         end
     end
@@ -420,17 +445,22 @@ local function AnnounceBuffChanges()
     if On("combatBuffsFade") then
         for key, prev in pairs(knownBuffs) do
             if not snap[key] then
-                lines[#lines + 1] = FormatBuffFade(prev)
+                fadeLines[#fadeLines + 1] = FormatBuffFade(prev)
             end
         end
     end
 
     knownBuffs = snap
 
-    if #lines == 0 then
-        return
+    if #applyLines > 0 then
+        SayBuff(table.concat(applyLines, " "), "combatBuffsApply")
     end
-    SayBuff(table.concat(lines, " "))
+    if #stackLines > 0 then
+        SayBuff(table.concat(stackLines, " "), "combatBuffsStacks")
+    end
+    if #fadeLines > 0 then
+        SayBuff(table.concat(fadeLines, " "), "combatBuffsFade")
+    end
 end
 
 local function ProcessAuraScan()

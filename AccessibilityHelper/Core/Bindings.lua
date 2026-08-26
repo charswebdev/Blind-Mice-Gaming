@@ -13,6 +13,7 @@ local Bindings = AH.Bindings
 -- Display names for Key Bindings UI.
 _G.BINDING_HEADER_ACCESSIBILITYHELPER = "Accessibility Helper"
 _G.BINDING_NAME_ACCESSIBILITYHELPER_READTOOLTIP = "Read hovered tooltip (TTS)"
+_G.BINDING_NAME_ACCESSIBILITYHELPER_READUNDERMOUSE = "Read text under mouse (TTS)"
 _G["BINDING_NAME_CLICK AccessibilityHelperTomTomReadBindProxy:LeftButton"] = "Read TomTom waypoint distance (TTS)"
 _G["BINDING_NAME_CLICK AccessibilityHelperZygorReadBindProxy:LeftButton"] = "Read Zygor waypoint arrow (TTS)"
 _G.BINDING_NAME_ACCESSIBILITYHELPER_OPENSETTINGS = "Open Accessibility Helper settings"
@@ -38,6 +39,14 @@ function AccessibilityHelper_ReadTooltipBinding()
         return
     end
     SayStub("Tooltip reader unavailable.")
+end
+
+function AccessibilityHelper_ReadUnderMouseBinding()
+    if AH.UnderMouse and AH.UnderMouse.Read then
+        AH.UnderMouse.Read()
+        return
+    end
+    SayStub("Under-mouse reader unavailable.")
 end
 
 -- Settings keybind.
@@ -145,6 +154,11 @@ function Bindings.RegisterSlashStubs()
     SLASH_AHREADTIP2 = "/ahtip"
     SlashCmdList["AHREADTIP"] = function()
         AccessibilityHelper_ReadTooltipBinding()
+    end
+
+    SLASH_AHREAD1 = "/ahread"
+    SlashCmdList["AHREAD"] = function()
+        AccessibilityHelper_ReadUnderMouseBinding()
     end
 
     SLASH_AHDISTANCE1 = "/ahdist"

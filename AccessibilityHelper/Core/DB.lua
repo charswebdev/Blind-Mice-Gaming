@@ -22,6 +22,13 @@ local defaults = {
     tooltipCompare = true,
     tooltipTitanEnabled = true,
 
+    -- Visible UI labels under the cursor (not tooltips; those stay on /ahtip).
+    -- underMouseMode: "keybind" | "hover" | "off"
+    underMouseMode = "keybind",
+    underMouseEnabled = true,
+    underMouseHover = false,
+    cursorAnnounceEnabled = true,
+
     -- Chat channel TTS (all default off; master gate also off)
     chatReadEnabled = false,
     -- Player
@@ -183,6 +190,23 @@ local defaults = {
     combatBuffsFade = true,
     combatBuffsStacks = true,
     combatBuffsDuration = true,
+
+    -- Cast / duration bars and interrupt cue
+    castsEnabled = true,
+    castsPlayerEnabled = true,
+    castsEnemyEnabled = true,
+    interruptAlertEnabled = true,
+
+    -- Alert delivery: tts | sound | both
+    alertLocMode = "tts",
+    alertDebuffMode = "tts",
+    alertBuffMode = "tts",
+    alertDurationMode = "tts",
+    alertInterruptMode = "sound",
+    alertVitalMode = "tts",
+    soundPack = "raidWarning",
+    -- Per-item overrides: alertItems[dbKey] = { mode = "tts"|"sound"|"both", sound = "<id>" }
+    alertItems = {},
 }
 
 function DB.GetDefaults()
@@ -192,12 +216,45 @@ end
 function DB.Merge()
     AccessibilityHelperDB = AccessibilityHelperDB or {}
     local sv = AccessibilityHelperDB
+    if sv.underMouseMode ~= "off" and sv.underMouseMode ~= "keybind" and sv.underMouseMode ~= "hover" then
+        if sv.underMouseEnabled == false then
+            sv.underMouseMode = "off"
+        elseif sv.underMouseHover == true then
+            sv.underMouseMode = "hover"
+        else
+            sv.underMouseMode = "keybind"
+        end
+    end
     for k, v in pairs(defaults) do
         if sv[k] == nil then
             sv[k] = v
         end
     end
+    if type(sv.alertItems) ~= "table" then
+        sv.alertItems = {}
+    end
+    sv.underMouseEnabled = sv.underMouseMode ~= "off"
+    sv.underMouseHover = sv.underMouseMode == "hover"
     return sv
+end
+
+function DB.GetUnderMouseMode()
+    local sv = DB.Get()
+    local m = sv.underMouseMode
+    if m == "off" or m == "keybind" or m == "hover" then
+        return m
+    end
+    return "keybind"
+end
+
+function DB.SetUnderMouseMode(mode)
+    if mode ~= "off" and mode ~= "keybind" and mode ~= "hover" then
+        mode = "keybind"
+    end
+    local sv = DB.Get()
+    sv.underMouseMode = mode
+    sv.underMouseEnabled = mode ~= "off"
+    sv.underMouseHover = mode == "hover"
 end
 
 function DB.Get()
@@ -245,4 +302,13 @@ end
 function DB.IsChatEchoEnabled()
     local sv = DB.Get()
     return sv.chatEcho == true
+end
+
+function DB.GetSoundPackID()
+    local sv = DB.Get()
+    local id = sv.soundPack
+    if type(id) ~= "string" or id == "" then
+        return "raidWarning"
+    end
+    return id
 end

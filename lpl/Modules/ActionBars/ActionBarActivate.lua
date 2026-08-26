@@ -235,13 +235,22 @@ local function PickupSpellDirect(spellID, test)
 end
 
 
-local function GetMacroByText(macroText)
+local function GetMacroByText(macroText, macroName)
+    if LPL.ActionBarCodec and LPL.ActionBarCodec.FindMacroIndex then
+        return LPL.ActionBarCodec:FindMacroIndex(macroText, macroName)
+    end
     macroText = Trim(macroText)
-    if macroText == "" then
+    if macroText == "" and (type(macroName) ~= "string" or macroName == "") then
         return nil
     end
+    if type(macroName) == "string" and macroName ~= "" and GetMacroIndexByName then
+        local index = GetMacroIndexByName(macroName)
+        if type(index) == "number" and index > 0 then
+            return index
+        end
+    end
     local maxGlobal = MAX_ACCOUNT_MACROS or 120
-    local maxChar = MAX_CHARACTER_MACROS or 12
+    local maxChar = MAX_CHARACTER_MACROS or 30
     for index = 1, maxGlobal + maxChar do
         local body = GetMacroBody and GetMacroBody(index)
         if body and Trim(body) == macroText then
@@ -887,7 +896,7 @@ local function PickupActionTable(tbl, test, activating)
     local success, msg = true, "Success"
     local ok, err = pcall(function()
         if tbl.type == "macro" then
-            local index = GetMacroByText(tbl.macroText)
+            local index = GetMacroByText(tbl.macroText, tbl.name)
             if not index or index == 0 then
                 if activating then
                     index = CreateMissingMacro(tbl)
