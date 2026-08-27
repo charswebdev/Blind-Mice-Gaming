@@ -33,6 +33,23 @@ local function Enabled()
     return AH.DB.Get().cursorAnnounceEnabled ~= false
 end
 
+local function CanUseValue(v)
+    if AH.Compat and AH.Compat.CanUseValue then
+        return AH.Compat.CanUseValue(v)
+    end
+    if AH.Compat and AH.Compat.IsSecretValue then
+        return not AH.Compat.IsSecretValue(v)
+    end
+    return true
+end
+
+local function UsableString(v)
+    if type(v) ~= "string" or not CanUseValue(v) then
+        return ""
+    end
+    return v
+end
+
 local function SafeUnitExists(unit)
     return unit and UnitExists and UnitExists(unit)
 end
@@ -53,12 +70,18 @@ local function PhraseFromToken(raw)
     end
     local s
     if type(raw) == "number" then
+        if not CanUseValue(raw) then
+            return nil
+        end
         if enumPhrase and enumPhrase[raw] then
             return enumPhrase[raw]
         end
         s = tostring(raw)
     elseif type(raw) == "string" then
-        s = raw
+        s = UsableString(raw)
+        if s == "" then
+            return nil
+        end
     else
         return nil
     end
@@ -181,14 +204,15 @@ local function PickupType()
         return nil
     end
     local ok, infoType = pcall(GetCursorInfo)
-    if ok and type(infoType) == "string" and infoType ~= "" then
+    infoType = ok and UsableString(infoType) or ""
+    if infoType ~= "" then
         return infoType:lower()
     end
     return nil
 end
 
 local function UICursorIsMount(cursorType)
-    if cursorType == nil then
+    if cursorType == nil or not CanUseValue(cursorType) then
         return false
     end
     if Enum and Enum.UICursorType and Enum.UICursorType.Mount ~= nil then
@@ -198,7 +222,8 @@ local function UICursorIsMount(cursorType)
 end
 
 local function LooksLikeMountText(blob)
-    if type(blob) ~= "string" or blob == "" then
+    blob = UsableString(blob)
+    if blob == "" then
         return false
     end
     if blob:find("to ride", 1, true) or blob:find("to mount", 1, true) or blob:find("click to mount", 1, true) or blob:find("click to ride", 1, true) then
@@ -249,7 +274,8 @@ local function IsMountableUnit(unit)
         end
     end
     local guid = UnitGUID and UnitGUID(unit)
-    if type(guid) == "string" and guid:sub(1, 8) == "Vehicle-" then
+    guid = UsableString(guid)
+    if guid ~= "" and guid:sub(1, 8) == "Vehicle-" then
         return true
     end
     if UnitIsPlayer and UnitIsPlayer(unit) then
@@ -259,7 +285,7 @@ local function IsMountableUnit(unit)
         return false
     end
     local name = UnitName and UnitName(unit)
-    if LooksLikeMountText(type(name) == "string" and name:lower() or "") then
+    if LooksLikeMountText(UsableString(name):lower()) then
         return true
     end
     return false
@@ -284,7 +310,8 @@ local function GetWorldCursorData()
 end
 
 local function AppendLine(parts, text)
-    if type(text) == "string" and text ~= "" then
+    text = UsableString(text)
+    if text ~= "" then
         parts[#parts + 1] = text
     end
 end
@@ -355,12 +382,29 @@ local function JoinLower(parts)
     if not parts or #parts == 0 then
         return ""
     end
-    return table.concat(parts, " "):lower()
+    local usable = {}
+    for i = 1, #parts do
+        local s = UsableString(parts[i])
+        if s ~= "" then
+            usable[#usable + 1] = s
+        end
+    end
+    if #usable == 0 then
+        return ""
+    end
+    local ok, blob = pcall(function()
+        return table.concat(usable, " "):lower()
+    end)
+    if ok and type(blob) == "string" then
+        return blob
+    end
+    return ""
 end
 
 local function BlobHasGlobal(blob, key)
-    local s = _G[key]
-    if type(s) ~= "string" or s == "" then
+    blob = UsableString(blob)
+    local s = UsableString(_G[key])
+    if blob == "" or s == "" then
         return false
     end
     return blob:find(s:lower(), 1, true) and true or false
@@ -378,7 +422,8 @@ local function GetUnitTooltipData(unit)
 end
 
 local function StripText(s)
-    if type(s) ~= "string" then
+    s = UsableString(s)
+    if s == "" then
         return ""
     end
     if AH.ChatText and AH.ChatText.ForSpeech then
@@ -397,7 +442,8 @@ local function StripText(s)
 end
 
 local function TitleFromLine(s)
-    if type(s) ~= "string" or s == "" then
+    s = UsableString(s)
+    if s == "" then
         return nil
     end
     local inner = s:match("^<(.-)>$")
@@ -432,7 +478,7 @@ local function CollectLines(unit, data)
     local seen = {}
     for i = 1, #parts do
         local t = StripText(parts[i])
-        if t ~= "" then
+        if t ~= "" and CanUseValue(t) then
             local key = t:lower()
             if not seen[key] then
                 seen[key] = true
@@ -446,8 +492,8 @@ end
 local function Identity(unit, data)
     local unitName
     if unit and UnitName then
-        local n = UnitName(unit)
-        if type(n) == "string" and n ~= "" then
+        local n = UsableString(UnitName(unit))
+        if n ~= "" then
             unitName = StripText(n)
         end
     end
@@ -485,18 +531,21 @@ local function Identity(unit, data)
 end
 
 local function BuildSpeak(name, title, action)
+    name = UsableString(name)
+    title = UsableString(title)
+    action = UsableString(action)
     local parts = {}
-    if type(name) == "string" and name ~= "" then
+    if name ~= "" then
         parts[#parts + 1] = name
     end
-    if type(title) == "string" and title ~= "" then
-        if not name or title:lower() ~= name:lower() then
+    if title ~= "" then
+        if name == "" or title:lower() ~= name:lower() then
             parts[#parts + 1] = title
         end
     end
-    if type(action) == "string" and action ~= "" then
+    if action ~= "" then
         local skip = false
-        if title and title:lower() == action:lower() then
+        if title ~= "" and title:lower() == action:lower() then
             skip = true
         end
         if not skip then
@@ -516,7 +565,8 @@ end
 -- Infer interaction from tooltip / NPC title. Most specific first.
 -- Does not announce Speak on every friendly NPC.
 local function ClassifyBlob(blob)
-    if type(blob) ~= "string" or blob == "" then
+    blob = UsableString(blob)
+    if blob == "" then
         return nil
     end
 
@@ -746,13 +796,14 @@ local function HoverKey()
     local unit = MouseUnit()
     local data = GetWorldCursorData()
     local name = Identity(unit, data)
-    if type(name) == "string" and name ~= "" then
+    name = UsableString(name)
+    if name ~= "" then
         return "n:" .. name:lower()
     end
     if unit then
         if UnitGUID then
-            local guid = UnitGUID(unit)
-            if type(guid) == "string" and guid ~= "" then
+            local guid = UsableString(UnitGUID(unit))
+            if guid ~= "" then
                 return "u:" .. guid
             end
         end
