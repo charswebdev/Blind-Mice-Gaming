@@ -1086,7 +1086,7 @@ local function BuildPage(id, parent, rows)
     elseif id == "sounds_casts" then
         Section("Casts", "How cast bars are delivered. Turn them on under Combat → Casts.")
         AlertItem("Player casts", "castsPlayerEnabled", "duration", "Your own casts and channels.", true)
-        AlertItem("Target, focus, and boss casts", "castsEnemyEnabled", "duration", "Hostile and boss cast bars.", true)
+        AlertItem("Target, focus, and boss casts", "castsEnemyEnabled", "duration", "Hostile target, focus, boss, and arena only. Nearby or friendly players are not announced as enemies.", true)
 
     elseif id == "sounds_interrupt" then
         Section("Interrupt", "How the interrupt cue is delivered. Turn it on under Combat → Interrupt.")
@@ -1237,6 +1237,7 @@ local function BuildPage(id, parent, rows)
         Check("Level up", "stateLevelUp", "Congratulates you, then announces class, specialization, or hero talent points when they are gained.")
         Check("Quest accepted / complete / turn-in", "stateQuest", "Announces those quest status changes.")
         Check("Target acquired / cleared", "stateTarget", "Announces when you gain or clear a target.")
+        Check("Target of target off you", "stateTargetOfTarget", "When a hostile target is looking at someone else, speaks that name. Speaks On you when they come back. Meant for tanks watching aggro.")
         Check("Battle.net friends", "stateBNFriends", "Announces Battle.net friends coming online or going offline.")
 
     elseif id == "rewards_quests" then
@@ -1261,7 +1262,7 @@ local function BuildPage(id, parent, rows)
         Section("Casts", "Turn these on or off. Choose TTS or sound under Sounds → Casts.")
         Check("Read cast and channel bars", "castsEnabled", "Master switch for this page. Player and enemy casts still need to be on.")
         Check("Player casts", "castsPlayerEnabled", "Your own casts and channels. Example: Casting Frostbolt. 2 seconds.")
-        Check("Target, focus, and boss casts", "castsEnemyEnabled", "Hostile and boss cast bars. Example: Target casting Frostbolt. 2 seconds. Can interrupt.")
+        Check("Target, focus, and boss casts", "castsEnemyEnabled", "Hostile target, focus, boss, and arena cast bars only. Nearby or friendly players are not announced as enemies. Example: Target casting Frostbolt. 2 seconds. Can interrupt.")
 
     elseif id == "combat_interrupt" then
         Section("Interrupt", "Turn this on or off. Choose TTS or sound under Sounds → Interrupt.")
@@ -1532,7 +1533,7 @@ local function BuildFrame()
     local version = FontString(frame, 12, COL_MUTED[1], COL_MUTED[2], COL_MUTED[3])
     version:SetPoint("BOTTOMRIGHT", -20, 14)
     version:SetJustifyH("RIGHT")
-    local ver = "3.6.17"
+    local ver = "3.6.18"
     if C_AddOns and C_AddOns.GetAddOnMetadata then
         ver = C_AddOns.GetAddOnMetadata("AccessibilityHelper", "Version") or ver
     elseif GetAddOnMetadata then

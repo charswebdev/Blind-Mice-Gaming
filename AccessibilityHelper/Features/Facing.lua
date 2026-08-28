@@ -52,6 +52,37 @@ local function Say(msg)
     end
 end
 
+local function UsableString(v)
+    if type(v) ~= "string" then
+        return nil
+    end
+    if AH.Compat and AH.Compat.CanUseValue and not AH.Compat.CanUseValue(v) then
+        return nil
+    end
+    if v == "" then
+        return nil
+    end
+    return v
+end
+
+local function UnitLabel(unit)
+    if not UnitName then
+        return nil
+    end
+    local ok, n = pcall(UnitName, unit)
+    if not ok then
+        return nil
+    end
+    n = UsableString(n)
+    if not n then
+        return nil
+    end
+    if AH.ChatText and AH.ChatText.ForSpeech then
+        n = UsableString(AH.ChatText.ForSpeech(n))
+    end
+    return n
+end
+
 local function InCombat()
     if UnitAffectingCombat then
         local ok, v = pcall(UnitAffectingCombat, "player")
@@ -546,8 +577,8 @@ function Facing.ReadTarget()
     end
 
     local parts = {}
-    local name = UnitName and UnitName("target")
-    if type(name) == "string" and name ~= "" then
+    local name = UnitLabel("target")
+    if name then
         parts[#parts + 1] = name
     else
         parts[#parts + 1] = "Target"
@@ -576,6 +607,25 @@ function Facing.ReadTarget()
     local dist = TargetDistancePhrase()
     if dist then
         parts[#parts + 1] = dist
+    end
+
+    if UnitExists and UnitExists("targettarget") then
+        local who = name or "Target"
+        if UnitIsUnit and UnitIsUnit("targettarget", "player") then
+            parts[#parts + 1] = who .. " is targeting you"
+        elseif UnitIsUnit and UnitExists("pet") and UnitIsUnit("targettarget", "pet") then
+            parts[#parts + 1] = who .. " is targeting your pet"
+        else
+            local tot = UnitLabel("targettarget")
+            if tot then
+                parts[#parts + 1] = who .. " is targeting " .. tot
+            else
+                parts[#parts + 1] = who .. " is targeting someone else"
+            end
+        end
+    else
+        local who = name or "Target"
+        parts[#parts + 1] = who .. " has no target"
     end
 
     Say(table.concat(parts, ". ") .. ".")

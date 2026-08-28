@@ -72,11 +72,29 @@ local function SafeCall(fn, ...)
     return a, b, c, d
 end
 
+local function CanUseValue(v)
+    if AH.Compat and AH.Compat.CanUseValue then
+        return AH.Compat.CanUseValue(v)
+    end
+    return true
+end
+
 local function CanUseNumber(v)
     if AH.Compat and AH.Compat.CanUseNumber then
         return AH.Compat.CanUseNumber(v)
     end
     return type(v) == "number"
+end
+
+--- Nil if v is not a usable (non-secret) non-empty string.
+local function UsableString(v)
+    if type(v) ~= "string" or not CanUseValue(v) then
+        return nil
+    end
+    if v == "" then
+        return nil
+    end
+    return v
 end
 
 -- Follow announces (Part 2 A+E / BlindAssist-style):
@@ -1120,10 +1138,96 @@ local function OnMoney()
     end
 end
 
+local totState = nil -- "you" | "pet" | "other" | "none"
+local totName = nil
+local totElapsed = 0
+local TOT_POLL = 0.25
+
+local function UnitLabel(unit)
+    if not UnitName then
+        return nil
+    end
+    local n = UsableString(SafeCall(UnitName, unit))
+    if not n then
+        return nil
+    end
+    if AH.ChatText and AH.ChatText.ForSpeech then
+        n = UsableString(AH.ChatText.ForSpeech(n))
+    end
+    return n
+end
+
+local function HostileTarget()
+    if not UnitExists or not UnitExists("target") then
+        return false
+    end
+    if UnitIsDead and SafeCall(UnitIsDead, "target") then
+        return false
+    end
+    if UnitCanAttack then
+        local ok, v = pcall(UnitCanAttack, "player", "target")
+        return ok and v and true or false
+    end
+    return false
+end
+
+local function TotKind()
+    if not UnitExists or not UnitExists("targettarget") then
+        return "none", nil
+    end
+    if UnitIsUnit and UnitIsUnit("targettarget", "player") then
+        return "you", nil
+    end
+    if UnitIsUnit and UnitExists("pet") and UnitIsUnit("targettarget", "pet") then
+        return "pet", nil
+    end
+    return "other", UnitLabel("targettarget")
+end
+
+local function SayTot(msg)
+    if AH.Speech and AH.Speech.Say then
+        AH.Speech.Say(msg, AH.Speech.PRIORITY_CRITICAL)
+    else
+        Say(msg)
+    end
+end
+
+local function CheckTargetOfTarget()
+    if not On("stateTargetOfTarget") then
+        totState = nil
+        totName = nil
+        return
+    end
+    if not HostileTarget() then
+        totState = nil
+        totName = nil
+        return
+    end
+    local kind, name = TotKind()
+    if kind == totState and (kind ~= "other" or name == totName) then
+        return
+    end
+    local prev = totState
+    totState = kind
+    totName = name
+    local targetName = UnitLabel("target") or "Your target"
+    if kind == "other" then
+        if name then
+            SayTot(targetName .. " is targeting " .. name .. ".")
+        else
+            SayTot(targetName .. " is targeting someone else.")
+        end
+    elseif kind == "pet" then
+        SayTot(targetName .. " is targeting your pet.")
+    elseif kind == "you" and (prev == "other" or prev == "pet") then
+        SayTot(targetName .. " is targeting you.")
+    end
+end
+
 local function OnTarget()
     if UnitExists("target") then
-        local name = UnitName("target")
-        if type(name) == "string" and name ~= "" then
+        local name = UnitLabel("target")
+        if name then
             Announce("stateTarget", "Target acquired: " .. name .. ".")
         else
             Announce("stateTarget", "Target acquired.")
@@ -1131,6 +1235,7 @@ local function OnTarget()
     else
         Announce("stateTarget", "Target cleared.")
     end
+    CheckTargetOfTarget()
 end
 
 local function OnBagFull()
@@ -1222,6 +1327,8 @@ frame:RegisterEvent("PLAYER_MONEY")
 frame:RegisterEvent("CHAT_MSG_MONEY")
 frame:RegisterEvent("CHAT_MSG_SYSTEM")
 frame:RegisterEvent("PLAYER_TARGET_CHANGED")
+frame:RegisterEvent("UNIT_TARGET")
+pcall(frame.RegisterEvent, frame, "UNIT_THREAT_SITUATION_UPDATE")
 frame:RegisterEvent("BAG_UPDATE")
 frame:RegisterEvent("UPDATE_INVENTORY_DURABILITY")
 frame:RegisterEvent("LFG_QUEUE_STATUS_UPDATE")
@@ -1246,6 +1353,11 @@ pcall(frame.RegisterEvent, frame, "UNIT_EXITED_VEHICLE")
 frame.elapsed = 0
 frame:SetScript("OnUpdate", function(self, elapsed)
     self.elapsed = self.elapsed + elapsed
+    totElapsed = totElapsed + elapsed
+    if totElapsed >= TOT_POLL then
+        totElapsed = 0
+        CheckTargetOfTarget()
+    end
     if self.elapsed < POLL then
         return
     end
@@ -1260,6 +1372,8 @@ frame:SetScript("OnEvent", function(self, event, ...)
         stuck.x, stuck.y, stuck.since, stuck.announced = nil, nil, nil, false
         bagsWereFull = false
         durabilityWarned = false
+        totState = nil
+        totName = nil
         ResetFollowState()
         if GetMoney then
             lastMoney = SafeCall(GetMoney)
@@ -1308,6 +1422,20 @@ frame:SetScript("OnEvent", function(self, event, ...)
     end
     if event == "PLAYER_TARGET_CHANGED" then
         OnTarget()
+        return
+    end
+    if event == "UNIT_TARGET" then
+        local unit = ...
+        if unit == "target" or (UnitIsUnit and unit and UnitIsUnit(unit, "target")) then
+            CheckTargetOfTarget()
+        end
+        return
+    end
+    if event == "UNIT_THREAT_SITUATION_UPDATE" then
+        local unit = ...
+        if unit == nil or unit == "player" or unit == "target" or (UnitIsUnit and unit and UnitIsUnit(unit, "target")) then
+            CheckTargetOfTarget()
+        end
         return
     end
     if event == "BAG_UPDATE" then

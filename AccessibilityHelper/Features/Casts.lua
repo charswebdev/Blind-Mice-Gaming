@@ -58,6 +58,55 @@ local function SafeCall(fn, ...)
     return a, b, c, d, e, f, g, h, i
 end
 
+--- Player / target / focus / boss / arena only. Nameplates, party, and raid
+--- fire UNIT_SPELLCAST_* too; those are other people, not "the enemy bar".
+local function IsWatchedCastUnit(unit)
+    if type(unit) ~= "string" or unit == "" then
+        return false
+    end
+    if unit == "player" or unit == "target" or unit == "focus" then
+        return true
+    end
+    if unit:match("^boss%d+$") or unit:match("^arena%d+$") then
+        return true
+    end
+    return false
+end
+
+local function IsBossUnit(unit)
+    return type(unit) == "string" and unit:match("^boss%d+$") and true or false
+end
+
+local function IsFriendlyUnit(unit)
+    if unit == "player" then
+        return true
+    end
+    if UnitIsUnit and SafeCall(UnitIsUnit, unit, "player") then
+        return true
+    end
+    if UnitPlayerOrPetInParty and SafeCall(UnitPlayerOrPetInParty, unit) then
+        return true
+    end
+    if UnitPlayerOrPetInRaid and SafeCall(UnitPlayerOrPetInRaid, unit) then
+        return true
+    end
+    if UnitIsFriend then
+        local ok, friend = pcall(UnitIsFriend, "player", unit)
+        if ok and friend then
+            return true
+        end
+    end
+    return false
+end
+
+local function IsPlayerUnit(unit)
+    if not UnitIsPlayer then
+        return false
+    end
+    local ok, player = pcall(UnitIsPlayer, unit)
+    return ok and player and true or false
+end
+
 local function UnitLabel(unit)
     if unit == "player" then
         return nil
@@ -71,6 +120,17 @@ local function UnitLabel(unit)
     local bossIndex = unit and unit:match("^boss(%d+)$")
     if bossIndex then
         return "Boss " .. bossIndex
+    end
+    local arenaIndex = unit and unit:match("^arena(%d+)$")
+    if arenaIndex then
+        return "Arena " .. arenaIndex
+    end
+    -- Never call another player "Enemy" (nameplates / stray tokens).
+    if IsPlayerUnit(unit) then
+        if IsFriendlyUnit(unit) then
+            return "Friendly player"
+        end
+        return "Hostile player"
     end
     return "Enemy"
 end
@@ -168,11 +228,19 @@ local function Hostile(unit)
     if unit == "player" then
         return false
     end
+    if UnitIsUnit and SafeCall(UnitIsUnit, unit, "player") then
+        return false
+    end
+    -- Attackable units are hostile for combat alerts (mobs, PvP, duels).
     if UnitCanAttack then
         local ok, attack = pcall(UnitCanAttack, "player", unit)
         if ok and attack then
             return true
         end
+    end
+    -- Same-faction / party players you cannot attack are never "the enemy".
+    if IsFriendlyUnit(unit) then
+        return false
     end
     if UnitIsEnemy then
         local ok, enemy = pcall(UnitIsEnemy, "player", unit)
@@ -181,6 +249,13 @@ local function Hostile(unit)
         end
     end
     return false
+end
+
+local function ShouldAnnounceOtherCast(unit)
+    if IsBossUnit(unit) then
+        return true
+    end
+    return Hostile(unit)
 end
 
 local function PlayerSilenced()
@@ -206,8 +281,14 @@ local function AnnounceDuration(unit, info)
     if unit == "player" and not On("castsPlayerEnabled") then
         return
     end
-    if unit ~= "player" and not On("castsEnemyEnabled") then
-        return
+    if unit ~= "player" then
+        if not On("castsEnemyEnabled") then
+            return
+        end
+        -- Friendly players (party, same-faction, nameplates) are not "enemy casts".
+        if not ShouldAnnounceOtherCast(unit) then
+            return
+        end
     end
     if info.trade then
         return
@@ -274,7 +355,7 @@ local function AnnounceInterrupt(unit, info)
 end
 
 local function HandleUnit(unit)
-    if type(unit) ~= "string" or unit == "" then
+    if not IsWatchedCastUnit(unit) then
         return
     end
     local info = ReadCast(unit)
@@ -317,6 +398,9 @@ frame:SetScript("OnEvent", function(_, event, unit)
     if event == "PLAYER_FOCUS_CHANGED" then
         lastCastKey.focus = nil
         HandleUnit("focus")
+        return
+    end
+    if not IsWatchedCastUnit(unit) then
         return
     end
     if event == "UNIT_SPELLCAST_STOP"

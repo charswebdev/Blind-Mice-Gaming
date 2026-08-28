@@ -153,6 +153,7 @@ local defaults = {
     stateDurability = true,
     stateMoney = true,
     stateTarget = true,
+    stateTargetOfTarget = true,
     stateBNFriends = true,
 
     -- Progress (Phase 8)
