@@ -40,6 +40,9 @@ try {
 } catch (PDOException $error) {
     fail(500, 'Could not reach the community database.');
 }
+if (!isset($pdo)) {
+    fail(500, 'Could not reach the community database.');
+}
 
 $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
 if ($method === 'GET') {
@@ -173,7 +176,6 @@ function normalize_build(array $build): array
         fail(400, 'Build id is not valid.');
     }
     $name = trim((string) ($build['name'] ?? 'Untitled'));
-    $name = preg_replace('/[<>]/', '', $name) ?? '';
     $name = substr($name, 0, 200);
     if ($name === '') {
         $name = 'Untitled';
@@ -284,7 +286,7 @@ function to_sql_datetime(string $value, string $fallback): string
     return gmdate('Y-m-d H:i:s', $stamp);
 }
 
-function fail(int $code, string $message): void
+function fail(int $code, string $message): never
 {
     http_response_code($code);
     echo json_encode(['ok' => false, 'error' => $message], JSON_UNESCAPED_UNICODE);
