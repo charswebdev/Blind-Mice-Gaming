@@ -3,8 +3,8 @@
 ## Author: Blind Mice Gaming
 ## Category-enUS: Blind Mice Gaming
 ## IconTexture: Interface\AddOns\lpl\icons\lpl_32.blp
-## Notes: Plan, save, and apply loadouts - talents, gear, bars, PvP, Edit Mode, conditions, macros, and more. |cffffcc00/lpl|r to open.
-## Version: 1.1.3
+## Notes: Plan, save, and apply loadouts - talents, gear, bars, PvP, Edit Mode, conditions, macros, housing blueprints, and more. |cffffcc00/lpl|r to open.
+## Version: 1.1.4
 ## DefaultState: enabled
 ## OptionalDeps: LibTalentTree-1.0
 ## SavedVariables: LPLDB
@@ -100,6 +100,9 @@ Modules\AddonsManager\AddonCatalog.lua
 Modules\AddonsManager\AddonProfileStore.lua
 Modules\AddonsManager\AddonProfileSetList.lua
 Modules\AddonsManager\AddonProfileEditor.lua
+Modules\Housing\HousingStore.lua
+Modules\Housing\HousingSetList.lua
+Modules\Housing\HousingEditor.lua
 Modules\Equipment\EquipmentCursor.lua
 Modules\Equipment\EquipmentSlotButton.lua
 Modules\Equipment\EquipmentEditor.lua
@@ -135,5 +138,6 @@ Modules\AddonSets\AddonSetSetList.lua
 Modules\AddonSets\AddonSetEditor.lua
 Modules\AddonSets.lua
 Modules\AddonsManager.lua
+Modules\Housing.lua
 Modules\Settings.lua
 Core\Init.lua

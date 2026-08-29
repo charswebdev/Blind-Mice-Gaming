@@ -40,22 +40,26 @@ function Compat.GetInterfaceVersion()
 end
 
 --- True if value is a Midnight+ secret (opaque) value.
+--- Do not `if v` / `v and` / `v == nil` on the value; only probe via issecretvalue.
 function Compat.IsSecretValue(v)
-    if v == nil or not issecretvalue then
+    if not issecretvalue then
         return false
     end
     local ok, secret = pcall(issecretvalue, v)
-    return ok and secret and true or false
+    return ok == true and secret == true
 end
 
 --- True if we may compare, concatenate, or do logic on v.
 function Compat.CanUseValue(v)
-    if v == nil or not Compat.IsSecretValue(v) then
+    if not Compat.IsSecretValue(v) then
         return true
     end
     if canaccessvalue then
         local ok, access = pcall(canaccessvalue, v)
-        return ok and access and true or false
+        if ok ~= true or Compat.IsSecretValue(access) then
+            return false
+        end
+        return access == true
     end
     return false
 end
@@ -66,6 +70,67 @@ function Compat.CanUseNumber(v)
         return false
     end
     return Compat.CanUseValue(v)
+end
+
+--- Call fn and return a plain true/false. Secret results are false (never `if` them).
+--- canaccessvalue does not make a secret boolean safe to test on Midnight.
+function Compat.SafeBool(fn, ...)
+    if type(fn) ~= "function" then
+        return false
+    end
+    local ok, v = pcall(fn, ...)
+    if ok ~= true then
+        return false
+    end
+    if Compat.IsSecretValue(v) then
+        return false
+    end
+    if v == true then
+        return true
+    end
+    if v == false then
+        return false
+    end
+    return false
+end
+
+--- True when both tokens resolve to the same usable GUID. Avoids UnitIsUnit secrets.
+function Compat.SameUnit(unitA, unitB)
+    if type(unitA) ~= "string" or type(unitB) ~= "string" or not UnitGUID then
+        return false
+    end
+    local okA, ga = pcall(UnitGUID, unitA)
+    local okB, gb = pcall(UnitGUID, unitB)
+    if okA ~= true or okB ~= true then
+        return false
+    end
+    if type(ga) ~= "string" or type(gb) ~= "string" then
+        return false
+    end
+    if Compat.IsSecretValue(ga) or Compat.IsSecretValue(gb) then
+        return false
+    end
+    return ga == gb
+end
+
+--- True if we have a usable GUID or name for unit (no UnitExists boolean test).
+function Compat.UnitSeen(unit)
+    if type(unit) ~= "string" or unit == "" then
+        return false
+    end
+    if UnitGUID then
+        local ok, guid = pcall(UnitGUID, unit)
+        if ok == true and type(guid) == "string" and guid ~= "" and not Compat.IsSecretValue(guid) then
+            return true
+        end
+    end
+    if UnitName then
+        local ok, name = pcall(UnitName, unit)
+        if ok == true and type(name) == "string" and name ~= "" and not Compat.IsSecretValue(name) then
+            return true
+        end
+    end
+    return false
 end
 
 function Compat.GetSystemTtsVoiceID()

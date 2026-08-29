@@ -1533,7 +1533,7 @@ local function BuildFrame()
     local version = FontString(frame, 12, COL_MUTED[1], COL_MUTED[2], COL_MUTED[3])
     version:SetPoint("BOTTOMRIGHT", -20, 14)
     version:SetJustifyH("RIGHT")
-    local ver = "3.6.2"
+    local ver = "3.6.3"
     if C_AddOns and C_AddOns.GetAddOnMetadata then
         ver = C_AddOns.GetAddOnMetadata("AccessibilityHelper", "Version") or ver
     elseif GetAddOnMetadata then

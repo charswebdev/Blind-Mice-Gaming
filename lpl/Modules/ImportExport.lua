@@ -169,6 +169,9 @@ function ImportExportModule.create(parent)
         if importKind == "addonprofiles" or importKind == "vaultchooser" then
             return "Imported Addon Profile"
         end
+        if importKind == "housing" then
+            return "Imported Housing Blueprint"
+        end
         return "Imported Loadout"
     end
 
@@ -200,6 +203,9 @@ function ImportExportModule.create(parent)
         if importKind == "addonprofiles" or importKind == "vaultchooser" then
             return LPL.AddonProfileStore:NormalizeSetName(name, DefaultImportName(importKind))
         end
+        if importKind == "housing" then
+            return LPL.HousingStore:NormalizeSetName(name, DefaultImportName(importKind))
+        end
         return LPL.BuildStore:NormalizeBuildName(name, DefaultImportName(importKind))
     end
 
@@ -227,12 +233,18 @@ function ImportExportModule.create(parent)
             return nil, nil
         end
         local ctx = frame.importContext
+        if ctx == "housing" then
+            return "housing", nil
+        end
         local addonKey = "custom"
         if LPL.AddonCatalog and LPL.AddonCatalog.Detect then
             addonKey = LPL.AddonCatalog:Detect(trimmed) or "custom"
         end
         if addonKey ~= "custom" then
             return "addonprofiles", addonKey
+        end
+        if LPL.HousingStore and LPL.HousingStore.Detect and LPL.HousingStore:Detect(trimmed) then
+            return "housing", nil
         end
         if ctx == "macros" then
             return "macros", nil
@@ -331,6 +343,17 @@ function ImportExportModule.create(parent)
                 addonLabel = "",
             }
         end
+        if importKind == "housing" then
+            local code = text or ""
+            if LPL.HousingStore and LPL.HousingStore.NormalizeCode then
+                code = LPL.HousingStore:NormalizeCode(code)
+            end
+            return true, {
+                name = DefaultImportName("housing"),
+                code = code,
+                notes = "",
+            }
+        end
         if importKind == "loadout" then
             local preview = LPL.LoadoutImport:BuildImportPreviewFromText(text, DefaultImportName("loadout"))
             if preview then
@@ -364,9 +387,9 @@ function ImportExportModule.create(parent)
 
     local function ValidateImportForText(text)
         local importKind = ResolveImportKind(text)
-        if importKind == "macros" or importKind == "addonprofiles" or importKind == "vaultchooser" then
+        if importKind == "macros" or importKind == "addonprofiles" or importKind == "vaultchooser" or importKind == "housing" then
             if not text or text:match("^%s*$") then
-                return false, "Paste a macro body or addon profile string."
+                return false, "Paste a macro body, addon profile, or housing blueprint code."
             end
             return true, ""
         end
@@ -413,7 +436,7 @@ function ImportExportModule.create(parent)
 
     local function BuildImportPreview(text, importName, importKind)
         importKind = importKind or ResolveImportKind(text)
-        if importKind == "macros" or importKind == "addonprofiles" or importKind == "vaultchooser" then
+        if importKind == "macros" or importKind == "addonprofiles" or importKind == "vaultchooser" or importKind == "housing" then
             return nil
         end
         if importKind == "loadout" then
@@ -453,6 +476,10 @@ function ImportExportModule.create(parent)
             importButton:SetText("Import Profile")
             local label = (LPL.AddonCatalog and LPL.AddonCatalog:GetLabel(addonKey or "custom")) or "Custom"
             subtitle:SetText(string.format("Detected as Addon Profile (%s). Import saves to Addons Manager.", label))
+        elseif importKind == "housing" then
+            nameLabel:SetText("Blueprint name")
+            importButton:SetText("Import Blueprint")
+            subtitle:SetText("Detected as a Housing Blueprint code. Import saves to Housing Blueprints (does not place the house).")
         elseif importKind == "vaultchooser" then
             nameLabel:SetText("Name")
             importButton:SetText("Import…")
@@ -570,6 +597,22 @@ function ImportExportModule.create(parent)
             return true
         end
 
+        if importKind == "housing" then
+            local code = text
+            if LPL.HousingStore and LPL.HousingStore.NormalizeCode then
+                code = LPL.HousingStore:NormalizeCode(text)
+            end
+            local draft = {
+                name = importName,
+                code = code,
+                notes = "",
+            }
+            LPL.HousingStore:SaveFromEditor(nil, importName, draft, function(setID)
+                NavigateToVaultModule("housing", setID)
+            end)
+            return true
+        end
+
         return false
     end
 
@@ -614,6 +657,7 @@ function ImportExportModule.create(parent)
                     or currentName == "Imported Loadout"
                     or currentName == "Imported Macro"
                     or currentName == "Imported Addon Profile"
+                    or currentName == "Imported Housing Blueprint"
                     or currentName == "Imported Cooldown Manager Set" then
                     if sourceName then
                         nameBox:SetText(NormalizeImportName(importKind, sourceName))
@@ -626,6 +670,7 @@ function ImportExportModule.create(parent)
                 frame.validImportData ~= nil
                 or importKind == "macros"
                 or importKind == "addonprofiles"
+                or importKind == "housing"
                 or importKind == "vaultchooser"
             ))
         else
@@ -669,6 +714,11 @@ function ImportExportModule.create(parent)
             nameLabel:SetText("Profile name")
             importButton:SetText("Import Profile")
             nameBox:SetText("Imported Addon Profile")
+        elseif frame.importContext == "housing" then
+            subtitle:SetText("Paste a Blizzard housing blueprint code. Import stores the code; it does not place the house.")
+            nameLabel:SetText("Blueprint name")
+            importButton:SetText("Import Blueprint")
+            nameBox:SetText("Imported Housing Blueprint")
         else
             nameBox:SetText("Imported Loadout")
         end
@@ -747,7 +797,7 @@ function ImportExportModule.create(parent)
         local importKind = frame.validImportKind or ResolveImportKind(text)
         local importName = NormalizeImportName(importKind, nameBox:GetText())
 
-        if importKind == "macros" or importKind == "addonprofiles" then
+        if importKind == "macros" or importKind == "addonprofiles" or importKind == "housing" then
             CommitVaultImport(importKind, text, importName)
             return
         end
@@ -1201,7 +1251,7 @@ function LPL.ImportExport:OpenImport(importContext)
     self.requestedView = "import"
     self.requestedExportText = nil
     self.requestedExportName = nil
-    self.importContext = importContext -- "macros" | "addonsmanager" | nil
+    self.importContext = importContext -- "macros" | "addonsmanager" | "housing" | nil
     LPL.Modules:Activate("builds")
     self:ApplyRequestedView()
 end

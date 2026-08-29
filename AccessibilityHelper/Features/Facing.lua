@@ -609,11 +609,13 @@ function Facing.ReadTarget()
         parts[#parts + 1] = dist
     end
 
-    if UnitExists and UnitExists("targettarget") then
+    local totSeen = AH.Compat and AH.Compat.UnitSeen and AH.Compat.UnitSeen("targettarget")
+    if totSeen then
         local who = name or "Target"
-        if UnitIsUnit and UnitIsUnit("targettarget", "player") then
+        local same = AH.Compat and AH.Compat.SameUnit
+        if same and same("targettarget", "player") then
             parts[#parts + 1] = who .. " is targeting you"
-        elseif UnitIsUnit and UnitExists("pet") and UnitIsUnit("targettarget", "pet") then
+        elseif same and AH.Compat.UnitSeen("pet") and same("targettarget", "pet") then
             parts[#parts + 1] = who .. " is targeting your pet"
         else
             local tot = UnitLabel("targettarget")

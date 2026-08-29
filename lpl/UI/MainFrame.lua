@@ -3,8 +3,18 @@ local addonName, LPL = ...
 LPL.MainFrame = {}
 
 local MIN_WIDTH = 720
-local MIN_HEIGHT = 480
+local DEFAULT_WIDTH = 980
+local DEFAULT_HEIGHT = 860
+local MAX_WIDTH = 1400
+local MAX_HEIGHT = 1100
 local FRAME_NAME = "LPLMainFrame"
+
+local function MinHeight()
+    if LPL.Sidebar and LPL.Sidebar.RequiredFrameHeight then
+        return LPL.Sidebar:RequiredFrameHeight()
+    end
+    return DEFAULT_HEIGHT
+end
 local PROFILE_ICON_SIZE = 32
 
 local function CreateProfileIcon(titleBar)
@@ -96,7 +106,8 @@ function LPL.MainFrame:Create()
     self.frame = frame
     frame:Hide()
 
-    frame:SetSize(980, 680)
+    local minHeight = MinHeight()
+    frame:SetSize(DEFAULT_WIDTH, math.max(DEFAULT_HEIGHT, minHeight))
     frame:SetFrameStrata("DIALOG")
     frame:SetFrameLevel(100)
     frame:SetClampedToScreen(true)
@@ -104,10 +115,10 @@ function LPL.MainFrame:Create()
     frame:EnableMouse(true)
     frame:SetResizable(true)
     if frame.SetResizeBounds then
-        frame:SetResizeBounds(MIN_WIDTH, MIN_HEIGHT, 1400, 900)
+        frame:SetResizeBounds(MIN_WIDTH, minHeight, MAX_WIDTH, MAX_HEIGHT)
     else
-        frame:SetMinResize(MIN_WIDTH, MIN_HEIGHT)
-        frame:SetMaxResize(1400, 900)
+        frame:SetMinResize(MIN_WIDTH, minHeight)
+        frame:SetMaxResize(MAX_WIDTH, MAX_HEIGHT)
     end
     LPL.Theme:ApplyBackdrop(frame, "panel", "bgPrimary", "border")
 

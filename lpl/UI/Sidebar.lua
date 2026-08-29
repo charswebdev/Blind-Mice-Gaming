@@ -11,6 +11,7 @@ local TAB_STEP = TAB_SIZE + TAB_GAP
 local TOP_PAD = 10
 local BOTTOM_PAD = 10
 local DIVIDER_GAP = 10
+local TITLE_BAR_HEIGHT = 36
 
 local TAB_DEFINITIONS = {
     {
@@ -110,9 +111,17 @@ local TAB_DEFINITIONS = {
         bottom = false,
     },
     {
+        id = "housing",
+        label = "Housing Blueprints",
+        description = "Store Blizzard player-housing blueprint codes for copy and paste.",
+        iconStem = "housing_64",
+        order = 61,
+        bottom = false,
+    },
+    {
         id = "builds",
         label = "Import / Export",
-        description = "Import and export LPL loadouts, builds, macros, and addon profiles.",
+        description = "Import and export LPL loadouts, builds, macros, addon profiles, and housing blueprints.",
         iconStem = "import_64",
         order = 90,
         bottom = true,
@@ -146,6 +155,21 @@ local function CollectTabs(bottom)
         return (a.order or 0) < (b.order or 0)
     end)
     return list
+end
+
+--- Frame height that fits every sidebar tab with no scroll.
+function LPL.Sidebar:RequiredFrameHeight()
+    local topCount = #CollectTabs(false)
+    local bottomCount = #CollectTabs(true)
+    local topNeeded = TAB_SIZE
+    if topCount > 1 then
+        topNeeded = ((topCount - 1) * TAB_STEP) + TAB_SIZE
+    end
+    local bottomReserve = BOTTOM_PAD
+    if bottomCount > 0 then
+        bottomReserve = BOTTOM_PAD + (bottomCount * TAB_SIZE) + ((bottomCount - 1) * TAB_GAP) + DIVIDER_GAP
+    end
+    return TITLE_BAR_HEIGHT + TOP_PAD + topNeeded + 4 + bottomReserve
 end
 
 function LPL.Sidebar:Layout()
@@ -193,21 +217,40 @@ function LPL.Sidebar:Layout()
     end
 
     local available = math.max(TAB_SIZE, height - TOP_PAD - bottomReserve - 4)
-    local step = TAB_STEP
+    local needed = TAB_SIZE
     if topCount > 1 then
-        local needed = ((topCount - 1) * TAB_STEP) + TAB_SIZE
-        if needed > available then
-            step = math.max(36, math.floor((available - TAB_SIZE) / (topCount - 1)))
-        end
+        needed = ((topCount - 1) * TAB_STEP) + TAB_SIZE
     end
 
-    local topY = -TOP_PAD
+    if self.topScroll then
+        self.topScroll:ClearAllPoints()
+        self.topScroll:SetPoint("TOPLEFT", sidebar, "TOPLEFT", 0, -TOP_PAD)
+        self.topScroll:SetPoint("TOPRIGHT", sidebar, "TOPRIGHT", 0, -TOP_PAD)
+        self.topScroll:SetPoint("BOTTOMLEFT", sidebar, "BOTTOMLEFT", 0, bottomReserve)
+        self.topScroll:SetPoint("BOTTOMRIGHT", sidebar, "BOTTOMRIGHT", 0, bottomReserve)
+    end
+
+    if self.topChild then
+        self.topChild:SetWidth(64)
+        self.topChild:SetHeight(math.max(needed, available))
+    end
+
+    local topY = 0
     for _, tabData in ipairs(topDefs) do
         local tab = self.tabs[tabData.id]
         if tab then
             tab:ClearAllPoints()
-            tab:SetPoint("TOP", sidebar, "TOP", 0, topY)
-            topY = topY - step
+            local parent = self.topChild or sidebar
+            tab:SetPoint("TOP", parent, "TOP", 0, -topY)
+            topY = topY + TAB_STEP
+        end
+    end
+
+    if self.topScroll then
+        local maxScroll = math.max(0, needed - available)
+        local current = self.topScroll:GetVerticalScroll() or 0
+        if current > maxScroll then
+            self.topScroll:SetVerticalScroll(maxScroll)
         end
     end
 end
@@ -227,8 +270,21 @@ function LPL.Sidebar:Create(parent)
     self._topDefs = CollectTabs(false)
     self._bottomDefs = CollectTabs(true)
 
+    local topScroll = CreateFrame("ScrollFrame", "LPLSidebarTopScroll", sidebar)
+    topScroll:EnableMouseWheel(true)
+    topScroll:SetScript("OnMouseWheel", function(self, delta)
+        local current = self:GetVerticalScroll() or 0
+        local range = self:GetVerticalScrollRange() or 0
+        self:SetVerticalScroll(math.min(range, math.max(0, current - (delta * TAB_STEP))))
+    end)
+    local topChild = CreateFrame("Frame", nil, topScroll)
+    topChild:SetSize(64, TAB_SIZE)
+    topScroll:SetScrollChild(topChild)
+    self.topScroll = topScroll
+    self.topChild = topChild
+
     for _, tabData in ipairs(self._topDefs) do
-        local tab = LPL:CreateSidebarTab("LPLSidebarTab" .. tabData.id, sidebar, tabData)
+        local tab = LPL:CreateSidebarTab("LPLSidebarTab" .. tabData.id, topChild, tabData)
         tab:SetScript("OnClick", function()
             OnTabClick(tabData)
         end)

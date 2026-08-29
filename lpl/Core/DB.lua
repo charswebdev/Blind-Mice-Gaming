@@ -18,7 +18,7 @@ local DEFAULTS = {
             x = 0,
             y = 0,
             width = 980,
-            height = 680,
+            height = 860,
             locked = false,
         },
     },
@@ -73,6 +73,10 @@ local DEFAULTS = {
         sets = {},
         nextSetId = 0,
     },
+    housing = {
+        sets = {},
+        nextSetId = 0,
+    },
     conditions = {
         enabled = true,
         limitConditions = false,
@@ -93,6 +97,7 @@ local DEFAULTS = {
         macros = {},
         addonsets = {},
         addonprofiles = {},
+        housing = {},
     },
     listCollapsed = {
         talents = {},
@@ -107,6 +112,7 @@ local DEFAULTS = {
         macros = {},
         addonsets = {},
         addonprofiles = {},
+        housing = {},
     },
 }
 
@@ -337,6 +343,19 @@ function LPL.DB:GetAddonProfiles()
     return self.data.addonProfiles
 end
 
+function LPL.DB:GetHousing()
+    self:SyncFromGlobal()
+    if not self.data then
+        self:Initialize()
+    end
+    if type(self.data.housing) ~= "table" then
+        self.data.housing = DeepCopy(DEFAULTS.housing)
+    else
+        MergeDefaults(self.data.housing, DEFAULTS.housing)
+    end
+    return self.data.housing
+end
+
 function LPL.DB:GetTalentView()
     local talents = self:GetTalents()
     if type(talents.view) ~= "table" then
@@ -368,12 +387,17 @@ function LPL.DB:RestoreFrameState(frame)
     local frameState = self:GetUI().frame
     if type(frameState) ~= "table" then
         frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-        frame:SetSize(900, 600)
+        frame:SetSize(980, 860)
         return
     end
 
-    local width = tonumber(frameState.width) or 900
-    local height = tonumber(frameState.height) or 600
+    local minHeight = 860
+    if LPL.Sidebar and LPL.Sidebar.RequiredFrameHeight then
+        minHeight = LPL.Sidebar:RequiredFrameHeight()
+    end
+
+    local width = tonumber(frameState.width) or 980
+    local height = tonumber(frameState.height) or minHeight
     local x = tonumber(frameState.x) or 0
     local y = tonumber(frameState.y) or 0
     local point = frameState.point or "CENTER"
@@ -381,5 +405,5 @@ function LPL.DB:RestoreFrameState(frame)
 
     frame:ClearAllPoints()
     frame:SetPoint(point, UIParent, relativePoint, x, y)
-    frame:SetSize(math.max(720, width), math.max(480, height))
+    frame:SetSize(math.max(720, width), math.max(minHeight, height))
 end

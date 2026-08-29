@@ -70,6 +70,6 @@ do
     elseif GetBuildInfo then
         iface = tostring(select(4, GetBuildInfo()) or "?")
     end
-    print("|cff00ff00[Accessibility Helper]|r v3.6.2 loaded. TTS: " .. tostring(mode) .. " · Interface: " .. iface)
+    print("|cff00ff00[Accessibility Helper]|r v3.6.3 loaded. TTS: " .. tostring(mode) .. " · Interface: " .. iface)
     print("|cff00ff00[Accessibility Helper]|r |cff00ff00/ah|r settings · |cff00ff00/ahcmds|r · |cff00ff00/ahclear|r · |cff00ff00/ahstop|r · |cff00ff00/ahs|r")
 end

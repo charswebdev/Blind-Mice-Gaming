@@ -101,10 +101,10 @@ function LPL.TalentActionBar:Create(parent, handlers, options)
         options.editTooltip or "Edit the selected build in the talent tree"
     )
     local activateButton = CreateActionButton(
-        "Activate",
+        options.activateButtonLabel or "Activate",
         options.activateButtonWidth or 88,
         "onActivate",
-        options.activateTooltipTitle or "Activate",
+        options.activateTooltipTitle or options.activateButtonLabel or "Activate",
         options.activateTooltipBody or "Apply this build to your character"
     )
     if showActivate then

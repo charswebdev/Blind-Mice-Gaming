@@ -86,6 +86,45 @@ local function CanUseNumber(v)
     return type(v) == "number"
 end
 
+--- Plain true/false from a unit API. Never `and` a secret result.
+local function SafeBool(fn, ...)
+    if AH.Compat and AH.Compat.SafeBool then
+        return AH.Compat.SafeBool(fn, ...)
+    end
+    if type(fn) ~= "function" then
+        return false
+    end
+    local ok, v = pcall(fn, ...)
+    if ok ~= true then
+        return false
+    end
+    if AH.Compat and AH.Compat.IsSecretValue and AH.Compat.IsSecretValue(v) then
+        return false
+    end
+    return v == true
+end
+
+local function SameUnit(a, b)
+    if AH.Compat and AH.Compat.SameUnit then
+        return AH.Compat.SameUnit(a, b)
+    end
+    return false
+end
+
+local function UnitSeen(unit)
+    if AH.Compat and AH.Compat.UnitSeen then
+        return AH.Compat.UnitSeen(unit)
+    end
+    return UsableString(SafeCall(UnitName, unit)) ~= nil
+end
+
+local function UsableUnitToken(unit)
+    if type(unit) ~= "string" or not CanUseValue(unit) then
+        return nil
+    end
+    return unit
+end
+
 --- Nil if v is not a usable (non-secret) non-empty string.
 local function UsableString(v)
     if type(v) ~= "string" or not CanUseValue(v) then
@@ -1158,27 +1197,30 @@ local function UnitLabel(unit)
 end
 
 local function HostileTarget()
-    if not UnitExists or not UnitExists("target") then
+    if not UnitSeen("target") then
         return false
     end
-    if UnitIsDead and SafeCall(UnitIsDead, "target") then
+    if SafeBool(UnitIsDead, "target") then
         return false
     end
+    -- Secret attackable is unknown: still allow ToT. Plain false skips friendlies.
     if UnitCanAttack then
         local ok, v = pcall(UnitCanAttack, "player", "target")
-        return ok and v and true or false
+        if ok == true and not (AH.Compat and AH.Compat.IsSecretValue and AH.Compat.IsSecretValue(v)) and v == false then
+            return false
+        end
     end
-    return false
+    return true
 end
 
 local function TotKind()
-    if not UnitExists or not UnitExists("targettarget") then
+    if not UnitSeen("targettarget") then
         return "none", nil
     end
-    if UnitIsUnit and UnitIsUnit("targettarget", "player") then
+    if SameUnit("targettarget", "player") then
         return "you", nil
     end
-    if UnitIsUnit and UnitExists("pet") and UnitIsUnit("targettarget", "pet") then
+    if UnitSeen("pet") and SameUnit("targettarget", "pet") then
         return "pet", nil
     end
     return "other", UnitLabel("targettarget")
@@ -1225,7 +1267,7 @@ local function CheckTargetOfTarget()
 end
 
 local function OnTarget()
-    if UnitExists("target") then
+    if UnitSeen("target") then
         local name = UnitLabel("target")
         if name then
             Announce("stateTarget", "Target acquired: " .. name .. ".")
@@ -1425,15 +1467,16 @@ frame:SetScript("OnEvent", function(self, event, ...)
         return
     end
     if event == "UNIT_TARGET" then
-        local unit = ...
-        if unit == "target" or (UnitIsUnit and unit and UnitIsUnit(unit, "target")) then
+        local unit = UsableUnitToken(...)
+        if not unit or unit == "target" or unit == "player" then
             CheckTargetOfTarget()
         end
         return
     end
     if event == "UNIT_THREAT_SITUATION_UPDATE" then
-        local unit = ...
-        if unit == nil or unit == "player" or unit == "target" or (UnitIsUnit and unit and UnitIsUnit(unit, "target")) then
+        -- Token compare only. UnitIsUnit on targettarget is a secret boolean on Midnight.
+        local unit = UsableUnitToken(...)
+        if not unit or unit == "player" or unit == "target" or unit == "targettarget" then
             CheckTargetOfTarget()
         end
         return
