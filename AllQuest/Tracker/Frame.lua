@@ -266,7 +266,7 @@ local function HoverSpeechText(data)
         return title
     end
     if data.kind == "progress" then
-        return data.speech or "Progress"
+        return data.speech or data.title or "Progress"
     end
     return StripHeaderPrefix(data.title or data.speech or "")
 end
@@ -449,6 +449,15 @@ local function ApplyIconTex(tex, icon, atlas)
     return false
 end
 
+-- WoW tracker fonts have no ✓ / ✕ glyphs (they render as empty boxes).
+local function InlineTex(file, size)
+    size = size or 12
+    return "|T" .. file .. ":" .. size .. ":" .. size .. ":0:0|t "
+end
+
+local MARK_CHECK = "Interface\\RaidFrame\\ReadyCheck-Ready"
+local MARK_FAIL = "Interface\\RaidFrame\\ReadyCheck-NotReady"
+
 local function ClockText(sec)
     sec = math.floor(tonumber(sec) or 0)
     if sec < 0 then
@@ -504,6 +513,9 @@ local function HideInstanceChrome(row)
     if row.SegBar then
         row.SegBar:Hide()
     end
+    if row.ProgressBar then
+        row.ProgressBar:Hide()
+    end
     if row.IconGlow then
         row.IconGlow:Hide()
     end
@@ -552,98 +564,58 @@ local function EnsureBadge(row)
     return badge
 end
 
+local HEART_SIZE = 22
+
 local function EnsureLives(row)
     if not row.Heart then
         local heart = row:CreateTexture(nil, "ARTWORK")
-        heart:SetSize(12, 12)
-        local used
-        if heart.SetAtlas then
-            used = pcall(heart.SetAtlas, heart, "auctionhouse-icon-favorite", true)
-            if not used then
-                used = pcall(heart.SetAtlas, heart, "UI-HUD-Heart", true)
-            end
-        end
-        if not used then
-            heart:SetColorTexture(0.85, 0.12, 0.16, 1)
-        end
-        heart:SetVertexColor(1, 0.15, 0.18, 1)
         row.Heart = heart
     end
+    row.Heart:SetSize(HEART_SIZE, HEART_SIZE)
     if not row.Lives then
-        row.Lives = AQ.Widgets.TrackerFontString(row, 11, 1, 0.85, 0.2)
+        row.Lives = AQ.Widgets.TrackerFontString(row, 14, 1, 0.85, 0.2)
         row.Lives:SetJustifyH("LEFT")
+    else
+        AQ.Widgets.SetTrackerFont(row.Lives, 14)
     end
     return row.Heart, row.Lives
 end
 
-local function EnsureSegBar(row)
-    if row.SegBar then
-        return row.SegBar
+local function ApplyHeartTex(tex, icon)
+    tex:SetVertexColor(1, 1, 1, 1)
+    tex:SetTexCoord(0, 1, 0, 1)
+    -- Delve widget file IDs are the real heart. Never use AH favorite (a star).
+    if type(icon) == "number" then
+        tex:SetTexture(icon)
+        return
     end
-    local bar = CreateFrame("Frame", nil, row)
+    tex:SetTexture("Interface\\PetBattles\\PetBattle-StatIcons")
+    tex:SetTexCoord(0, 0.5, 0, 0.5)
+end
+
+local function EnsureProgressBar(row)
+    if row.ProgressBar then
+        return row.ProgressBar
+    end
+    local bar = CreateFrame("StatusBar", nil, row)
     bar:SetHeight(16)
+    bar:SetStatusBarTexture("Interface\\Buttons\\WHITE8x8")
+    bar:SetMinMaxValues(0, 1)
     local border = bar:CreateTexture(nil, "BACKGROUND")
-    border:SetAllPoints()
+    border:SetPoint("TOPLEFT", -1, 1)
+    border:SetPoint("BOTTOMRIGHT", 1, -1)
     border:SetColorTexture(0.72, 0.55, 0.18, 1)
-    local inner = bar:CreateTexture(nil, "BORDER")
-    inner:SetPoint("TOPLEFT", 1, -1)
-    inner:SetPoint("BOTTOMRIGHT", -1, 1)
-    inner:SetColorTexture(0.08, 0.08, 0.08, 1)
-    bar.Segs = {}
-    bar.Gaps = {}
-    for i = 1, 4 do
-        local seg = bar:CreateTexture(nil, "ARTWORK")
-        seg:SetColorTexture(0.82, 0.62, 0.18, 0.95)
-        bar.Segs[i] = seg
-    end
-    local label = AQ.Widgets.TrackerFontString(bar, 11, 1, 0.92, 0.7)
+    bar.AQBorder = border
+    local bg = bar:CreateTexture(nil, "BORDER")
+    bg:SetAllPoints()
+    bg:SetColorTexture(0.12, 0.10, 0.06, 1)
+    bar.AQBg = bg
+    local label = AQ.Widgets.TrackerFontString(bar, 11, 1, 0.95, 0.85)
     label:SetPoint("CENTER", 0, 0)
     label:SetJustifyH("CENTER")
     bar.Label = label
-    row.SegBar = bar
+    row.ProgressBar = bar
     return bar
-end
-
-local function LayoutSegBar(bar, pct)
-    pct = tonumber(pct) or 0
-    if pct < 0 then
-        pct = 0
-    elseif pct > 1 then
-        pct = 1
-    end
-    local w = bar:GetWidth()
-    if type(w) ~= "number" or w < 20 then
-        w = 180
-    end
-    local innerW = w - 4
-    local innerH = 12
-    local gap = 2
-    local segW = (innerW - gap * 3) / 4
-    local filled = pct * 4
-    for i = 1, 4 do
-        local seg = bar.Segs[i]
-        local x = 2 + (i - 1) * (segW + gap)
-        seg:ClearAllPoints()
-        seg:SetPoint("LEFT", bar, "LEFT", x, 0)
-        seg:SetSize(math.max(segW, 2), innerH)
-        local part = filled - (i - 1)
-        if part >= 1 then
-            seg:SetColorTexture(0.82, 0.62, 0.18, 0.95)
-            seg:SetWidth(segW)
-            seg:Show()
-        elseif part > 0 then
-            seg:SetColorTexture(0.82, 0.62, 0.18, 0.95)
-            seg:SetWidth(math.max(segW * part, 1))
-            seg:Show()
-        else
-            seg:SetColorTexture(0.16, 0.14, 0.08, 0.9)
-            seg:SetWidth(segW)
-            seg:Show()
-        end
-    end
-    bar.Label:SetText(string.format("%d%%", math.floor(pct * 100 + 0.5)))
-    bar.Label:Show()
-    bar:Show()
 end
 
 local function SetTomTomArrow(data)
@@ -734,6 +706,9 @@ local function CollectRows()
                     -- skipped
                 else
                 local ok, list = pcall(spec.GetRows)
+                if not ok and AQ.Print then
+                    AQ:Print("Tracker section failed: " .. tostring(spec.id) .. " — " .. tostring(list))
+                end
                 if ok and type(list) == "table" and #list > 0 then
                     local sectionId = spec.id
                     local collapsed = HeaderCollapsed("section:" .. sectionId)
@@ -816,16 +791,16 @@ local function Layout()
         elseif data.kind == "objective" or isProgress then
             indent = 28
         end
-        local wrap = data.kind == "header" or data.kind == "quest" or data.kind == "objective" or isInstance
+        local wrap = data.kind == "header" or data.kind == "quest" or data.kind == "objective" or isInstance or isProgress
         local isPercent = (data.kind == "objective" or isProgress) and AQ.Theme.IsPercentObjective and AQ.Theme.IsPercentObjective(data)
         local tracked = IsSuperTrackedQuest(data) or (data.kind == "quest" and i == focused)
         local h = 18
         if isProgress then
-            h = 22
+            h = (data.title and data.title ~= "") and 36 or 22
         elseif data.kind == "objective" then
             h = 18
         elseif isInstance then
-            h = data.lives and 36 or 28
+            h = data.lives and 50 or 28
         elseif isSectionHeader then
             h = 22
         elseif data.kind == "header" then
@@ -939,23 +914,24 @@ local function Layout()
         local title = data.title or ""
         if data.pet then
             if st == "DONE" then
-                title = "✓  " .. title
+                title = InlineTex(MARK_CHECK) .. title
             else
-                title = "✕  " .. title
+                title = InlineTex(MARK_FAIL) .. title
             end
         end
         if data.kind == "objective" then
             title = title:gsub("^%s+", ""):gsub(" %(complete%)$", "")
+            if AQ.Theme.EnsureObjectiveCounts then
+                title = AQ.Theme.EnsureObjectiveCounts(title, data)
+            end
+            if not (data.finished or data.clickComplete) and AQ.Theme.HighlightSlashCounts then
+                title = AQ.Theme.HighlightSlashCounts(title)
+            end
             if data.finished or data.clickComplete then
-                title = "✓  " .. title
-            elseif data.goldBullet then
-                title = "•  " .. title
+                title = InlineTex(MARK_CHECK) .. title
             else
                 title = "-  " .. title
             end
-        end
-        if isProgress then
-            title = ""
         end
         row.Text:SetText(title)
         local fs = data.fontSize or (data.kind == "objective" and 11 or 12)
@@ -965,7 +941,7 @@ local function Layout()
         AQ.Widgets.SetTrackerFont(row.Text, fs)
         row.Text:SetWordWrap(wrap)
         if row.Text.SetMaxLines then
-            row.Text:SetMaxLines(wrap and 2 or 1)
+            row.Text:SetMaxLines((wrap and not isProgress) and 2 or 1)
         end
         row.Text:SetJustifyV(wrap and "TOP" or "MIDDLE")
 
@@ -1070,6 +1046,9 @@ local function Layout()
                 a = AQ.Theme.ObjectiveProgressColor(data)
             end
             row.Text:SetTextColor(a[1], a[2], a[3], a[4] or 1)
+        elseif isProgress then
+            local a = th.objective
+            row.Text:SetTextColor(a[1], a[2], a[3], a[4] or 1)
         else
             local a = th.title
             row.Text:SetTextColor(a[1], a[2], a[3], 1)
@@ -1172,15 +1151,22 @@ local function Layout()
             end
             if type(data.lives) == "number" then
                 local heart, lives = EnsureLives(row)
+                ApplyHeartTex(heart, data.livesIcon)
                 heart:ClearAllPoints()
                 lives:ClearAllPoints()
                 lives:SetText(tostring(data.lives))
-                if rightW > 0 and row.Badge then
-                    heart:SetPoint("TOPRIGHT", row.Badge, "BOTTOMRIGHT", -14, -2)
-                else
-                    heart:SetPoint("TOPRIGHT", -20, -18)
+                lives:SetTextColor(1, 0.85, 0.22, 1)
+                lives:SetJustifyH("LEFT")
+                if lives.SetJustifyV then
+                    lives:SetJustifyV("MIDDLE")
                 end
-                lives:SetPoint("LEFT", heart, "RIGHT", 2, 0)
+                -- Number first on the right edge so it stays on-screen; heart sits to its left.
+                if rightW > 0 and row.Badge then
+                    lives:SetPoint("TOPRIGHT", row.Badge, "BOTTOMRIGHT", 0, -8)
+                else
+                    lives:SetPoint("TOPRIGHT", -6, -26)
+                end
+                heart:SetPoint("RIGHT", lives, "LEFT", -3, 0)
                 heart:Show()
                 lives:Show()
             end
@@ -1189,7 +1175,7 @@ local function Layout()
             row.Text:SetPoint("TOPRIGHT", -(10 + rightW), -4)
             row.Status:Hide()
             AQ.Widgets.SetTrackerFont(row.Text, data.fontSize or 14)
-            h = data.lives and 36 or 26
+            h = data.lives and 50 or 26
             row:SetHeight(h)
         end
         if isProgress then
@@ -1197,16 +1183,40 @@ local function Layout()
             if AQ.Theme.ObjectivePercent then
                 pct = AQ.Theme.ObjectivePercent(data)
             end
+            local label = "0%"
+            if AQ.Theme.ProgressBarLabel then
+                label = AQ.Theme.ProgressBarLabel(data)
+            end
             row.Status:Hide()
-            row.Text:SetText("")
-            local bar = EnsureSegBar(row)
+            local barCol = th.header
+            if AQ.Theme.ObjectiveProgressColor then
+                barCol = AQ.Theme.ObjectiveProgressColor(data)
+            end
+            local bar = EnsureProgressBar(row)
             bar:ClearAllPoints()
-            bar:SetPoint("LEFT", 4 + indent, 0)
-            bar:SetPoint("RIGHT", -8, 0)
             bar:SetHeight(16)
-            h = 22
+            local hasTitle = type(data.title) == "string" and data.title ~= ""
+            if hasTitle then
+                local textH = row.Text.GetStringHeight and row.Text:GetStringHeight() or 14
+                if type(textH) ~= "number" or textH < 12 then
+                    textH = 14
+                end
+                bar:SetPoint("BOTTOMLEFT", 4 + indent, 3)
+                bar:SetPoint("BOTTOMRIGHT", -8, 3)
+                h = math.floor(textH + 26)
+            else
+                bar:SetPoint("LEFT", 4 + indent, 0)
+                bar:SetPoint("RIGHT", -8, 0)
+                h = 24
+            end
             row:SetHeight(h)
-            LayoutSegBar(bar, pct)
+            bar:SetMinMaxValues(0, 1)
+            bar:SetValue(pct)
+            bar:SetStatusBarColor(barCol[1], barCol[2], barCol[3], 0.95)
+            bar.Label:SetText(label)
+            bar.Label:SetTextColor(1, 0.92, 0.7, 1)
+            bar.Label:Show()
+            bar:Show()
         end
         if data.kind == "objective" and data.goldBullet and not (data.finished or data.clickComplete) then
             row.Text:SetTextColor(0.85, 0.7, 0.28, 1)
@@ -1229,6 +1239,9 @@ local function Layout()
         HideInstanceChrome(rows[i])
         if rows[i].Bar then
             rows[i].Bar:Hide()
+        end
+        if rows[i].ProgressBar then
+            rows[i].ProgressBar:Hide()
         end
         if rows[i].ItemTag then
             rows[i].ItemTag:Hide()
