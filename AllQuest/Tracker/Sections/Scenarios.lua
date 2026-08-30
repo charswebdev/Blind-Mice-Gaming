@@ -226,6 +226,11 @@ local BANNER_BUFF_SPELLS = {
     [1273058] = true,
     [1273066] = true,
 }
+-- Aura sweep only (Everything Delves). Combat log is forbidden on Midnight.
+local RAGER_AURA_SPELLS = {
+    [1271184] = true, -- Voidfused Rager Spawn
+    [1271189] = true, -- Voidfused Rager
+}
 local EXTRA_CRITERIA_WORDS = {
     "nemesis pack",
     "nemesis packs",
@@ -234,6 +239,8 @@ local EXTRA_CRITERIA_WORDS = {
     "bonus loot",
     "sanctified banner",
     "abundant spoils",
+    "shrine of abundance",
+    "dundun",
 }
 
 local nemesisRun = {
@@ -244,7 +251,14 @@ local nemesisRun = {
     killedBase = 0,
     killedFromDespawn = 0,
     haveSeenPack = false,
+    packNeed = 0,
     bannerState = nil,
+    bannerLeft = 0,
+    bannerNeed = 0,
+    sawBanner = false,
+    sawRager = false,
+    ragerUp = false,
+    bonusFlavor = "s2",
 }
 
 local function SafeText(value)
@@ -351,7 +365,14 @@ local function ResetNemesisRun(key)
     nemesisRun.haveSeenPack = false
     nemesisRun.boxSeen = false
     nemesisRun.boxEarned = false
+    nemesisRun.packNeed = 0
     nemesisRun.bannerState = nil
+    nemesisRun.bannerLeft = 0
+    nemesisRun.bannerNeed = 0
+    nemesisRun.sawBanner = false
+    nemesisRun.sawRager = false
+    nemesisRun.ragerUp = false
+    nemesisRun.bonusFlavor = "s2"
 end
 
 local function EnsureNemesisRun()
@@ -408,17 +429,26 @@ local function InfoLooksLikePack(info)
     return BlobHas(blob, PACK_NAME_WORDS)
 end
 
+local function NoteBonusFlavor(ln)
+    if ln:find("sanctified banner", 1, true) or ln:find("sanctified spoils", 1, true) or ln:find("grand sanctified", 1, true) then
+        nemesisRun.bonusFlavor = "s1"
+    elseif ln:find("shrine of abundance", 1, true) or ln:find("abundant spoils", 1, true) or ln:find("dundun", 1, true) or ln:find("abundantly bountiful", 1, true) then
+        nemesisRun.bonusFlavor = "s2"
+    end
+end
+
 local function NoteBannerName(ln)
     if ln == "" then
         return
     end
+    NoteBonusFlavor(ln)
     if ln:find("grand sanctified", 1, true) then
         nemesisRun.bannerState = "grand"
-    elseif ln:find("sanctified spoils", 1, true) then
+    elseif ln:find("sanctified spoils", 1, true) or ln:find("abundant spoils", 1, true) or ln:find("abundantly bountiful", 1, true) then
         if nemesisRun.bannerState ~= "grand" then
             nemesisRun.bannerState = "clicked"
         end
-    elseif ln:find("sanctified banner", 1, true) then
+    elseif ln:find("sanctified banner", 1, true) or ln:find("shrine of abundance", 1, true) or ln:find("dundun", 1, true) then
         if not nemesisRun.bannerState then
             nemesisRun.bannerState = "announced"
         end
@@ -468,6 +498,8 @@ local function ScanDelveVignettes()
     local vigs = CollectVignetteGuids()
     local packCount = 0
     local boxSeen = false
+    local ragerUp = false
+    local bannerLeft = 0
     for i = 1, #vigs do
         local vigGuid = vigs[i]
         pcall(function()
@@ -485,6 +517,12 @@ local function ScanDelveVignettes()
                     end
                 end
                 NoteBannerName(VignetteNameLower(info.name))
+                if ln:find("voidfused", 1, true) then
+                    ragerUp = true
+                end
+                if ln:find("sanctified banner", 1, true) or ln:find("shrine of abundance", 1, true) or ln:find("dundun", 1, true) then
+                    bannerLeft = bannerLeft + 1
+                end
             end
         end)
     end
@@ -501,9 +539,45 @@ local function ScanDelveVignettes()
         nemesisRun.boxEarned = true
     end
     nemesisRun.remaining = packCount
+    if ragerUp then
+        nemesisRun.sawRager = true
+        nemesisRun.ragerUp = true
+        if nemesisRun.bannerState ~= "grand" and nemesisRun.bannerState ~= "clicked" and nemesisRun.bannerState ~= "buffed" then
+            nemesisRun.bannerState = "eliteUp"
+        end
+    else
+        nemesisRun.ragerUp = false
+        if nemesisRun.sawRager and nemesisRun.bannerState == "eliteUp" then
+            nemesisRun.bannerState = "grand"
+        end
+    end
+    if bannerLeft > 0 then
+        nemesisRun.sawBanner = true
+        if (nemesisRun.bannerNeed or 0) < bannerLeft then
+            nemesisRun.bannerNeed = bannerLeft
+        end
+    elseif nemesisRun.sawBanner and nemesisRun.bannerState == "announced" then
+        nemesisRun.bannerState = "clicked"
+    end
+    nemesisRun.bannerLeft = bannerLeft
 end
 
 -- Tooltip/stackDisplay is remaining/total (forum: 2/3 after one of three packs).
+-- "Enemy groups affected: 7" is the Strong Box requirement (total), not remaining.
+local function ParseAffectedTotal(text)
+    if type(text) ~= "string" or text == "" or IsSecret(text) then
+        return nil
+    end
+    local ok, blob = pcall(string.lower, text)
+    if not ok or type(blob) ~= "string" then
+        return nil
+    end
+    local n = string.match(blob, "groups affected:%s*(%d+)")
+        or string.match(blob, "affected:%s*(%d+)")
+        or string.match(blob, "(%d+)%s+enemy groups")
+    return tonumber(n)
+end
+
 local function ParseRemainingSlash(text)
     if type(text) ~= "string" or text == "" or IsSecret(text) then
         return nil
@@ -517,8 +591,11 @@ local function ParseRemainingSlash(text)
     if a and b and b > 0 and a <= b then
         return a, b
     end
+    if blob:find("affected", 1, true) and not blob:find("remaining", 1, true) then
+        return nil
+    end
     local n = tonumber(string.match(text, "(%d+)"))
-    if n and (blob:find("remaining", 1, true) or blob:find("affected", 1, true) or blob:find("left", 1, true)) then
+    if n and (blob:find("remaining", 1, true) or blob:find("left", 1, true) or blob:find("alive", 1, true)) then
         return n, nil
     end
     return nil
@@ -647,13 +724,15 @@ local function NoteBonusMessage(msg)
     if blob == "" then
         return
     end
-    if blob:find("sanctified banner", 1, true) then
+    if blob:find("sanctified banner", 1, true) or blob:find("shrine of abundance", 1, true) or blob:find("dundun", 1, true) then
         EnsureNemesisRun()
+        NoteBonusFlavor(blob)
         if not nemesisRun.bannerState then
             nemesisRun.bannerState = "announced"
         end
-    elseif blob:find("sanctified spoils", 1, true) or blob:find("grand sanctified", 1, true) then
+    elseif blob:find("sanctified spoils", 1, true) or blob:find("grand sanctified", 1, true) or blob:find("abundant spoils", 1, true) or blob:find("abundantly bountiful", 1, true) then
         EnsureNemesisRun()
+        NoteBonusFlavor(blob)
         nemesisRun.bannerState = blob:find("grand", 1, true) and "grand" or "clicked"
     elseif blob:find("strongbox", 1, true) or blob:find("nemesis", 1, true) then
         if blob:find("upgrad", 1, true) or blob:find("improv", 1, true) then
@@ -664,10 +743,10 @@ local function NoteBonusMessage(msg)
     end
 end
 
-local function AddDelveExtraRow(rows, title, have, need, finished, speech)
+local function AddDelveExtraRow(rows, title, have, need, finished, speech, unit)
     local text = title
-    if not finished and have and need then
-        text = string.format("%d/%d %s", have, need, title == "Nemesis Strong Box" and "Nemesis Packs defeated" or title)
+    if have and need then
+        text = string.format("%d/%d %s", have, need, unit or title)
     end
     AddRow(rows, {
         kind = "objective",
@@ -676,8 +755,115 @@ local function AddDelveExtraRow(rows, title, have, need, finished, speech)
         numFulfilled = have,
         numNeeded = need,
         goldBullet = not finished,
-        speech = (speech or title) .. (finished and " complete" or ""),
+        speech = speech or text,
     })
+end
+
+local function LooksLikeBonusText(text)
+    local blob = SafeLower(text)
+    if blob == "" then
+        return false
+    end
+    if blob:find("nemesis", 1, true) or blob:find("groups affected", 1, true) or blob:find("enemy groups", 1, true) then
+        return false
+    end
+    return blob:find("banner", 1, true)
+        or blob:find("sanctified", 1, true)
+        or blob:find("spoils", 1, true)
+        or blob:find("voidfused", 1, true)
+        or blob:find("rager", 1, true)
+        or blob:find("bountiful", 1, true)
+        or blob:find("coffer", 1, true)
+        or blob:find("shrine of abundance", 1, true)
+        or blob:find("dundun", 1, true)
+        or blob:find("abundant", 1, true)
+end
+
+local function CollectBonusTexts(delve)
+    local texts = {}
+    local function add(text)
+        if LooksLikeBonusText(text) then
+            texts[#texts + 1] = text
+        end
+    end
+    if type(delve) == "table" then
+        add(delve.tooltip)
+        if type(delve.rewardInfo) == "table" then
+            add(delve.rewardInfo.earnedTooltip)
+            add(delve.rewardInfo.unearnedTooltip)
+        end
+        if type(delve.spells) == "table" then
+            for i = 1, #delve.spells do
+                local extra = delve.spells[i]
+                if type(extra) == "table" then
+                    add(extra.tooltip)
+                    add(extra.text)
+                    add(SpellDesc(tonumber(extra.spellID)))
+                end
+            end
+        end
+    end
+    for sid in pairs(BANNER_INTERACT_SPELLS) do
+        add(SpellDesc(sid))
+    end
+    return texts
+end
+
+local function ReadBannerSlash(delve)
+    local have, need
+    local texts = CollectBonusTexts(delve)
+    for i = 1, #texts do
+        local rem, tot = ParseRemainingSlash(texts[i])
+        if tot and tot > 0 then
+            local got = tot - (rem or 0)
+            if got < 0 then
+                got = 0
+            end
+            if not need or tot > need then
+                need = tot
+                have = got
+            end
+        end
+        local blob = SafeLower(texts[i])
+        if blob:find("voidfused", 1, true) or blob:find("rager", 1, true) then
+            nemesisRun.sawRager = true
+        end
+    end
+    return have, need
+end
+
+local function AddBonusLootRow(rows, delve)
+    if PlayerHasSpellAura(RAGER_AURA_SPELLS) then
+        nemesisRun.sawRager = true
+        nemesisRun.ragerUp = true
+        if nemesisRun.bannerState ~= "grand" and nemesisRun.bannerState ~= "clicked" and nemesisRun.bannerState ~= "buffed" then
+            nemesisRun.bannerState = "eliteUp"
+        end
+    end
+    local title
+    local finished = false
+    local have, need
+    local unit
+    local s1 = nemesisRun.bonusFlavor == "s1"
+    local findName = s1 and "Sanctified Banner" or "Shrine of Abundance"
+    if nemesisRun.bannerState == "grand" then
+        title = s1 and "Sanctified Banner — Grand Spoils earned" or "Shrine of Abundance — Grand Spoils earned"
+        finished = true
+    elseif BannerIsDone() then
+        title = s1 and "Sanctified Banner found — bonus Spoils secured" or "Shrine of Abundance found — Abundant Spoils secured"
+        finished = true
+    elseif nemesisRun.ragerUp or nemesisRun.bannerState == "eliteUp" then
+        title = "Kill the Voidfused Rager"
+    else
+        have, need = ReadBannerSlash(delve)
+        if need and need > 0 then
+            title = findName
+            unit = findName
+        else
+            title = "Find " .. findName
+        end
+    end
+    AddDelveExtraRow(rows, title, have, need, finished, title, unit)
 end
 
 local function AddNemesisExtras(rows, delve, sp, tip, tier)
@@ -688,29 +874,48 @@ local function AddNemesisExtras(rows, delve, sp, tip, tier)
         expect = 4
     end
     local widgetRemaining, total, boxEarned
-    total = expect
+    total = tonumber(nemesisRun.packNeed) or 0
+    if total < 1 then
+        total = expect
+    end
+    local function NoteNeed(n)
+        n = tonumber(n)
+        if n and n > total then
+            total = n
+        end
+    end
+    local function NoteText(text)
+        NoteNeed(ParseAffectedTotal(text))
+        local rem, tot = ParseRemainingSlash(text)
+        if tot then
+            NoteNeed(tot)
+        end
+        return rem, tot
+    end
+    NoteText(tip)
+    NoteText(type(delve) == "table" and delve.tooltip or nil)
+    for sid in pairs(NEMESIS_SPELL) do
+        NoteText(SpellDesc(sid))
+    end
     local spells = CollectNemesisSpells(delve, sp)
     for i = 1, #spells do
         local rem, tot, earned = ReadSpellProgress(spells[i])
         if earned then
             boxEarned = true
         end
+        NoteNeed(tot)
+        NoteText(type(spells[i]) == "table" and spells[i].tooltip or nil)
         if rem and (tot or rem > 0 or earned) then
             widgetRemaining = rem
-            if tot and tot > 0 then
-                total = tot
-            end
         end
     end
     if type(tip) == "string" and widgetRemaining == nil then
-        local rem, tot = ParseRemainingSlash(tip)
+        local rem = ParseRemainingSlash(tip)
         if rem then
             widgetRemaining = rem
-            if tot and tot > 0 then
-                total = tot
-            end
         end
     end
+    nemesisRun.packNeed = total
     local auraStacks = ReadStrongboxAuras()
     local remaining = widgetRemaining
     if remaining == nil then
@@ -747,9 +952,8 @@ local function AddNemesisExtras(rows, delve, sp, tip, tier)
         killed = total
     end
     local packDone = (boxEarned or nemesisRun.boxEarned or (killed >= total and (nemesisRun.haveSeenPack or widgetRemaining ~= nil or killed > 0))) and true or false
-    AddDelveExtraRow(rows, "Nemesis Strong Box", killed, total, packDone, "Nemesis Strong Box")
-    local bonusDone = BannerIsDone()
-    AddDelveExtraRow(rows, "Bonus loot", bonusDone and 1 or 0, 1, bonusDone, "Bonus loot")
+    AddDelveExtraRow(rows, "Nemesis Strong Box", killed, total, packDone, "Nemesis Strong Box", "packs")
+    AddBonusLootRow(rows, delve)
 end
 
 local function InsertRowsAfter(rows, afterIndex, extras)
@@ -774,8 +978,8 @@ local function AttachNemesisExtras(rows, delve, sp, tip, tier, afterIndex)
         if need <= 0 then
             need = 4
         end
-        AddDelveExtraRow(extras, "Nemesis Strong Box", 0, need, false, "Nemesis Strong Box")
-        AddDelveExtraRow(extras, "Bonus loot", 0, 1, false, "Bonus loot")
+        AddDelveExtraRow(extras, "Nemesis Strong Box", 0, need, false, "Nemesis Strong Box", "packs")
+        AddBonusLootRow(extras, delve)
     end
     InsertRowsAfter(rows, afterIndex, extras)
 end

@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** (journal data plan phases 0–5 complete) |
-| Version | **1.0.10** (addon toc + updater catalog; data packs are `1.0.0` with `X-AllQuest-AutoLoad`) |
+| Version | **1.0.11** (addon toc + updater catalog; data packs are `1.0.0` with `X-AllQuest-AutoLoad`) |
 | Type | In-game quest tracker + questline journal + expansion data plugins |
 | Folders | `AllQuest/` (runtime) · `AllQuest_Data_*` (one pack per expansion) |
 | Author tools | `Tools/AllQuest/` — extractors, wago DB2 cache, ID census (gitignored) |
@@ -25,7 +25,7 @@ World-quest / repeatable journal buckets stay **visible** by default (setting ca
 
 - Custom tracker (can hide Blizzard’s).
 - Sections: popups, quests, world quests, scenarios, campaigns, achievements, recipes, activities, events, collectibles, pets, rares.
-- Delve instance block: under Nemesis Influence, **Nemesis Strong Box** and **Bonus loot**. Strong Box fill is remaining/total from the Influence widget tooltip/`stackDisplay` (2/3 means 1 pack down), plus Strongbox auras 472952/1239535, then vignettes. Bonus loot: Sanctified Banner spell IDs.
+- Delve instance block: under Nemesis Influence, **Nemesis Strong Box** shows the requirement as `0/7 packs` (live “Enemy groups affected” / tooltip total, not a hardcoded 4). At `7/7` the line keeps the count and gets a green check. **Bonus loot** names the live Season 2 requirement — **Find Shrine of Abundance** (Dundun / Abundant Spoils), Kill the Voidfused Rager, or spoils secured — not Season 1’s Sanctified Banner and not a hardcoded `0/1 Bonus loot`.
 - Auto-accept / auto-turn-in (Shift at NPC skips).
 - Super-track, items, sounds, colors, filters, profiles.
 - Speech of focused rows (AH queue if loaded).
@@ -101,11 +101,13 @@ Classic after phase 5: **822** chains, **5,519** unique IDs, Era QuestV2 **4,807
 - Guessing Strongbox progress from in-delve spell widgets or vignette *names*. Everything Delves: those widgets exist only on the entrance picker; pack names can be Midnight secret strings. Live source is vignette **IDs**.
 - Indexing `nemesisRun.seen[objectGUID]` and `if guid` on Midnight secret GUIDs. The scan threw, extras fell back to a frozen `0/4`, so pack kills never registered. Safe keys + remaining-drop + pcall per vignette.
 - Editing `Documents\\…\\AllQuest` and `/reload` while `_retail_\\Interface\\AddOns\\AllQuest` is a separate Aug-27 copy — none of the extras code was loaded.
+- Hardcoding Bonus loot as `0/1`. The requirement is find/click the live bonus object, or kill the Voidfused Rager if it spawned; a fake 1 hid that.
+- Labeling Season 2 bonus loot as Sanctified Banner. Patch 12.1 replaced that with **Shrine of Abundance** (Dundun / Abundant Spoils).
 
 ## Open work
 
 - Delve Nemesis extras: live screenshot at Shadowguard Point showed Influence but no Strong Box / Bonus loot — extras only fired on a classified nemesis *spell*. Midnight can list Influence as a currency or a spell without a numeric id; attach now keys off any “nemesis” chrome row.
-- Confirm live tooltip/vignette names if a season renames Ula'tek packs or bonus spoils. Append new pack vignette IDs; do not replace 7531/7869.
+- Confirm live tooltip/vignette names if a season renames Ula'tek packs or bonus spoils. Append new pack vignette IDs; do not replace 7531/7869. Season 2 bonus object is **Shrine of Abundance** (not Sanctified Banner).
 - Hand starter overlays past Elwynn/Durotar (Westfall, Barrens, Loch Modan, …) — overlay work, not another extract phase.
 - Playtest on Era (`/reload`); Retail will not show the Classic pack.
 - TBC/Wrath/WoD remaining linear dumps.
