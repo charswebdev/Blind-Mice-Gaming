@@ -4,6 +4,8 @@ Living product files for agents and humans. Versions and catalog URLs change; re
 
 **Locked:** any change to a project must update that project’s file in this folder in the same session (Cursor rule `update-project-docs`).
 
+**Versions (all projects):** `major.minor.patch` with a **single-digit** patch (`1.0.2`, not `1.0.11`). After `.9`, bump the minor (`1.0.9` → `1.1.0`). Never append a digit to the patch. Applies to every addon, desktop app, updater, and catalog row.
+
 **Repo:** https://github.com/charswebdev/Blind-Mice-Gaming  
 **Owner:** Charlotte Bryant (`charswebdev`)  
 **Install path for players:** Blind Mice Gaming Updater (addons + first-run desktop apps). Desktop apps also self-update from their own `catalog.json`.  
@@ -22,7 +24,7 @@ Commit, push, and GitHub releases happen **only when asked**.
 | Document | Status | Version (catalog / toc) |
 |----------|--------|-------------------------|
 | [Accessibility Helper](Accessibility-Helper.md) | Shipped | 3.6.4 |
-| [AllQuest](AllQuest.md) | Shipped | 1.0.11 |
+| [AllQuest](AllQuest.md) | Shipped | 1.1.0 |
 | [Cooldown Assist](Cooldown-Assist.md) | Shipped | 1.1.0 |
 | [Exploration](Exploration.md) | Shipped | 2.0.2 |
 | [FPSDiag](FPSDiag.md) | Shipped | 0.3.0 |

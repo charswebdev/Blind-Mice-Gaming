@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** (journal data plan phases 0–5 complete) |
-| Version | **1.0.11** (addon toc + updater catalog; data packs are `1.0.0` with `X-AllQuest-AutoLoad`) |
+| Version | **1.1.0** (addon toc + updater catalog; data packs are `1.0.0` with `X-AllQuest-AutoLoad`) |
 | Type | In-game quest tracker + questline journal + expansion data plugins |
 | Folders | `AllQuest/` (runtime) · `AllQuest_Data_*` (one pack per expansion) |
 | Author tools | `Tools/AllQuest/` — extractors, wago DB2 cache, ID census (gitignored) |
@@ -103,6 +103,7 @@ Classic after phase 5: **822** chains, **5,519** unique IDs, Era QuestV2 **4,807
 - Editing `Documents\\…\\AllQuest` and `/reload` while `_retail_\\Interface\\AddOns\\AllQuest` is a separate Aug-27 copy — none of the extras code was loaded.
 - Hardcoding Bonus loot as `0/1`. The requirement is find/click the live bonus object, or kill the Voidfused Rager if it spawned; a fake 1 hid that.
 - Labeling Season 2 bonus loot as Sanctified Banner. Patch 12.1 replaced that with **Shrine of Abundance** (Dundun / Abundant Spoils).
+- Shipping `1.0.10` / `1.0.11`. Patch stays a single digit on every project; this build is **1.1.0**.
 
 ## Open work
 
