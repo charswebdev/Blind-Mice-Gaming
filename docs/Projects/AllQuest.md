@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** (journal data plan phases 0–5 complete) |
-| Version | **1.1.0** (addon toc + updater catalog; data packs are `1.0.0` with `X-AllQuest-AutoLoad`) |
+| Version | **1.1.1** (addon toc + updater catalog; data packs are `1.0.0` with `X-AllQuest-AutoLoad`) |
 | Type | In-game quest tracker + questline journal + expansion data plugins |
 | Folders | `AllQuest/` (runtime) · `AllQuest_Data_*` (one pack per expansion) |
 | Author tools | `Tools/AllQuest/` — extractors, wago DB2 cache, ID census (gitignored) |
@@ -25,7 +25,7 @@ World-quest / repeatable journal buckets stay **visible** by default (setting ca
 
 - Custom tracker (can hide Blizzard’s).
 - Sections: popups, quests, world quests, scenarios, campaigns, achievements, recipes, activities, events, collectibles, pets, rares.
-- Delve instance block: under Nemesis Influence, **Nemesis Strong Box** shows the requirement as `0/7 packs` (live “Enemy groups affected” / tooltip total, not a hardcoded 4). At `7/7` the line keeps the count and gets a green check. **Bonus loot** names the live Season 2 requirement — **Find Shrine of Abundance** (Dundun / Abundant Spoils), Kill the Voidfused Rager, or spoils secured — not Season 1’s Sanctified Banner and not a hardcoded `0/1 Bonus loot`.
+- Delve instance block: under Nemesis Influence, **Nemesis Strong Box** shows the requirement as `0/7 packs` (live “Enemy groups affected” / tooltip total, not a hardcoded 4). At `7/7` the line keeps the count and gets a green check. **Find Shrine of Abundance** only appears in a **Bountiful** delve (header `rewardInfo` / bountiful spell). After Dundun gossip / an Abundantly Bountiful widget or aura / a bonus-named cast, the line checks off as spoils secured.
 - Auto-accept / auto-turn-in (Shift at NPC skips).
 - Super-track, items, sounds, colors, filters, profiles.
 - Speech of focused rows (AH queue if loaded).
@@ -103,6 +103,8 @@ Classic after phase 5: **822** chains, **5,519** unique IDs, Era QuestV2 **4,807
 - Editing `Documents\\…\\AllQuest` and `/reload` while `_retail_\\Interface\\AddOns\\AllQuest` is a separate Aug-27 copy — none of the extras code was loaded.
 - Hardcoding Bonus loot as `0/1`. The requirement is find/click the live bonus object, or kill the Voidfused Rager if it spawned; a fake 1 hid that.
 - Labeling Season 2 bonus loot as Sanctified Banner. Patch 12.1 replaced that with **Shrine of Abundance** (Dundun / Abundant Spoils).
+- Marking S2 bonus complete only from Season 1 banner spell IDs / auras. Clicking Dundun never fired those, so the line stayed **Find Shrine of Abundance** after the bonus was already secured.
+- Showing the shrine line on every T4+ delve. The shrine only exists in **Bountiful** delves.
 - Shipping `1.0.10` / `1.0.11`. Patch stays a single digit on every project; this build is **1.1.0**.
 
 ## Open work

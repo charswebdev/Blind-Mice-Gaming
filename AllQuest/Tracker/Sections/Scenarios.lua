@@ -259,6 +259,9 @@ local nemesisRun = {
     sawRager = false,
     ragerUp = false,
     bonusFlavor = "s2",
+    sawDundun = false,
+    dundunGossip = false,
+    wasBountiful = false,
 }
 
 local function SafeText(value)
@@ -373,6 +376,9 @@ local function ResetNemesisRun(key)
     nemesisRun.sawRager = false
     nemesisRun.ragerUp = false
     nemesisRun.bonusFlavor = "s2"
+    nemesisRun.sawDundun = false
+    nemesisRun.dundunGossip = false
+    nemesisRun.wasBountiful = false
 end
 
 local function EnsureNemesisRun()
@@ -402,6 +408,144 @@ local function PlayerHasSpellAura(idSet)
         local ok, aura = pcall(byId, sid)
         if ok and aura then
             return true
+        end
+    end
+    return false
+end
+
+local function BlobLooksBonusSecured(blob)
+    blob = SafeLower(blob)
+    if blob == "" then
+        return false
+    end
+    return blob:find("abundant spoils", 1, true)
+        or blob:find("abundantly bountiful", 1, true)
+        or blob:find("grand sanctified", 1, true)
+        or blob:find("sanctified spoils", 1, true)
+        or blob:find("bonus spoils", 1, true)
+end
+
+local function BlobLooksBonusFind(blob)
+    blob = SafeLower(blob)
+    if blob == "" then
+        return false
+    end
+    return blob:find("shrine of abundance", 1, true)
+        or blob:find("sanctified banner", 1, true)
+        or blob:find("dundun", 1, true)
+end
+
+local function SpellLooksLikeBonus(id)
+    id = tonumber(id)
+    if not id then
+        return false
+    end
+    if BANNER_INTERACT_SPELLS[id] or BANNER_BUFF_SPELLS[id] then
+        return true
+    end
+    local blob = SafeLower(SpellName(id)) .. " " .. SafeLower(SpellDesc(id))
+    return BlobLooksBonusSecured(blob) or BlobLooksBonusFind(blob)
+end
+
+local function PlayerHasNamedBonusAura()
+    local get = C_UnitAuras and C_UnitAuras.GetAuraDataByIndex
+    if type(get) ~= "function" then
+        return false
+    end
+    for i = 1, 40 do
+        local ok, aura = pcall(get, "player", i, "HELPFUL")
+        if not ok or type(aura) ~= "table" then
+            break
+        end
+        local blob = SafeLower(aura.name)
+        if blob == "" and aura.spellId then
+            blob = SafeLower(SpellName(tonumber(aura.spellId)))
+        end
+        if BlobLooksBonusSecured(blob) or BlobLooksBonusFind(blob) then
+            return true
+        end
+    end
+    return false
+end
+
+local function UnitLooksLikeBonusNpc(unit)
+    if type(unit) ~= "string" or unit == "" then
+        return false
+    end
+    local ok, name = pcall(UnitName, unit)
+    if not ok then
+        return false
+    end
+    local ln = SafeLower(name)
+    return BlobLooksBonusFind(ln)
+end
+
+local function NoteBonusNpcUnits()
+    local units = { "npc", "target", "softinteract", "mouseover" }
+    for i = 1, #units do
+        if UnitLooksLikeBonusNpc(units[i]) then
+            EnsureNemesisRun()
+            nemesisRun.sawBanner = true
+            nemesisRun.sawDundun = true
+            nemesisRun.bonusFlavor = "s2"
+            if not nemesisRun.bannerState then
+                nemesisRun.bannerState = "announced"
+            end
+            return true
+        end
+    end
+    return false
+end
+
+local function DelveIsBountiful(delve)
+    if nemesisRun.wasBountiful or nemesisRun.sawDundun then
+        return true
+    end
+    if type(delve) ~= "table" then
+        return false
+    end
+    if type(delve.rewardInfo) == "table" and IsShownState(delve.rewardInfo.shownState) then
+        nemesisRun.wasBountiful = true
+        return true
+    end
+    local blob = SafeLower(delve.tooltip) .. " " .. SafeLower(delve.headerText)
+    if blob:find("bountiful", 1, true) then
+        nemesisRun.wasBountiful = true
+        return true
+    end
+    if type(delve.spells) == "table" then
+        for i = 1, #delve.spells do
+            local extra = delve.spells[i]
+            if type(extra) == "table" and ClassifyDelveSpell(extra) == "bountiful" then
+                nemesisRun.wasBountiful = true
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function DelveShowsBonusSecured(delve)
+    if type(delve) ~= "table" then
+        return false
+    end
+    if BlobLooksBonusSecured(delve.tooltip) or BlobLooksBonusSecured(delve.headerText) then
+        return true
+    end
+    if type(delve.rewardInfo) == "table" then
+        if BlobLooksBonusSecured(delve.rewardInfo.earnedTooltip) then
+            return true
+        end
+    end
+    if type(delve.spells) == "table" then
+        for i = 1, #delve.spells do
+            local extra = delve.spells[i]
+            if type(extra) == "table" then
+                local blob = SafeLower(extra.text) .. " " .. SafeLower(extra.tooltip) .. " " .. SafeLower(SpellName(tonumber(extra.spellID))) .. " " .. SafeLower(SpellDesc(tonumber(extra.spellID)))
+                if BlobLooksBonusSecured(blob) then
+                    return true
+                end
+            end
         end
     end
     return false
@@ -699,6 +843,10 @@ local function BannerIsDone()
         nemesisRun.bannerState = "buffed"
         return true
     end
+    if PlayerHasNamedBonusAura() then
+        nemesisRun.bannerState = "buffed"
+        return true
+    end
     return false
 end
 
@@ -724,16 +872,16 @@ local function NoteBonusMessage(msg)
     if blob == "" then
         return
     end
-    if blob:find("sanctified banner", 1, true) or blob:find("shrine of abundance", 1, true) or blob:find("dundun", 1, true) then
+    if BlobLooksBonusSecured(blob) or (blob:find("dundun", 1, true) and (blob:find("reward", 1, true) or blob:find("bless", 1, true) or blob:find("glorif", 1, true) or blob:find("secured", 1, true))) then
+        EnsureNemesisRun()
+        NoteBonusFlavor(blob)
+        nemesisRun.bannerState = blob:find("grand", 1, true) and "grand" or "clicked"
+    elseif blob:find("sanctified banner", 1, true) or blob:find("shrine of abundance", 1, true) or blob:find("dundun", 1, true) then
         EnsureNemesisRun()
         NoteBonusFlavor(blob)
         if not nemesisRun.bannerState then
             nemesisRun.bannerState = "announced"
         end
-    elseif blob:find("sanctified spoils", 1, true) or blob:find("grand sanctified", 1, true) or blob:find("abundant spoils", 1, true) or blob:find("abundantly bountiful", 1, true) then
-        EnsureNemesisRun()
-        NoteBonusFlavor(blob)
-        nemesisRun.bannerState = blob:find("grand", 1, true) and "grand" or "clicked"
     elseif blob:find("strongbox", 1, true) or blob:find("nemesis", 1, true) then
         if blob:find("upgrad", 1, true) or blob:find("improv", 1, true) then
             EnsureNemesisRun()
@@ -833,6 +981,12 @@ local function ReadBannerSlash(delve)
 end
 
 local function AddBonusLootRow(rows, delve)
+    NoteBonusNpcUnits()
+    if DelveShowsBonusSecured(delve) then
+        if nemesisRun.bannerState ~= "grand" then
+            nemesisRun.bannerState = "clicked"
+        end
+    end
     if PlayerHasSpellAura(RAGER_AURA_SPELLS) then
         nemesisRun.sawRager = true
         nemesisRun.ragerUp = true
@@ -953,7 +1107,10 @@ local function AddNemesisExtras(rows, delve, sp, tip, tier)
     end
     local packDone = (boxEarned or nemesisRun.boxEarned or (killed >= total and (nemesisRun.haveSeenPack or widgetRemaining ~= nil or killed > 0))) and true or false
     AddDelveExtraRow(rows, "Nemesis Strong Box", killed, total, packDone, "Nemesis Strong Box", "packs")
-    AddBonusLootRow(rows, delve)
+    NoteBonusNpcUnits()
+    if DelveIsBountiful(delve) then
+        AddBonusLootRow(rows, delve)
+    end
 end
 
 local function InsertRowsAfter(rows, afterIndex, extras)
@@ -979,7 +1136,9 @@ local function AttachNemesisExtras(rows, delve, sp, tip, tier, afterIndex)
             need = 4
         end
         AddDelveExtraRow(extras, "Nemesis Strong Box", 0, need, false, "Nemesis Strong Box", "packs")
-        AddBonusLootRow(extras, delve)
+        if DelveIsBountiful(delve) then
+            AddBonusLootRow(extras, delve)
+        end
     end
     InsertRowsAfter(rows, afterIndex, extras)
 end
@@ -1616,9 +1775,24 @@ AQ.Events.Register("UNIT_AURA", function(_, unit)
     end
 end)
 AQ.Events.Register("UNIT_SPELLCAST_SUCCEEDED", function(_, unit, _, spellID)
-    if unit == "player" and BANNER_INTERACT_SPELLS[tonumber(spellID) or 0] then
+    if unit == "player" and SpellLooksLikeBonus(spellID) then
         EnsureNemesisRun()
         nemesisRun.bannerState = "clicked"
+        RefreshIfInside()
+    end
+end)
+AQ.Events.Register("GOSSIP_SHOW", function()
+    if NoteBonusNpcUnits() then
+        nemesisRun.dundunGossip = true
+        RefreshIfInside()
+    end
+end)
+AQ.Events.Register("GOSSIP_CLOSED", function()
+    if nemesisRun.dundunGossip then
+        nemesisRun.dundunGossip = false
+        if nemesisRun.bannerState ~= "grand" then
+            nemesisRun.bannerState = "clicked"
+        end
         RefreshIfInside()
     end
 end)
@@ -1636,5 +1810,11 @@ AQ.Events.Register("UI_INFO_MESSAGE", function(_, _, msg)
     NoteBonusThenRefresh(msg)
 end)
 AQ.Events.Register("CHAT_MSG_SYSTEM", function(_, msg)
+    NoteBonusThenRefresh(msg)
+end)
+AQ.Events.Register("CHAT_MSG_MONSTER_SAY", function(_, msg)
+    NoteBonusThenRefresh(msg)
+end)
+AQ.Events.Register("CHAT_MSG_MONSTER_YELL", function(_, msg)
     NoteBonusThenRefresh(msg)
 end)
