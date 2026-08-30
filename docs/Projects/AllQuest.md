@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** (journal data plan phases 0–5 complete) |
-| Version | **1.0.9** (addon toc + updater catalog; data packs are `1.0.0` with `X-AllQuest-AutoLoad`) |
+| Version | **1.0.10** (addon toc + updater catalog; data packs are `1.0.0` with `X-AllQuest-AutoLoad`) |
 | Type | In-game quest tracker + questline journal + expansion data plugins |
 | Folders | `AllQuest/` (runtime) · `AllQuest_Data_*` (one pack per expansion) |
 | Author tools | `Tools/AllQuest/` — extractors, wago DB2 cache, ID census (gitignored) |
@@ -25,7 +25,7 @@ World-quest / repeatable journal buckets stay **visible** by default (setting ca
 
 - Custom tracker (can hide Blizzard’s).
 - Sections: popups, quests, world quests, scenarios, campaigns, achievements, recipes, activities, events, collectibles, pets, rares.
-- Delve instance block: under Nemesis Influence, **Nemesis Strong Box** (`0/4 Nemesis Packs defeated`) and **Bonus loot**. Pack count uses Everything Delves’ seasonal vignette IDs (7531 / 7869); bonus loot uses Sanctified Banner interact/buff spell IDs. Retail AddOns copy must be synced — WoW does not load this repo folder.
+- Delve instance block: under Nemesis Influence, **Nemesis Strong Box** and **Bonus loot**. Strong Box fill is remaining/total from the Influence widget tooltip/`stackDisplay` (2/3 means 1 pack down), plus Strongbox auras 472952/1239535, then vignettes. Bonus loot: Sanctified Banner spell IDs.
 - Auto-accept / auto-turn-in (Shift at NPC skips).
 - Super-track, items, sounds, colors, filters, profiles.
 - Speech of focused rows (AH queue if loaded).
@@ -99,12 +99,13 @@ Classic after phase 5: **822** chains, **5,519** unique IDs, Era QuestV2 **4,807
 - TBC / Wrath / WoD: often one chain per zone.
 - Delve extras only on a classified nemesis spell: Shadowguard Point showed **Nemesis Influence** with no Strong Box / Bonus loot. Midnight can list that line as a currency or a spell without a numeric id.
 - Guessing Strongbox progress from in-delve spell widgets or vignette *names*. Everything Delves: those widgets exist only on the entrance picker; pack names can be Midnight secret strings. Live source is vignette **IDs**.
+- Indexing `nemesisRun.seen[objectGUID]` and `if guid` on Midnight secret GUIDs. The scan threw, extras fell back to a frozen `0/4`, so pack kills never registered. Safe keys + remaining-drop + pcall per vignette.
 - Editing `Documents\\…\\AllQuest` and `/reload` while `_retail_\\Interface\\AddOns\\AllQuest` is a separate Aug-27 copy — none of the extras code was loaded.
 
 ## Open work
 
 - Delve Nemesis extras: live screenshot at Shadowguard Point showed Influence but no Strong Box / Bonus loot — extras only fired on a classified nemesis *spell*. Midnight can list Influence as a currency or a spell without a numeric id; attach now keys off any “nemesis” chrome row.
-- Confirm live tooltip/vignette names if a season renames Ula'tek packs or bonus spoils.
+- Confirm live tooltip/vignette names if a season renames Ula'tek packs or bonus spoils. Append new pack vignette IDs; do not replace 7531/7869.
 - Hand starter overlays past Elwynn/Durotar (Westfall, Barrens, Loch Modan, …) — overlay work, not another extract phase.
 - Playtest on Era (`/reload`); Retail will not show the Classic pack.
 - TBC/Wrath/WoD remaining linear dumps.

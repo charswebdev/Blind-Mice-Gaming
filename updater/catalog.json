@@ -96,8 +96,8 @@
       "id": "AccessibilityHelper",
       "name": "Accessibility Helper",
       "folders": ["AccessibilityHelper"],
-      "version": "3.6.3",
-      "updated": "2026-08-29",
+      "version": "3.6.4",
+      "updated": "2026-08-30",
       "interfaces": [120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508],
       "saved": ["AccessibilityHelperDB"]
     },
@@ -119,8 +119,8 @@
         "AllQuest_Data_WoD",
         "AllQuest_Data_Wrath"
       ],
-      "version": "1.0.9",
-      "updated": "2026-08-29",
+      "version": "1.0.10",
+      "updated": "2026-08-30",
       "interfaces": [120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508],
       "saved": ["AllQuestDB", "AllQuestCharDB"]
     },

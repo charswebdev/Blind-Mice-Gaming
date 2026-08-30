@@ -1,6 +1,6 @@
 ## Interface: 120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508
 ## Title: Accessibility Helper
-## Version: 3.6.3
+## Version: 3.6.4
 ## Notes: TTS accessibility helper for blind and visually impaired players. Tooltips, waypoints, distance, chat channels, subzones, discoveries, loot, currencies, UI errors, player state, professions, reputation, XP, combat alerts, duration bars, and interrupt sounds.
 ## Author: Blind Mice Gaming
 ## Category-enUS: Blind Mice Gaming

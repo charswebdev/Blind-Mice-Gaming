@@ -21,8 +21,8 @@ Commit, push, and GitHub releases happen **only when asked**.
 
 | Document | Status | Version (catalog / toc) |
 |----------|--------|-------------------------|
-| [Accessibility Helper](Accessibility-Helper.md) | Shipped | 3.6.3 |
-| [AllQuest](AllQuest.md) | Shipped | 1.0.9 |
+| [Accessibility Helper](Accessibility-Helper.md) | Shipped | 3.6.4 |
+| [AllQuest](AllQuest.md) | Shipped | 1.0.10 |
 | [Cooldown Assist](Cooldown-Assist.md) | Shipped | 1.1.0 |
 | [Exploration](Exploration.md) | Shipped | 2.0.2 |
 | [FPSDiag](FPSDiag.md) | Shipped | 0.3.0 |

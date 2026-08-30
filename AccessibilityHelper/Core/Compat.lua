@@ -49,6 +49,18 @@ function Compat.IsSecretValue(v)
     return ok == true and secret == true
 end
 
+--- Plain string, or nil if secret / not a string / empty.
+--- Never `==` / `or` / `if v` on a secret; issecretvalue only.
+function Compat.UsableString(v)
+    if Compat.IsSecretValue(v) then
+        return nil
+    end
+    if type(v) ~= "string" or v == "" then
+        return nil
+    end
+    return v
+end
+
 --- True if we may compare, concatenate, or do logic on v.
 function Compat.CanUseValue(v)
     if not Compat.IsSecretValue(v) then
@@ -114,19 +126,20 @@ function Compat.SameUnit(unitA, unitB)
 end
 
 --- True if we have a usable GUID or name for unit (no UnitExists boolean test).
+--- UnitGUID/UnitName on target can be secret strings; never `==` / `~=` them first.
 function Compat.UnitSeen(unit)
     if type(unit) ~= "string" or unit == "" then
         return false
     end
     if UnitGUID then
         local ok, guid = pcall(UnitGUID, unit)
-        if ok == true and type(guid) == "string" and guid ~= "" and not Compat.IsSecretValue(guid) then
+        if ok == true and Compat.UsableString(guid) then
             return true
         end
     end
     if UnitName then
         local ok, name = pcall(UnitName, unit)
-        if ok == true and type(name) == "string" and name ~= "" and not Compat.IsSecretValue(name) then
+        if ok == true and Compat.UsableString(name) then
             return true
         end
     end

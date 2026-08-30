@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **3.6.3** (toc, Init banner, settings footer fallback, `updater/catalog.json`) |
+| Version | **3.6.4** (toc, Init banner, settings footer fallback, `updater/catalog.json`) |
 | Type | In-game addon (VI / TTS) |
 | Folder | `AccessibilityHelper/` |
 | Author tools | `Tools/AccessibilityHelper/` (release checklists; not in the addon zip) |
@@ -26,7 +26,7 @@ Version numbers stay short on purpose (3.6.2, then 3.6.3) — not 3.6.18-style p
 ### Speech and sounds
 
 - Own speech queue (`Core/Speech.lua`) with volume, rate, voice, and a critical-priority interrupt path.
-- Midnight **secret-value** safety: never concatenate, compare, or table-key secret strings/numbers (`Compat.CanUseValue` / `CanUseNumber`).
+- Midnight **secret-value** safety: never concatenate, compare, or table-key secret strings/numbers (`Compat.CanUseValue` / `CanUseNumber` / `UsableString`). Creature chat (`CHAT_MSG_MONSTER_*`) is often a secret string — skip it instead of `message == ""`.
 - Per-alert delivery: TTS, sound kit, or both (`Core/Alerts.lua`). Default sound fallback.
 
 ### Reading the world
@@ -75,6 +75,7 @@ Work was phased in the Lua headers and later combat/cast slices:
 | Later | Combat + casts | LoC, debuffs, buffs, duration bars, interrupt sound |
 | 3.6.2 | Cast filter + ToT | Hostile-only enemy casts; target-of-target aggro |
 | 3.6.3 | ToT secrets | GUID/`UnitSeen` instead of boolean-testing `UnitIsUnit` on `targettarget` |
+| 3.6.4 | UnitSeen GUID | `UsableString` before any `guid ~= ""` (macro `TargetUnit` secret GUID) |
 
 Settings were rewritten to the two-pane pattern so VI users get one topic at a time instead of a dense options dump.
 
@@ -92,6 +93,7 @@ Settings were rewritten to the two-pane pattern so VI users get one topic at a t
 - Using Accessibility Helper as a speech **backend** for AllQuest when loaded, without making AH a quest addon.
 - Filtering `UNIT_SPELLCAST_*` to player / target / focus / boss / arena. Nameplates, party, and raid fire the same events; labeling those “Enemy” was false feedback for blind players.
 - ToT must not `if UnitIsUnit(...)` or `if` a secret even after `canaccessvalue`. Identify ToT with usable GUIDs (`Compat.SameUnit` / `UnitSeen`).
+- `UnitSeen` must run `UsableString` (issecretvalue first). `type(guid) == "string" and guid ~= ""` still throws on a secret GUID.
 
 ## What did not work
 
@@ -100,8 +102,11 @@ Settings were rewritten to the two-pane pattern so VI users get one topic at a t
 - Long patch versions (3.6.16 → 3.6.17 → 3.6.18). Product rule is now short numbers (3.6.2).
 - Routing Cooldown Assist through AH speech: rejected; overlapping “ready” lines fought the tooltip queue.
 - `if UnitIsUnit(...)` and `if v then` after `canaccessvalue` on `targettarget` vs `player`. Midnight still forbids boolean-testing that secret. Fixed in 3.6.3: GUID/`UnitSeen` only.
+- `message == ""` on `CHAT_MSG_MONSTER_SAY` (secret string, tainted). Skip via `Compat.UsableString` before any compare.
+- `guid ~= ""` before `issecretvalue` in `Compat.UnitSeen`. Targeting from a macro (`TargetUnit` / action button) returns a secret `UnitGUID("target")`; `type()` is `"string"` so the empty-string compare ran and threw. `UsableString` first.
 
 ## Open work
 
-- Players stuck on 3.6.17/3.6.18 may need a forced updater/reinstall to see 3.6.3.
+- Players stuck on 3.6.17/3.6.18 may need a forced updater/reinstall to see 3.6.4.
+- Chat secret-string skip is in tree (unshipped until the next AH patch). Creature Say in delves will stay silent when Blizzard marks the line secret.
 - More starter-zone or encounter-specific cues belong in other addons unless they are generic unit/combat facts.
