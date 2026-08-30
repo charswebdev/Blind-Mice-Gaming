@@ -116,10 +116,9 @@ function Compat.SameUnit(unitA, unitB)
     if okA ~= true or okB ~= true then
         return false
     end
-    if type(ga) ~= "string" or type(gb) ~= "string" then
-        return false
-    end
-    if Compat.IsSecretValue(ga) or Compat.IsSecretValue(gb) then
+    ga = Compat.UsableString(ga)
+    gb = Compat.UsableString(gb)
+    if not ga or not gb then
         return false
     end
     return ga == gb

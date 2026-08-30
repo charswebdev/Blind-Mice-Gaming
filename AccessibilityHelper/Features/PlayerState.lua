@@ -127,6 +127,9 @@ end
 
 --- Nil if v is not a usable (non-secret) non-empty string.
 local function UsableString(v)
+    if AH.Compat and AH.Compat.UsableString then
+        return AH.Compat.UsableString(v)
+    end
     if type(v) ~= "string" or not CanUseValue(v) then
         return nil
     end
@@ -225,7 +228,8 @@ local function ResolveFollowName(arg)
     end
     if C_PlayerInfo and C_PlayerInfo.GetFollowTargetGUID and GetPlayerInfoByGUID then
         local ok, guid = pcall(C_PlayerInfo.GetFollowTargetGUID)
-        if ok and type(guid) == "string" and guid ~= "" then
+        guid = ok and UsableString(guid) or nil
+        if guid then
             local ok2, _, _, _, _, _, name = pcall(GetPlayerInfoByGUID, guid)
             if ok2 and type(name) == "string" and name ~= "" then
                 return name

@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **3.6.4** (toc, Init banner, settings footer fallback, `updater/catalog.json`) |
+| Version | **3.6.5** (toc, Init banner, settings footer fallback, `updater/catalog.json`) |
 | Type | In-game addon (VI / TTS) |
 | Folder | `AccessibilityHelper/` |
 | Author tools | `Tools/AccessibilityHelper/` (release checklists; not in the addon zip) |
@@ -76,6 +76,7 @@ Work was phased in the Lua headers and later combat/cast slices:
 | 3.6.2 | Cast filter + ToT | Hostile-only enemy casts; target-of-target aggro |
 | 3.6.3 | ToT secrets | GUID/`UnitSeen` instead of boolean-testing `UnitIsUnit` on `targettarget` |
 | 3.6.4 | UnitSeen GUID | `UsableString` before any `guid ~= ""` (macro `TargetUnit` secret GUID) |
+| 3.6.5 | UnitSeen AddOns | SameUnit / follow GUID also go through `UsableString`; live AddOns copy no longer compares secret `guid ~= ""` |
 
 Settings were rewritten to the two-pane pattern so VI users get one topic at a time instead of a dense options dump.
 
@@ -103,10 +104,10 @@ Settings were rewritten to the two-pane pattern so VI users get one topic at a t
 - Routing Cooldown Assist through AH speech: rejected; overlapping “ready” lines fought the tooltip queue.
 - `if UnitIsUnit(...)` and `if v then` after `canaccessvalue` on `targettarget` vs `player`. Midnight still forbids boolean-testing that secret. Fixed in 3.6.3: GUID/`UnitSeen` only.
 - `message == ""` on `CHAT_MSG_MONSTER_SAY` (secret string, tainted). Skip via `Compat.UsableString` before any compare.
-- `guid ~= ""` before `issecretvalue` in `Compat.UnitSeen`. Targeting from a macro (`TargetUnit` / action button) returns a secret `UnitGUID("target")`; `type()` is `"string"` so the empty-string compare ran and threw. `UsableString` first.
+- `guid ~= ""` before `issecretvalue` in `Compat.UnitSeen`. Targeting from a macro (`TargetUnit` / action button) returns a secret `UnitGUID("target")`; `type()` is `"string"` so the empty-string compare ran and threw. `UsableString` first. Retail AddOns still had the old `type(guid) == "string" and guid ~= ""` at Compat.lua:123 (`PLAYER_TARGET_CHANGED` → `OnTarget` → `UnitSeen`); Documents already used `UsableString`.
 
 ## Open work
 
-- Players stuck on 3.6.17/3.6.18 may need a forced updater/reinstall to see 3.6.4.
+- Players stuck on 3.6.17/3.6.18 may need a forced updater/reinstall to see 3.6.5.
 - Chat secret-string skip is in tree (unshipped until the next AH patch). Creature Say in delves will stay silent when Blizzard marks the line secret.
 - More starter-zone or encounter-specific cues belong in other addons unless they are generic unit/combat facts.
