@@ -37,11 +37,7 @@ function LPL.LoadoutSetList:Create(parent, bottomInset)
             return false
         end,
         getSubtitle = function(set)
-            local line = LPL.LoadoutStore:GetSummaryLine(set)
-            if set.restrictions and next(set.restrictions) then
-                return line .. " · Restricted"
-            end
-            return line
+            return LPL.SetRestrictions:FormatListSubtitle(LPL.LoadoutStore:GetSummaryLine(set), set.restrictions)
         end,
         getSubtitleColor = function(set)
             local classID = LPL.LoadoutStore:GetEffectiveClassID(set)

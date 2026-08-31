@@ -37,11 +37,7 @@ function LPL.EditModeSetList:Create(parent, bottomInset)
             return LPL.EditModeActive and LPL.EditModeActive:IsActive(set)
         end,
         getSubtitle = function(set)
-            local line = LPL.EditModeStore:GetSummaryLine(set)
-            if set.restrictions and next(set.restrictions) then
-                return line .. " · Restricted"
-            end
-            return line
+            return LPL.SetRestrictions:FormatListSubtitle(LPL.EditModeStore:GetSummaryLine(set), set.restrictions)
         end,
         getSubtitleColor = function(set)
             local classID = LPL.EditModeStore:GetEffectiveClassID(set)

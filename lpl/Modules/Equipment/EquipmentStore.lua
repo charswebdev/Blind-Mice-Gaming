@@ -300,19 +300,8 @@ function LPL.EquipmentStore:GetEffectiveSpecID(set)
     if set.filters and set.filters.spec then
         return tonumber(set.filters.spec)
     end
-    local restrictions = set.restrictions
-    if type(restrictions) == "table" and type(restrictions.spec) == "table" then
-        local inferred
-        for restrictedSpecID in pairs(restrictions.spec) do
-            restrictedSpecID = tonumber(restrictedSpecID)
-            if restrictedSpecID then
-                if inferred and inferred ~= restrictedSpecID then
-                    return nil
-                end
-                inferred = restrictedSpecID
-            end
-        end
-        return inferred
+    if LPL.SetRestrictions and LPL.SetRestrictions.GetSingleRestrictedSpecID then
+        return LPL.SetRestrictions:GetSingleRestrictedSpecID(set.restrictions)
     end
     return nil
 end
@@ -328,19 +317,8 @@ function LPL.EquipmentStore:GetEffectiveHeroID(set)
     if set.filters and set.filters.herotalents then
         return tonumber(set.filters.herotalents)
     end
-    local restrictions = set.restrictions
-    if type(restrictions) == "table" and type(restrictions.herotalents) == "table" then
-        local inferred
-        for heroID in pairs(restrictions.herotalents) do
-            heroID = tonumber(heroID)
-            if heroID then
-                if inferred and inferred ~= heroID then
-                    return nil
-                end
-                inferred = heroID
-            end
-        end
-        return inferred
+    if LPL.SetRestrictions and LPL.SetRestrictions.GetSingleRestrictedHeroID then
+        return LPL.SetRestrictions:GetSingleRestrictedHeroID(set.restrictions)
     end
     return nil
 end

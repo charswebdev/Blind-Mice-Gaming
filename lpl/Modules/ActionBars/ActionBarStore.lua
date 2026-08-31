@@ -296,17 +296,8 @@ function LPL.ActionBarStore:GetEffectiveSpecID(set)
     if type(restrictions) ~= "table" or not next(restrictions) then
         return nil
     end
-    if type(restrictions.spec) == "table" then
-        local inferred
-        for restrictedSpecID in pairs(restrictions.spec) do
-            restrictedSpecID = tonumber(restrictedSpecID)
-            if restrictedSpecID then
-                if inferred and inferred ~= restrictedSpecID then
-                    return nil
-                end
-                inferred = restrictedSpecID
-            end
-        end
+    if LPL.SetRestrictions and LPL.SetRestrictions.GetSingleRestrictedSpecID then
+        local inferred = LPL.SetRestrictions:GetSingleRestrictedSpecID(restrictions)
         if inferred then
             return inferred
         end
@@ -325,17 +316,8 @@ function LPL.ActionBarStore:GetEffectiveHeroID(set)
     if type(restrictions) ~= "table" or not next(restrictions) then
         return nil
     end
-    if type(restrictions.herotalents) == "table" then
-        local inferred
-        for heroID in pairs(restrictions.herotalents) do
-            heroID = tonumber(heroID)
-            if heroID then
-                if inferred and inferred ~= heroID then
-                    return nil
-                end
-                inferred = heroID
-            end
-        end
+    if LPL.SetRestrictions and LPL.SetRestrictions.GetSingleRestrictedHeroID then
+        local inferred = LPL.SetRestrictions:GetSingleRestrictedHeroID(restrictions)
         if inferred then
             return inferred
         end

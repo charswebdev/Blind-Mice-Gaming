@@ -2,10 +2,10 @@ local addonName, LPL = ...
 
 LPL.SetListView = {}
 
-local ROW_HEIGHT = 44
+local ROW_HEIGHT = 58
 local CLASS_HEADER_HEIGHT = 28
 local SPEC_HEADER_HEIGHT = 24
-local HERO_HEADER_HEIGHT = 22
+local HERO_HEADER_HEIGHT = 40
 local ROW_GAP = 2
 local CHROME_GAP = 8
 local META_WIDTH = 148
@@ -455,7 +455,11 @@ function LPL.SetListView:Create(parent, config)
 
             self.activeBadge:Hide()
             self.title:ClearAllPoints()
-            self.title:SetPoint("LEFT", self.expandIcon, "RIGHT", 4, 0)
+            if entry.type == "hero" then
+                self.title:SetPoint("TOPLEFT", self, "TOPLEFT", indent + 16, -4)
+            else
+                self.title:SetPoint("LEFT", self.expandIcon, "RIGHT", 4, 0)
+            end
             self.title:SetPoint("RIGHT", self, "RIGHT", -8, 0)
             self.title:SetJustifyH("LEFT")
             self.createdLabel:Hide()
@@ -466,8 +470,31 @@ function LPL.SetListView:Create(parent, config)
             elseif entry.type == "spec" and entry.useClassColor then
                 self.title:SetText(entry.label or "")
             elseif entry.type == "hero" then
-                self.title:SetText(entry.label or "")
-                self.title:SetTextColor(LPL.Theme:GetColor("textSecondary"))
+                local classSpec = ""
+                if LPL.ListGrouping and entry.classID and entry.specID then
+                    classSpec = LPL.ListGrouping:GetClassSpecLabel(entry.classID, entry.specID)
+                end
+                if classSpec ~= "" then
+                    local heroName = entry.label or ""
+                    if LPL.ListGrouping and entry.classID then
+                        heroName = LPL.ListGrouping:WrapClassText(entry.classID, heroName)
+                    end
+                    self.title:SetText(classSpec)
+                    self.subtitle:SetText(heroName)
+                    self.subtitle:SetFontObject(LPL.Theme.fonts.bodyBold)
+                    self.subtitle:Show()
+                    self.subtitle:SetWordWrap(false)
+                    self.subtitle:ClearAllPoints()
+                    self.subtitle:SetPoint("TOPLEFT", self.title, "BOTTOMLEFT", 16, -2)
+                    self.subtitle:SetPoint("RIGHT", self, "RIGHT", -8, 0)
+                    self.subtitle:SetTextColor(1, 1, 1)
+                else
+                    if LPL.ListGrouping and entry.classID then
+                        self.title:SetText(LPL.ListGrouping:WrapClassText(entry.classID, entry.label or ""))
+                    else
+                        self.title:SetText(entry.label or "")
+                    end
+                end
             elseif entry.type == "class" then
                 self.title:SetText(entry.label or "Other")
                 self.title:SetTextColor(LPL.Theme:GetColor("textSecondary"))
@@ -476,14 +503,16 @@ function LPL.SetListView:Create(parent, config)
                 self.title:SetTextColor(LPL.Theme:GetColor("textSecondary"))
             end
 
-            if entry.type == "class" and entry.classID then
+            if entry.type == "class" or entry.type == "spec" or entry.type == "hero" then
                 self.title:SetFontObject(LPL.Theme.fonts.bodyBold)
             else
                 self.title:SetFontObject(LPL.Theme.fonts.small)
             end
 
-            self.subtitle:SetText("")
-            self.subtitle:Hide()
+            if entry.type ~= "hero" then
+                self.subtitle:SetText("")
+                self.subtitle:Hide()
+            end
             LPL.Theme:ApplyListHeaderBackdrop(self)
         end
 
@@ -506,6 +535,9 @@ function LPL.SetListView:Create(parent, config)
             self.title:SetTextColor(LPL.Theme:GetColor("textBright"))
 
             self.subtitle:Show()
+            self.subtitle:SetWordWrap(true)
+            self.subtitle:SetJustifyV("TOP")
+            self.subtitle:SetHeight(28)
             self.subtitle:ClearAllPoints()
             self.subtitle:SetPoint("TOPLEFT", self.title, "BOTTOMLEFT", 0, -2)
             self.subtitle:SetPoint("RIGHT", self, "RIGHT", -(META_WIDTH + META_RIGHT_PAD), 0)

@@ -38,11 +38,7 @@ function LPL.CooldownManagerSetList:Create(parent, bottomInset)
             return LPL.CooldownManagerActive and LPL.CooldownManagerActive:IsActive(set)
         end,
         getSubtitle = function(set)
-            local line = LPL.CooldownManagerStore:GetSummaryLine(set)
-            if set.restrictions and next(set.restrictions) then
-                return line .. " · Restricted"
-            end
-            return line
+            return LPL.SetRestrictions:FormatListSubtitle(LPL.CooldownManagerStore:GetSummaryLine(set), set.restrictions)
         end,
         getSubtitleColor = function(set)
             local classID = LPL.CooldownManagerStore:GetEffectiveClassID(set)

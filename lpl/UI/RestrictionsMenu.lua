@@ -65,12 +65,13 @@ local function AddHeroTalentRestrictionMenu(record, onChanged, level)
                 for _, hero in ipairs(heroes) do
                     local info = UIDropDownMenu_CreateInfo()
                     info.text = hero.name or tostring(hero.id)
-                    info.checked = record.restrictions.herotalents and record.restrictions.herotalents[hero.id]
+                    info.checked = LPL.SetRestrictions:IsHeroTalentLimited(record.restrictions, spec.id, hero.id)
                     info.isNotRadio = true
                     info.keepShownOnClick = true
-                    info.arg1 = hero.id
-                    info.func = function(_, heroID)
-                        ToggleRestrictionBucket(record.restrictions, "herotalents", heroID)
+                    info.arg1 = spec.id
+                    info.arg2 = hero.id
+                    info.func = function(_, specID, heroID)
+                        LPL.SetRestrictions:ToggleHeroTalentLimit(record.restrictions, specID, heroID)
                         if onChanged then
                             onChanged(record)
                         end

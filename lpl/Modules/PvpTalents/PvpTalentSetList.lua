@@ -37,11 +37,7 @@ function LPL.PvpTalentSetList:Create(parent, bottomInset)
             return LPL.PvpTalentActive and LPL.PvpTalentActive:IsActive(set)
         end,
         getSubtitle = function(set)
-            local line = LPL.PvpTalentStore:GetSummaryLine(set)
-            if set.restrictions and next(set.restrictions) then
-                return line .. " · Restricted"
-            end
-            return line
+            return LPL.SetRestrictions:FormatListSubtitle(LPL.PvpTalentStore:GetSummaryLine(set), set.restrictions)
         end,
         getSubtitleColor = function(set)
             local classID = LPL.PvpTalentStore:GetEffectiveClassID(set)

@@ -37,15 +37,7 @@ function LPL.EquipmentSetList:Create(parent, bottomInset)
             return LPL.EquipmentActive:IsActive(set)
         end,
         getSubtitle = function(set)
-            local line = LPL.EquipmentStore:GetSummaryLine(set)
-            local restrictionLine = LPL.SetRestrictions and LPL.SetRestrictions:GetSummaryLine(set.restrictions)
-            if restrictionLine then
-                if line == "" then
-                    return restrictionLine
-                end
-                return line .. " | " .. restrictionLine
-            end
-            return line
+            return LPL.SetRestrictions:FormatListSubtitle(LPL.EquipmentStore:GetSummaryLine(set), set.restrictions)
         end,
         getSubtitleColor = function(set)
             if set.restrictions and next(set.restrictions) then

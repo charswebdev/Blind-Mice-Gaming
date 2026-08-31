@@ -53,6 +53,101 @@ local function ContainsOrMatches(setValue, filterValue)
     return setValue == filterValue or tostring(setValue) == tostring(filterValue)
 end
 
+function LPL.SetRestrictions:HeroTalentKey(specID, heroID)
+    specID = tonumber(specID)
+    heroID = tonumber(heroID)
+    if not specID or not heroID then
+        return nil
+    end
+    return specID .. ":" .. heroID
+end
+
+function LPL.SetRestrictions:ParseHeroTalentKey(key)
+    if type(key) == "number" then
+        return nil, key
+    end
+    if type(key) ~= "string" or key == "" then
+        return nil, nil
+    end
+    local specID, heroID = key:match("^(%d+):(%d+)$")
+    if specID then
+        return tonumber(specID), tonumber(heroID)
+    end
+    return nil, tonumber(key)
+end
+
+function LPL.SetRestrictions:IsHeroTalentLimited(restrictions, specID, heroID)
+    restrictions = restrictions or {}
+    local bucket = restrictions.herotalents
+    if type(bucket) ~= "table" then
+        return false
+    end
+    heroID = tonumber(heroID)
+    specID = tonumber(specID)
+    if not heroID then
+        return false
+    end
+    if bucket[heroID] then
+        return true
+    end
+    local key = specID and self:HeroTalentKey(specID, heroID)
+    return key and bucket[key] == true
+end
+
+function LPL.SetRestrictions:ToggleHeroTalentLimit(restrictions, specID, heroID)
+    restrictions = restrictions or {}
+    restrictions.herotalents = restrictions.herotalents or {}
+    local bucket = restrictions.herotalents
+    specID = tonumber(specID)
+    heroID = tonumber(heroID)
+    local key = self:HeroTalentKey(specID, heroID)
+    if not key then
+        return restrictions
+    end
+
+    if bucket[heroID] then
+        bucket[heroID] = nil
+        if LPL.TalentTree and LPL.TalentTree.GetClasses then
+            for _, class in ipairs(LPL.TalentTree:GetClasses()) do
+                for _, spec in ipairs(LPL.TalentTree:GetSpecsForClass(class.id)) do
+                    for _, hero in ipairs(LPL.TalentTree:GetHeroTalentsForSpec(spec.id)) do
+                        if hero.id == heroID and spec.id ~= specID then
+                            bucket[self:HeroTalentKey(spec.id, heroID)] = true
+                        end
+                    end
+                end
+            end
+        end
+    elseif bucket[key] then
+        bucket[key] = nil
+    else
+        bucket[key] = true
+    end
+
+    if not next(bucket) then
+        restrictions.herotalents = nil
+    end
+    return restrictions
+end
+
+local function HeroTalentRestrictionMatches(bucket, specID, subTreeID)
+    if type(bucket) ~= "table" or not next(bucket) then
+        return true
+    end
+    specID = tonumber(specID)
+    subTreeID = tonumber(subTreeID)
+    if not subTreeID then
+        return false
+    end
+    for key in pairs(bucket) do
+        local keySpec, keyHero = LPL.SetRestrictions:ParseHeroTalentKey(key)
+        if keyHero == subTreeID and (keySpec == nil or keySpec == specID) then
+            return true
+        end
+    end
+    return false
+end
+
 function LPL.SetRestrictions:NormalizeRestrictions(restrictions)
     if type(restrictions) ~= "table" then
         return {}
@@ -180,14 +275,12 @@ function LPL.SetRestrictions:AreValidForPlayer(restrictions)
     end
 
     if restrictions.herotalents then
+        local playerSpecID = character:GetSpecID()
         local subTreeID
-        if LPL.TalentTree and LPL.TalentTree.GetPlayerActiveSubTreeID then
-            local playerSpecID = character:GetSpecID()
-            if playerSpecID then
-                subTreeID = LPL.TalentTree:GetPlayerActiveSubTreeID(playerSpecID)
-            end
+        if LPL.TalentTree and LPL.TalentTree.GetPlayerActiveSubTreeID and playerSpecID then
+            subTreeID = LPL.TalentTree:GetPlayerActiveSubTreeID(playerSpecID)
         end
-        if not BucketRestrictionMatches(restrictions.herotalents, subTreeID) then
+        if not HeroTalentRestrictionMatches(restrictions.herotalents, playerSpecID, subTreeID) then
             return false
         end
     end
@@ -225,6 +318,71 @@ function LPL.SetRestrictions:AreValidForPlayerRecord(record)
     end
 
     return self:AreValidForPlayer(restrictions)
+end
+
+function LPL.SetRestrictions:GetLimitsSetLabel(restrictions)
+    local summary = self:GetSummaryLine(restrictions)
+    if not summary or summary == "" then
+        return "Limit Set: None"
+    end
+    return "Limits Set: " .. summary
+end
+
+function LPL.SetRestrictions:FormatListSubtitle(summaryLine, restrictions)
+    local limitsText = self:GetLimitsSetLabel(restrictions)
+    if type(summaryLine) ~= "string" or summaryLine == "" then
+        return limitsText
+    end
+    return summaryLine .. "\n" .. limitsText
+end
+
+function LPL.SetRestrictions:GetSingleRestrictedSpecID(restrictions)
+    restrictions = self:NormalizeRestrictions(restrictions)
+    local inferred
+    if type(restrictions.spec) == "table" then
+        for specID in pairs(restrictions.spec) do
+            specID = tonumber(specID)
+            if specID then
+                if inferred and inferred ~= specID then
+                    return nil
+                end
+                inferred = specID
+            end
+        end
+    end
+    if inferred then
+        return inferred
+    end
+    if type(restrictions.herotalents) == "table" then
+        for key in pairs(restrictions.herotalents) do
+            local specID = self:ParseHeroTalentKey(key)
+            if specID then
+                if inferred and inferred ~= specID then
+                    return nil
+                end
+                inferred = specID
+            end
+        end
+    end
+    return inferred
+end
+
+function LPL.SetRestrictions:GetSingleRestrictedHeroID(restrictions)
+    restrictions = self:NormalizeRestrictions(restrictions)
+    if type(restrictions.herotalents) ~= "table" then
+        return nil
+    end
+    local inferred
+    for key in pairs(restrictions.herotalents) do
+        local _, heroID = self:ParseHeroTalentKey(key)
+        if heroID then
+            if inferred and inferred ~= heroID then
+                return nil
+            end
+            inferred = heroID
+        end
+    end
+    return inferred
 end
 
 function LPL.SetRestrictions:GetSummaryLine(restrictions)
@@ -281,22 +439,29 @@ function LPL.SetRestrictions:GetSummaryLine(restrictions)
     end
 
     if restrictions.herotalents and type(restrictions.herotalents) == "table" then
-        for heroID in pairs(restrictions.herotalents) do
-            heroID = tonumber(heroID)
-            local heroName = "Hero " .. tostring(heroID)
+        for key in pairs(restrictions.herotalents) do
+            local specID, heroID = self:ParseHeroTalentKey(key)
+            local heroName = "Hero " .. tostring(heroID or key)
+            local specName
             if heroID and LPL.TalentTree and LPL.TalentTree.GetClasses and LPL.TalentTree.GetHeroTalentsForSpec then
                 for _, class in ipairs(LPL.TalentTree:GetClasses()) do
                     for _, spec in ipairs(LPL.TalentTree:GetSpecsForClass(class.id)) do
+                        if specID and spec.id == specID then
+                            specName = spec.name or tostring(spec.id)
+                        end
                         for _, hero in ipairs(LPL.TalentTree:GetHeroTalentsForSpec(spec.id)) do
                             if hero.id == heroID then
                                 heroName = hero.name or heroName
-                                break
                             end
                         end
                     end
                 end
             end
-            parts[#parts + 1] = heroName
+            if specName then
+                parts[#parts + 1] = specName .. " " .. heroName
+            else
+                parts[#parts + 1] = heroName
+            end
         end
     end
 
@@ -377,6 +542,21 @@ function LPL.SetRestrictions:GetClassFileForClassID(classID)
     return nil
 end
 
+function LPL.SetRestrictions:GetClassIDForSpecID(specID)
+    specID = tonumber(specID)
+    if not specID or not LPL.TalentTree or not LPL.TalentTree.GetClasses then
+        return nil
+    end
+    for _, class in ipairs(LPL.TalentTree:GetClasses()) do
+        for _, spec in ipairs(LPL.TalentTree:GetSpecsForClass(class.id)) do
+            if spec.id == specID then
+                return class.id
+            end
+        end
+    end
+    return nil
+end
+
 function LPL.SetRestrictions:GetClassIDForClassFile(classFile)
     if type(classFile) ~= "string" or classFile == "" then
         return nil
@@ -408,10 +588,10 @@ function LPL.SetRestrictions:GetEffectiveActionBarClassID(set)
         end
     end
 
-    if restrictions.spec and type(restrictions.spec) == "table" and LPL.TalentTree and LPL.TalentTree.GetClassIDForSpec then
+    if restrictions.spec and type(restrictions.spec) == "table" then
         local inferred
         for specID in pairs(restrictions.spec) do
-            local specClassID = LPL.TalentTree:GetClassIDForSpec(specID)
+            local specClassID = self:GetClassIDForSpecID(specID)
             if specClassID then
                 if inferred and inferred ~= specClassID then
                     return nil
@@ -421,6 +601,14 @@ function LPL.SetRestrictions:GetEffectiveActionBarClassID(set)
         end
         if inferred then
             return inferred
+        end
+    end
+
+    local heroSpecID = self:GetSingleRestrictedSpecID(restrictions)
+    if heroSpecID then
+        local heroClassID = self:GetClassIDForSpecID(heroSpecID)
+        if heroClassID then
+            return heroClassID
         end
     end
 
@@ -451,7 +639,7 @@ function LPL.SetRestrictions:UpdateTalentBuildFilters(build)
     end
 
     for key, value in pairs(restrictions) do
-        if type(value) == "table" then
+        if key ~= "herotalents" and type(value) == "table" then
             local list = {}
             for id in pairs(value) do
                 list[#list + 1] = id
@@ -461,6 +649,19 @@ function LPL.SetRestrictions:UpdateTalentBuildFilters(build)
             elseif #list > 1 then
                 filters[key] = list
             end
+        end
+    end
+
+    if restrictions.herotalents and type(restrictions.herotalents) == "table" then
+        for heroKey in pairs(restrictions.herotalents) do
+            local specID, heroID = self:ParseHeroTalentKey(heroKey)
+            if heroID then
+                filters.herotalents = heroID
+            end
+            if specID and not filters.spec then
+                filters.spec = specID
+            end
+            break
         end
     end
 
@@ -499,8 +700,14 @@ function LPL.SetRestrictions:UpdateActionBarSetFilters(set)
     end
 
     if restrictions.herotalents and type(restrictions.herotalents) == "table" then
-        for heroID in pairs(restrictions.herotalents) do
-            filters.herotalents = heroID
+        for key in pairs(restrictions.herotalents) do
+            local specID, heroID = self:ParseHeroTalentKey(key)
+            if heroID then
+                filters.herotalents = heroID
+            end
+            if specID and not filters.spec then
+                filters.spec = specID
+            end
             break
         end
     end

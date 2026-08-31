@@ -28,27 +28,42 @@ function LPL.TalentBuildList:Create(parent, bottomInset)
             return build.classID
         end,
         getSpecKey = function(build)
-            return build.specID
+            if build.specID then
+                return build.specID
+            end
+            if build.restrictions and build.restrictions.herotalents and LPL.SetRestrictions.ParseHeroTalentKey then
+                for key in pairs(build.restrictions.herotalents) do
+                    local specID = LPL.SetRestrictions:ParseHeroTalentKey(key)
+                    if specID then
+                        return specID
+                    end
+                end
+            end
+            return nil
         end,
         getHeroKey = function(build)
-            return build.subTreeID
+            if build.subTreeID then
+                return build.subTreeID
+            end
+            if build.restrictions and build.restrictions.herotalents and LPL.SetRestrictions.ParseHeroTalentKey then
+                for key in pairs(build.restrictions.herotalents) do
+                    local _, heroID = LPL.SetRestrictions:ParseHeroTalentKey(key)
+                    if heroID then
+                        return heroID
+                    end
+                end
+            end
+            return nil
         end,
         isActive = function(build)
             return LPL.BuildActive:IsActive(build)
         end,
         getSubtitle = function(build)
-            local parts = {}
+            local levelText = ""
             if build.level then
-                parts[#parts + 1] = "Lv " .. build.level
+                levelText = "Level: " .. tostring(build.level)
             end
-            local line = table.concat(parts, " · ")
-            if build.restrictions and next(build.restrictions) then
-                if line == "" then
-                    return "Restricted"
-                end
-                return line .. " · Restricted"
-            end
-            return line
+            return LPL.SetRestrictions:FormatListSubtitle(levelText, build.restrictions)
         end,
         getSubtitleColor = function(build)
             return LPL.BuildStore:GetClassColor(build.classID)

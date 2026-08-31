@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.1.4** |
+| Version | **1.1.5** |
 | Type | In-game composite loadout vault |
 | Folder | `lpl/` |
 | Clients | Retail Midnight (`120100`, `120007`, `120001`) |
@@ -32,8 +32,11 @@ This is the pattern every Classic flavor is supposed to **clone for UX** while r
 - **Addon sets** — enable/disable lists.
 - **Addons manager** — detect/import third-party profile strings (WeakAuras `!WA:`, ElvUI, Plater, Cell, TMW, Grid2, MDT `!` blobs, etc.).
 - Vault import chooser, list grouping/filtering, tooltip accessibility, activate feedback.
+- Limits → Hero Talents is **per specialization**. Shared trees (e.g. Hunter Pack Leader) list under each spec; checking Beast Mastery does not check Survival. Storage is `specID:heroID`, not the hero id alone.
+- Every Limits list (Talents, Loadouts, Action Bars, Equipment, PvP Talents, Edit Mode, Cooldown Manager) shows the existing summary on one line, then `Limits Set: …` or `Limit Set: None`. Talent builds use `Level: N` instead of `Lv`. A hero-talent limit groups under the class (not Other) with **Class Spec** then an indented **hero name**, both the same bold size as a spec header.
 - 1.1.3: cursor / action-bar macro fixes (shipped with AH 3.6.16 bump).
 - **1.1.4 Housing Blueprints** — vault tab like Macro Manager / Addons Manager: name, notes, Blizzard code. Retail only. Icon `housing_64.png`. Generic Import auto-detects live `Ag…` codes; chooser stays Macro vs Addon Profile. **Copy for House** copies the code and speaks/prints plot import steps. Window min height fits every sidebar tab. LPL does not place the house. Plan: [`docs/reports/lpl-housing-blueprints-plan.md`](../reports/lpl-housing-blueprints-plan.md).
+- **1.1.5 Limits lists** — hero talents are per spec (`specID:heroID`). Every Limits tab shows `Limits Set: …` or `Limit Set: None`. Talent builds use `Level: N`. A hero-talent limit groups under the class with **Class Spec** then an indented bold hero name.
 
 ## Development plan
 
@@ -62,6 +65,7 @@ Desktop siblings: **LPTM** (talent planner) and **LPLM** (loadout catalog + comm
 - Assuming Midnight APIs exist on Classic — Era uses `FlavorCompat` / `EraStubs` instead.
 - Mixing Era talent rules into this folder — **separate package** is locked.
 - `RequiredFrameHeight` above `local function CollectTabs` — Lua treated `CollectTabs` as a missing global (`Sidebar.lua:18`). Helper now sits after `CollectTabs`.
+- Hero talent Limits keyed only by subtree id. Pack Leader is the same id on Beast Mastery and Survival, so one checkbox locked both specs.
 
 ## Open work
 

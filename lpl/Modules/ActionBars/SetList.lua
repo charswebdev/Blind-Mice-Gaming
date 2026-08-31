@@ -37,11 +37,7 @@ function LPL.ActionBarSetList:Create(parent, bottomInset)
             return LPL.ActionBarActive:IsActive(set)
         end,
         getSubtitle = function(set)
-            local line = LPL.ActionBarStore:GetSummaryLine(set)
-            if set.restrictions and next(set.restrictions) then
-                return line .. " · Restricted"
-            end
-            return line
+            return LPL.SetRestrictions:FormatListSubtitle(LPL.ActionBarStore:GetSummaryLine(set), set.restrictions)
         end,
         getSubtitleColor = function(set)
             local classID = LPL.ActionBarStore:GetEffectiveClassID(set)

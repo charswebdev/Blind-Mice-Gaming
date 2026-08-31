@@ -29,6 +29,12 @@ local function ResolveClassID(item, getClassKey)
     if item.filters and item.filters.class and LPL.SetRestrictions then
         return LPL.SetRestrictions:GetClassIDForClassFile(item.filters.class)
     end
+    if item.restrictions and LPL.SetRestrictions and LPL.SetRestrictions.GetSingleRestrictedSpecID then
+        local specID = LPL.SetRestrictions:GetSingleRestrictedSpecID(item.restrictions)
+        if specID and LPL.SetRestrictions.GetClassIDForSpecID then
+            return LPL.SetRestrictions:GetClassIDForSpecID(specID)
+        end
+    end
     return nil
 end
 
@@ -46,6 +52,14 @@ local function ResolveSpecID(item, getSpecKey)
     if item.filters and item.filters.spec then
         return tonumber(item.filters.spec)
     end
+    if item.restrictions and item.restrictions.herotalents and LPL.SetRestrictions and LPL.SetRestrictions.ParseHeroTalentKey then
+        for heroKey in pairs(item.restrictions.herotalents) do
+            local specID = LPL.SetRestrictions:ParseHeroTalentKey(heroKey)
+            if specID then
+                return specID
+            end
+        end
+    end
     return nil
 end
 
@@ -53,7 +67,16 @@ local function ResolveHeroKey(item, getHeroKey)
     if getHeroKey then
         local key = getHeroKey(item)
         if key then
-            return tonumber(key)
+            local numeric = tonumber(key)
+            if numeric then
+                return numeric
+            end
+            if LPL.SetRestrictions and LPL.SetRestrictions.ParseHeroTalentKey then
+                local _, heroID = LPL.SetRestrictions:ParseHeroTalentKey(key)
+                if heroID then
+                    return heroID
+                end
+            end
         end
     end
     local heroID = tonumber(item.subTreeID)
@@ -61,7 +84,24 @@ local function ResolveHeroKey(item, getHeroKey)
         return heroID
     end
     if item.filters and item.filters.herotalents then
-        return tonumber(item.filters.herotalents)
+        local filterHero = tonumber(item.filters.herotalents)
+        if filterHero then
+            return filterHero
+        end
+        if LPL.SetRestrictions and LPL.SetRestrictions.ParseHeroTalentKey then
+            local _, parsed = LPL.SetRestrictions:ParseHeroTalentKey(item.filters.herotalents)
+            if parsed then
+                return parsed
+            end
+        end
+    end
+    if item.restrictions and item.restrictions.herotalents and LPL.SetRestrictions and LPL.SetRestrictions.ParseHeroTalentKey then
+        for heroKey in pairs(item.restrictions.herotalents) do
+            local _, parsed = LPL.SetRestrictions:ParseHeroTalentKey(heroKey)
+            if parsed then
+                return parsed
+            end
+        end
     end
     return nil
 end
@@ -496,6 +536,7 @@ function LPL.ListGrouping:BuildDisplayList(items, options)
             local hasSpecGroups = #specOrder > 0
 
             for _, specID in ipairs(specOrder) do
+                local specBucket = bucket.specs[specID]
                 local specKey = "spec:" .. classID .. ":" .. specID
                 local specCollapsed = self:IsCollapsed(
                     storage,
@@ -516,23 +557,32 @@ function LPL.ListGrouping:BuildDisplayList(items, options)
                     end
                 end
 
-                entries[#entries + 1] = {
-                    type = "spec",
-                    key = specKey,
-                    classID = classID,
-                    specID = specID,
-                    label = label,
-                    useClassColor = useClassColor,
-                    collapsed = specCollapsed,
-                    depth = 1,
-                }
+                local heroOnly = false
+                if groupByHero then
+                    local heroOrder = self:GetHeroOrder(classID, specID, specBucket.heroes or {}, playerClassID, playerSpecID)
+                    heroOnly = #heroOrder > 0 and #(specBucket.noHero or {}) == 0
+                end
 
-                if not specCollapsed then
-                    local specBucket = bucket.specs[specID]
-                    if groupByHero then
-                        appendHeroGroups(specBucket, classID, specID, 2)
-                    else
-                        appendItems(specBucket.items or {}, 2)
+                if heroOnly then
+                    appendHeroGroups(specBucket, classID, specID, 1)
+                else
+                    entries[#entries + 1] = {
+                        type = "spec",
+                        key = specKey,
+                        classID = classID,
+                        specID = specID,
+                        label = label,
+                        useClassColor = useClassColor,
+                        collapsed = specCollapsed,
+                        depth = 1,
+                    }
+
+                    if not specCollapsed then
+                        if groupByHero then
+                            appendHeroGroups(specBucket, classID, specID, 2)
+                        else
+                            appendItems(specBucket.items or {}, 2)
+                        end
                     end
                 end
             end
