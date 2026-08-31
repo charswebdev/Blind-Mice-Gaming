@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.1.5** |
+| Version | **1.1.6** |
 | Type | In-game composite loadout vault |
 | Folder | `lpl/` |
 | Clients | Retail Midnight (`120100`, `120007`, `120001`) |
@@ -37,6 +37,8 @@ This is the pattern every Classic flavor is supposed to **clone for UX** while r
 - 1.1.3: cursor / action-bar macro fixes (shipped with AH 3.6.16 bump).
 - **1.1.4 Housing Blueprints** — vault tab like Macro Manager / Addons Manager: name, notes, Blizzard code. Retail only. Icon `housing_64.png`. Generic Import auto-detects live `Ag…` codes; chooser stays Macro vs Addon Profile. **Copy for House** copies the code and speaks/prints plot import steps. Window min height fits every sidebar tab. LPL does not place the house. Plan: [`docs/reports/lpl-housing-blueprints-plan.md`](../reports/lpl-housing-blueprints-plan.md).
 - **1.1.5 Limits lists** — hero talents are per spec (`specID:heroID`). Every Limits tab shows `Limits Set: …` or `Limit Set: None`. Talent builds use `Level: N`. A hero-talent limit groups under the class with **Class Spec** then an indented bold hero name.
+- Hero-talent Limits do not block apply when the player has no hero tree yet (e.g. a level 10 Hunter). Class still has to match; combat is checked by activate, not by Limits.
+- **1.1.6:** apply a hero-limited set before hero talents unlock (any class) if the class matches and the player is out of combat.
 
 ## Development plan
 

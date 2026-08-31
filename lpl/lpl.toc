@@ -4,7 +4,7 @@
 ## Category-enUS: Blind Mice Gaming
 ## IconTexture: Interface\AddOns\lpl\icons\lpl_32.blp
 ## Notes: Plan, save, and apply loadouts - talents, gear, bars, PvP, Edit Mode, conditions, macros, housing blueprints, and more. |cffffcc00/lpl|r to open.
-## Version: 1.1.5
+## Version: 1.1.6
 ## DefaultState: enabled
 ## OptionalDeps: LibTalentTree-1.0
 ## SavedVariables: LPLDB

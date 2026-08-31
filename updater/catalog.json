@@ -155,7 +155,7 @@
       "id": "lpl",
       "name": "Light Paws Loadouts",
       "folders": ["lpl"],
-      "version": "1.1.5",
+      "version": "1.1.6",
       "updated": "2026-08-30",
       "interfaces": [120100, 120007, 120001],
       "saved": ["LPLDB"]

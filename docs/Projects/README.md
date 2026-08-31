@@ -29,7 +29,7 @@ Commit, push, and GitHub releases happen **only when asked**.
 | [Exploration](Exploration.md) | Shipped | 2.0.2 |
 | [FPSDiag](FPSDiag.md) | Shipped | 0.3.0 |
 | [WowGPS](WowGPS.md) | Shipped | 1.0.0 |
-| [Light Paws Loadouts (Retail)](Light-Paws-Loadouts-Retail.md) | Shipped | 1.1.5 |
+| [Light Paws Loadouts (Retail)](Light-Paws-Loadouts-Retail.md) | Shipped | 1.1.6 |
 | [Light Paws Loadouts - Classic Era](Light-Paws-Loadouts-Classic-Era.md) | Shipped | 1.0.0 |
 | [Light Paws - Anniversary](Light-Paws-Loadouts-Anniversary.md) | Planned | — |
 | [Light Paws Classic (MoP)](Light-Paws-Loadouts-Classic-MoP.md) | Planned | — |

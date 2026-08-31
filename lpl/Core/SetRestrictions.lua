@@ -130,14 +130,42 @@ function LPL.SetRestrictions:ToggleHeroTalentLimit(restrictions, specID, heroID)
     return restrictions
 end
 
-local function HeroTalentRestrictionMatches(bucket, specID, subTreeID)
+local function HeroTalentLimitMatchesClass(bucket, classID, specID)
+    specID = tonumber(specID)
+    classID = tonumber(classID)
+    for key in pairs(bucket) do
+        local keySpec, keyHero = LPL.SetRestrictions:ParseHeroTalentKey(key)
+        if keySpec and specID and keySpec == specID then
+            return true
+        end
+        if keySpec and classID and LPL.SetRestrictions.GetClassIDForSpecID then
+            if LPL.SetRestrictions:GetClassIDForSpecID(keySpec) == classID then
+                return true
+            end
+        end
+        if not keySpec and keyHero and classID and LPL.TalentTree and LPL.TalentTree.GetSpecsForClass then
+            for _, spec in ipairs(LPL.TalentTree:GetSpecsForClass(classID) or {}) do
+                for _, hero in ipairs(LPL.TalentTree:GetHeroTalentsForSpec(spec.id) or {}) do
+                    if hero.id == keyHero then
+                        return true
+                    end
+                end
+            end
+        end
+    end
+    return false
+end
+
+local function HeroTalentRestrictionMatches(bucket, specID, subTreeID, classID)
     if type(bucket) ~= "table" or not next(bucket) then
         return true
     end
     specID = tonumber(specID)
     subTreeID = tonumber(subTreeID)
-    if not subTreeID then
-        return false
+    -- Hero trees unlock late (level 71). A matching class can still apply
+    -- the set; combat is enforced by activate, not by Limits.
+    if not subTreeID or subTreeID == 0 then
+        return HeroTalentLimitMatchesClass(bucket, classID, specID)
     end
     for key in pairs(bucket) do
         local keySpec, keyHero = LPL.SetRestrictions:ParseHeroTalentKey(key)
@@ -280,7 +308,12 @@ function LPL.SetRestrictions:AreValidForPlayer(restrictions)
         if LPL.TalentTree and LPL.TalentTree.GetPlayerActiveSubTreeID and playerSpecID then
             subTreeID = LPL.TalentTree:GetPlayerActiveSubTreeID(playerSpecID)
         end
-        if not HeroTalentRestrictionMatches(restrictions.herotalents, playerSpecID, subTreeID) then
+        if not HeroTalentRestrictionMatches(
+            restrictions.herotalents,
+            playerSpecID,
+            subTreeID,
+            character:GetClassID()
+        ) then
             return false
         end
     end
