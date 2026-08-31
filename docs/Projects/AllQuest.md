@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** (journal data plan phases 0–5 complete) |
-| Version | **1.1.1** (addon toc + updater catalog; data packs are `1.0.0` with `X-AllQuest-AutoLoad`) |
+| Version | **1.1.2** (addon toc + updater catalog; data packs are `1.0.0` with `X-AllQuest-AutoLoad`) |
 | Type | In-game quest tracker + questline journal + expansion data plugins |
 | Folders | `AllQuest/` (runtime) · `AllQuest_Data_*` (one pack per expansion) |
 | Author tools | `Tools/AllQuest/` — extractors, wago DB2 cache, ID census (gitignored) |
@@ -25,7 +25,7 @@ World-quest / repeatable journal buckets stay **visible** by default (setting ca
 
 - Custom tracker (can hide Blizzard’s).
 - Sections: popups, quests, world quests, scenarios, campaigns, achievements, recipes, activities, events, collectibles, pets, rares.
-- Delve instance block: under Nemesis Influence, **Nemesis Strong Box** shows the requirement as `0/7 packs` (live “Enemy groups affected” / tooltip total, not a hardcoded 4). At `7/7` the line keeps the count and gets a green check. **Find Shrine of Abundance** only appears in a **Bountiful** delve (header `rewardInfo` / bountiful spell). After Dundun gossip / an Abundantly Bountiful widget or aura / a bonus-named cast, the line checks off as spoils secured.
+- Delve instance block: under Nemesis Influence, **Nemesis Packs** shows live `3/4` (vignette remaining + persisted kills, same method as Everything Delves). Label is **Nemesis Packs**, not `packs`. Total comes from the live “Enemy groups affected” tooltip when known, otherwise the tier table. At `4/4` the line keeps the count and gets a green check. **Find Shrine of Abundance** only appears in a **Bountiful** delve. After Dundun gossip / an Abundantly Bountiful widget or aura / a bonus-named cast, the line checks off as spoils secured.
 - Auto-accept / auto-turn-in (Shift at NPC skips).
 - Super-track, items, sounds, colors, filters, profiles.
 - Speech of focused rows (AH queue if loaded).
@@ -33,6 +33,7 @@ World-quest / repeatable journal buckets stay **visible** by default (setting ca
 ### Journal
 
 - List + graph views of chains; quest detail pane.
+- Tracker / journal open of a quest shows that quest’s detail pane. Named questlines win over Unlisted census dumps (Hero’s Call / Warchief’s Command breadcrumbs). Graph nodes wrap two title lines and scroll the focused quest into view.
 - Load-on-demand data packs (`## LoadOnDemand: 1`, `X-AllQuest-Expansion`).
 - Newest allowed expansion autoloads (`X-AllQuest-AutoLoad`).
 - Campaign folders and chapter order (Retail). CliTask **forks** where completed-quest parents exist.
@@ -106,6 +107,8 @@ Classic after phase 5: **822** chains, **5,519** unique IDs, Era QuestV2 **4,807
 - Marking S2 bonus complete only from Season 1 banner spell IDs / auras. Clicking Dundun never fired those, so the line stayed **Find Shrine of Abundance** after the bonus was already secured.
 - Showing the shrine line on every T4+ delve. The shrine only exists in **Bountiful** delves.
 - Shipping `1.0.10` / `1.0.11`. Patch stays a single digit on every project; this build is **1.1.0**.
+- Opening a tracker quest from the journal used the first indexed chain. Census leftovers like **Unlisted 28523-28666** won over a named questline, titles clipped to `Warchief's C…`, and the detail pane never opened.
+- Nemesis pack line said `0/4 packs` after three packs were dead: the unit was hardcoded `packs`, and the run key used `GetRealZoneText` (resets the tally). Progress now persists per instance, credits secret GUIDs, and can take Everything Delves’ `activeRun.nemesisKilled` as a floor.
 
 ## Open work
 

@@ -1097,7 +1097,18 @@ end
 
 function Compat.UnitFaction()
     local f = Safe(UnitFactionGroup, "player")
-    return f
+    if type(f) == "string" and not Compat.IsSecretValue(f) then
+        return f
+    end
+    return nil
+end
+
+function Compat.UnitClassFile()
+    local _, classFile = Safe(UnitClass, "player")
+    if type(classFile) == "string" and not Compat.IsSecretValue(classFile) then
+        return classFile
+    end
+    return nil
 end
 
 function Compat.QuestIDFromAccepted(arg1, arg2)
@@ -1175,10 +1186,9 @@ function Compat.GetPlayerMapPosition()
     return nil
 end
 
---- Map names from the current zone up to the continent. Empty if unknown.
-function Compat.GetMapNameChain()
+--- Map names from a map ID up to the continent. Empty if unknown.
+function Compat.GetMapNameChainFrom(mapID)
     local names = {}
-    local mapID = select(1, Compat.GetPlayerMapPosition())
     if type(mapID) ~= "number" or not C_Map or not C_Map.GetMapInfo then
         return names, mapID
     end
@@ -1199,6 +1209,24 @@ function Compat.GetMapNameChain()
         end
     end
     return names, mapID
+end
+
+function Compat.GetQuestUiMapID(questID)
+    if not Compat.CanUseNumber(questID) then
+        return nil
+    end
+    if C_QuestLog and C_QuestLog.GetQuestUiMapID then
+        local mapID = Safe(C_QuestLog.GetQuestUiMapID, questID)
+        if type(mapID) == "number" and mapID > 0 then
+            return mapID
+        end
+    end
+    return nil
+end
+
+--- Map names from the current zone up to the continent. Empty if unknown.
+function Compat.GetMapNameChain()
+    return Compat.GetMapNameChainFrom(select(1, Compat.GetPlayerMapPosition()))
 end
 
 function Compat.QuestLogIsFull()

@@ -210,12 +210,29 @@ local function UnindexChain(chainID)
     end
 end
 
+local function RemoveChainFromCategory(chainID, categoryID)
+    local cat = categories[categoryID]
+    if not cat or type(cat.chains) ~= "table" then
+        return
+    end
+    local n = 1
+    while n <= #cat.chains do
+        if cat.chains[n] == chainID then
+            table.remove(cat.chains, n)
+        else
+            n = n + 1
+        end
+    end
+end
+
 function Data:AddChain(item)
     if type(item) ~= "table" or type(item.id) ~= "number" then
         return nil
     end
-    if chains[item.id] then
+    local previous = chains[item.id]
+    if previous then
         UnindexChain(item.id)
+        RemoveChainFromCategory(item.id, previous.category)
     end
     item.nodes = item.nodes or {}
     item.prerequisites = item.prerequisites or {}
@@ -246,6 +263,18 @@ function Data:AddChain(item)
         AQ.Events.Fire("AQ_DATA_CHANGED")
     end
     return item
+end
+
+function Data:FindChainByName(expansionID, name)
+    if type(name) ~= "string" or name == "" then
+        return nil
+    end
+    for _, chain in pairs(chains) do
+        if chain and chain.name == name and (expansionID == nil or chain.expansion == expansionID) then
+            return chain
+        end
+    end
+    return nil
 end
 
 function Data:GetExpansion(id)
@@ -307,7 +336,8 @@ function Data.IsInternalContent(name)
     end
     -- Version-prefixed internal buckets: "12.0 Z3 - ...", "12.0 Prelaunch - WQs".
     if n:find("^%d+%.%d+") then
-        if n:find(" z%d+") or n:find("prelaunch", 1, true) or n:find("endeavor", 1, true)
+        if n:find(" z%d+") or n:find("prelaunch", 1, true) or n:find("preorder", 1, true)
+            or n:find("tutorial", 1, true) or n:find("endeavor", 1, true)
             or n:find("housing", 1, true) or n:find("cleanup", 1, true) then
             return true
         end
@@ -315,7 +345,48 @@ function Data.IsInternalContent(name)
     if n:find("moth hunt %- group", 1, true) then
         return true
     end
+    if n:find("catch up", 1, true) or n:find("lorewalking", 1, true) then
+        return true
+    end
     return false
+end
+
+--- Census leftover buckets (ID ranges, not a real questline).
+function Data.IsUnlistedBucket(name)
+    if type(name) ~= "string" or name == "" then
+        return false
+    end
+    return name:lower():find("^unlisted") and true or false
+end
+
+--- QuestLine buckets named as world quests / repeatables. Journal setting can hide them.
+function Data.IsWorldQuestBucket(name)
+    if type(name) ~= "string" or name == "" then
+        return false
+    end
+    local n = name:lower()
+    if n:find("world quest", 1, true) or n:find("repeatable", 1, true) then
+        return true
+    end
+    return false
+end
+
+function Data.ShowWorldQuestBuckets()
+    local db = AQ.DB and AQ.DB.Get and AQ.DB.Get() or nil
+    if not db then
+        return true
+    end
+    return db.journalShowWorldQuests ~= false
+end
+
+local function CategoryVisible(cat)
+    if not cat or Data.IsInternalContent(cat.name) then
+        return false
+    end
+    if Data.IsWorldQuestBucket(cat.name) and not Data.ShowWorldQuestBuckets() then
+        return false
+    end
+    return true
 end
 
 function Data:GetCategories(expansionID)
@@ -326,7 +397,7 @@ function Data:GetCategories(expansionID)
     end
     for i = 1, #exp.categories do
         local cat = categories[exp.categories[i]]
-        if cat and not Data.IsInternalContent(cat.name) then
+        if CategoryVisible(cat) then
             local visible = Data:GetChains(cat.id)
             if #visible > 0 then
                 out[#out + 1] = cat
@@ -437,7 +508,9 @@ function Data:GetChains(categoryID)
     for i = 1, #cat.chains do
         local chain = chains[cat.chains[i]]
         if chain and not Data.IsInternalContent(chain.name) then
-            out[#out + 1] = chain
+            if not (Data.IsWorldQuestBucket(chain.name) and not Data.ShowWorldQuestBuckets()) then
+                out[#out + 1] = chain
+            end
         end
     end
     return SortChainsForPlay(out)
@@ -447,12 +520,39 @@ function Data:FindChainsForQuest(questID)
     return questIndex[questID]
 end
 
+local function ChainOpenScore(chain)
+    if not chain then
+        return -1
+    end
+    local name = chain.name
+    if Data.IsInternalContent(name) then
+        return 0
+    end
+    if Data.IsUnlistedBucket(name) then
+        return 1
+    end
+    if Data.IsWorldQuestBucket(name) then
+        return 2
+    end
+    return 10
+end
+
 function Data:FindFirstChainForQuest(questID)
     local list = questIndex[questID]
-    if list and list[1] then
-        return chains[list[1].chainID], list[1].nodeIndex
+    if not list or not list[1] then
+        return nil
     end
-    return nil
+    local best, bestNode, bestScore
+    for i = 1, #list do
+        local chain = chains[list[i].chainID]
+        local score = ChainOpenScore(chain)
+        if not bestScore or score > bestScore then
+            bestScore = score
+            best = chain
+            bestNode = list[i].nodeIndex
+        end
+    end
+    return best, bestNode
 end
 
 local function RestrictionOk(restrictions)
@@ -464,6 +564,29 @@ local function RestrictionOk(restrictions)
         local player = AQ.Compat.UnitFaction()
         if player and player ~= faction then
             return false
+        end
+    end
+    local classFile = restrictions.class
+    if type(classFile) == "string" and classFile ~= "" then
+        local player = AQ.Compat.UnitClassFile and AQ.Compat.UnitClassFile()
+        if player and player ~= classFile then
+            return false
+        end
+    end
+    local classes = restrictions.classes
+    if type(classes) == "table" and #classes > 0 then
+        local player = AQ.Compat.UnitClassFile and AQ.Compat.UnitClassFile()
+        if player then
+            local ok = false
+            for i = 1, #classes do
+                if classes[i] == player then
+                    ok = true
+                    break
+                end
+            end
+            if not ok then
+                return false
+            end
         end
     end
     return true

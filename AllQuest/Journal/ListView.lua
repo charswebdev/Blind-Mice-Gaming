@@ -27,10 +27,22 @@ end
 
 local function RestrictionLabel(chain)
     local r = chain.restrictions
-    if type(r) == "table" and type(r.faction) == "string" then
-        return " " .. r.faction
+    if type(r) ~= "table" then
+        return ""
     end
-    return ""
+    local parts = {}
+    if type(r.faction) == "string" and r.faction ~= "" then
+        parts[#parts + 1] = r.faction
+    end
+    if type(r.class) == "string" and r.class ~= "" then
+        parts[#parts + 1] = r.class
+    elseif type(r.classes) == "table" and #r.classes > 0 then
+        parts[#parts + 1] = table.concat(r.classes, "/")
+    end
+    if #parts == 0 then
+        return ""
+    end
+    return " " .. table.concat(parts, " ")
 end
 
 local function Current()
@@ -140,8 +152,35 @@ local function BuildSearchItems()
     end
 end
 
+local function LeaveHiddenWorldQuestView()
+    while true do
+        local cur = Current()
+        if not cur then
+            return
+        end
+        local name
+        if cur.kind == "category" then
+            local cat = AQ.Data:GetCategory(cur.id)
+            name = cat and cat.name
+        elseif cur.kind == "chain" then
+            local chain = AQ.Data:GetChain(cur.id)
+            name = chain and chain.name
+        else
+            return
+        end
+        if not AQ.Data.IsWorldQuestBucket or not AQ.Data.IsWorldQuestBucket(name) then
+            return
+        end
+        if AQ.Data.ShowWorldQuestBuckets and AQ.Data.ShowWorldQuestBuckets() then
+            return
+        end
+        stack[#stack] = nil
+    end
+end
+
 local function BuildItems()
     items = {}
+    LeaveHiddenWorldQuestView()
     if searchQuery ~= "" then
         BuildSearchItems()
         if #items == 0 then
@@ -675,7 +714,7 @@ function ListView.OpenExpansion(id)
     AQ.Speech.Say(exp.name or "Expansion")
 end
 
-function ListView.OpenCategory(id)
+function ListView.OpenCategory(id, silent)
     local cat = AQ.Data:GetCategory(id)
     if not cat then
         return
@@ -689,7 +728,9 @@ function ListView.OpenCategory(id)
     stack[#stack + 1] = { kind = "category", id = cat.id, name = cat.name }
     focused = 1
     ListView.Refresh()
-    AQ.Speech.Say(cat.name or "Zone")
+    if not silent then
+        AQ.Speech.Say(cat.name or "Zone")
+    end
 end
 
 function ListView.Activate()
@@ -783,11 +824,9 @@ function ListView.OnZonePicked(value)
     end
 end
 
-function ListView.Here()
-    local names = AQ.Compat.GetMapNameChain and AQ.Compat.GetMapNameChain() or {}
+local function BestCategoryForNames(names)
     if type(names) ~= "table" or #names == 0 then
-        AQ.Speech.Say("Current zone unknown")
-        return
+        return nil
     end
     local best
     local bestScore
@@ -799,7 +838,7 @@ function ListView.Here()
             for ci = 1, #cats do
                 local cat = cats[ci]
                 local cname = (cat.name or ""):lower()
-                if cname ~= "" then
+                if cname ~= "" and not (AQ.Data.IsUnlistedBucket and AQ.Data.IsUnlistedBucket(cname)) then
                     local score
                     if cname == mapName then
                         score = 400
@@ -824,12 +863,43 @@ function ListView.Here()
             break
         end
     end
+    return best
+end
+
+local function MapNamesForQuest(questID)
+    local names = {}
+    local mapID = AQ.Compat.GetQuestUiMapID and AQ.Compat.GetQuestUiMapID(questID)
+    if type(mapID) ~= "number" and AQ.QuestSources and AQ.QuestSources.ResolveLocation then
+        mapID = select(1, AQ.QuestSources.ResolveLocation(questID))
+    end
+    if type(mapID) ~= "number" and AQ.Compat.GetQuestPickupLocation then
+        mapID = select(1, AQ.Compat.GetQuestPickupLocation(questID))
+    end
+    if AQ.Compat.GetMapNameChainFrom then
+        names = AQ.Compat.GetMapNameChainFrom(mapID)
+    elseif type(mapID) == "number" then
+        local name = AQ.Compat.GetMapName(mapID)
+        if name then
+            names[1] = name
+        end
+    end
+    return names
+end
+
+function ListView.Here()
+    local names = AQ.Compat.GetMapNameChain and AQ.Compat.GetMapNameChain() or {}
+    if type(names) ~= "table" or #names == 0 then
+        AQ.Speech.Say("Current zone unknown")
+        return
+    end
+    local best = BestCategoryForNames(names)
     if best then
         ListView.OpenCategory(best.id)
         return
     end
     for ni = 1, #names do
         local mapName = names[ni]:lower()
+        local expansions = AQ.Data:GetExpansions()
         for ei = 1, #expansions do
             local eName = (expansions[ei].name or ""):lower()
             if eName ~= "" and (eName == mapName or eName:find(mapName, 1, true) or mapName:find(eName, 1, true)) then
@@ -930,27 +1000,43 @@ function ListView.OnKey(key)
 end
 
 function ListView.OpenQuest(questID)
-    local chain, nodeIndex = AQ.Data:FindFirstChainForQuest(questID)
-    if not chain then
-        ListView.Home()
-        AQ.Speech.Say("No questline data for this quest")
+    if type(questID) ~= "number" then
         return
     end
     ClearSearch()
-    local cat = AQ.Data:GetCategory(chain.category)
-    local exp = cat and AQ.Data:GetExpansion(cat.expansion or chain.expansion)
-    stack = {}
-    if exp then
-        stack[#stack + 1] = { kind = "expansion", id = exp.id, name = exp.name }
+    local chain, nodeIndex = AQ.Data:FindFirstChainForQuest(questID)
+    local dump = chain and AQ.Data.IsUnlistedBucket and AQ.Data.IsUnlistedBucket(chain.name)
+    if chain and not dump then
+        local cat = AQ.Data:GetCategory(chain.category)
+        local exp = cat and AQ.Data:GetExpansion(cat.expansion or chain.expansion)
+        stack = {}
+        if exp then
+            stack[#stack + 1] = { kind = "expansion", id = exp.id, name = exp.name }
+        end
+        if cat then
+            stack[#stack + 1] = { kind = "category", id = cat.id, name = cat.name }
+        end
+        stack[#stack + 1] = { kind = "chain", id = chain.id, name = chain.name }
+        focused = nodeIndex or 1
+        ListView.Refresh()
+    else
+        local zone = BestCategoryForNames(MapNamesForQuest(questID))
+        if zone then
+            ListView.OpenCategory(zone.id, true)
+        else
+            stack = {}
+            focused = 1
+            ListView.Refresh()
+        end
     end
-    if cat then
-        stack[#stack + 1] = { kind = "category", id = cat.id, name = cat.name }
+    if AQ.Journal.QuestDetail then
+        local title = AQ.Compat.GetQuestTitle and AQ.Compat.GetQuestTitle(questID)
+        AQ.Journal.QuestDetail.Show(questID, title)
+        return
     end
-    stack[#stack + 1] = { kind = "chain", id = chain.id, name = chain.name }
-    focused = nodeIndex or 1
-    ListView.Refresh()
-    local data = items[focused]
-    AQ.Speech.Say("Opened questline " .. (chain.name or "") .. ". " .. ((data and data.speech) or ""))
+    if not chain then
+        AQ.Speech.Say("No questline data for this quest")
+    end
 end
 
 AQ.Events.Register("QUEST_DATA_LOAD_RESULT", function(_, questID, success)

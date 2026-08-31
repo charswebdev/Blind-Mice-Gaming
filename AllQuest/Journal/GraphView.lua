@@ -12,7 +12,7 @@ local GraphView = {}
 AQ.Journal.GraphView = GraphView
 
 local NODE_W = 220
-local NODE_H = 40
+local NODE_H = 48
 local VGAP = 36
 local HGAP = 16
 local LINE_H = 3
@@ -78,9 +78,9 @@ local function GetNode(i, parent)
     btn.Text:SetPoint("LEFT", 10, 0)
     btn.Text:SetPoint("RIGHT", -72, 0)
     btn.Text:SetJustifyH("LEFT")
-    btn.Text:SetWordWrap(false)
+    btn.Text:SetWordWrap(true)
     if btn.Text.SetMaxLines then
-        pcall(btn.Text.SetMaxLines, btn.Text, 1)
+        pcall(btn.Text.SetMaxLines, btn.Text, 2)
     end
     btn.Status = AQ.Widgets.FontString(btn, 12)
     btn.Status:SetPoint("RIGHT", -10, 0)
@@ -359,7 +359,10 @@ function GraphView.Refresh(items, focused)
             btn.Text:SetText(data.title or "")
             AQ.Widgets.SetFont(btn.Text, 14, AQ.Theme.accent[1], AQ.Theme.accent[2], AQ.Theme.accent[3])
             btn.Text:SetJustifyH("LEFT")
-            btn.Text:SetWordWrap(false)
+            btn.Text:SetWordWrap(true)
+            if btn.Text.SetMaxLines then
+                pcall(btn.Text.SetMaxLines, btn.Text, 2)
+            end
             local st = data.status or ""
             btn.Status:SetText(st)
             local sc = AQ.Theme.StatusColor(st)
@@ -411,6 +414,22 @@ function GraphView.Refresh(items, focused)
     end
     HideUnusedLines()
     child:SetSize(math.max(width, maxW + 8), math.max(height, 1))
+    local pos = focused and layout[focused]
+    if pos and f.Scroll and f.Scroll.SetVerticalScroll then
+        local viewH = f.Scroll:GetHeight() or 0
+        local maxScroll = 0
+        if f.Scroll.GetVerticalScrollRange then
+            maxScroll = f.Scroll:GetVerticalScrollRange() or 0
+        end
+        local target = pos.y - math.max(0, (viewH - NODE_H) / 3)
+        if target < 0 then
+            target = 0
+        end
+        if target > maxScroll then
+            target = maxScroll
+        end
+        f.Scroll:SetVerticalScroll(target)
+    end
 end
 
 function GraphView.UpdateTitles(items)

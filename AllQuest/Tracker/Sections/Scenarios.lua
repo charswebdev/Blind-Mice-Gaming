@@ -130,12 +130,23 @@ local function InstanceBits()
             difficultyName = AQ:SafeCall(GetDifficultyInfo, difficultyID)
         end
     end
+    local instanceID
+    if GetInstanceInfo then
+        local ok, n, _, _, _, _, _, _, id = pcall(GetInstanceInfo)
+        if ok and type(n) == "string" then
+            name = name or n
+        end
+        if ok and type(id) == "number" then
+            instanceID = id
+        end
+    end
     return {
         name = name,
         instanceType = instanceType,
         difficultyID = difficultyID,
         difficultyName = difficultyName,
         maxPlayers = maxPlayers,
+        instanceID = instanceID,
     }
 end
 
@@ -192,9 +203,11 @@ end
 -- vignette ID per remaining pack; each season appends a new ID. Banner is
 -- player auras + interact casts; vignette names can be Midnight secrets.
 local NEMESIS_PACK_VIGNETTES = {
-    7531,
-    7869,
+    7531, -- S1 Nullaeus' Minions
+    7869, -- S2 Ula'tek's Chosen
 }
+local learnedPackIDs = {}
+local PACK_UNIT = "Nemesis Packs"
 local PACK_NAME_WORDS = {
     "ula'tek",
     "ulatek",
@@ -347,15 +360,100 @@ local function SafeKey(value)
 end
 
 local function RunKey()
-    if GetRealZoneText then
-        local ok, zone = pcall(GetRealZoneText)
-        local text = ok and SafeText(zone) or ""
-        if text ~= "" then
-            return text
+    local inst = InstanceBits()
+    local name = inst and inst.name
+    if type(name) ~= "string" or name == "" then
+        if GetRealZoneText then
+            local ok, zone = pcall(GetRealZoneText)
+            name = ok and SafeText(zone) or ""
         end
     end
-    local inst = InstanceBits()
-    return SafeText(inst and inst.name)
+    local id = inst and inst.instanceID
+    if type(name) == "string" and name ~= "" then
+        return name .. "#" .. tostring(id or 0)
+    end
+    return SafeText(id)
+end
+
+local function CharNemesis()
+    local char = AQ.DB and AQ.DB.Char and AQ.DB.Char()
+    if type(char) ~= "table" then
+        return nil
+    end
+    if type(char.delveNemesis) ~= "table" then
+        char.delveNemesis = {}
+    end
+    return char.delveNemesis
+end
+
+local function LearnPackID(id, persist)
+    id = tonumber(id)
+    if not id then
+        return
+    end
+    for i = 1, #NEMESIS_PACK_VIGNETTES do
+        if NEMESIS_PACK_VIGNETTES[i] == id then
+            return
+        end
+    end
+    for i = 1, #learnedPackIDs do
+        if learnedPackIDs[i] == id then
+            return
+        end
+    end
+    learnedPackIDs[#learnedPackIDs + 1] = id
+    if persist == false then
+        return
+    end
+    local saved = CharNemesis()
+    if saved then
+        local list = saved.packIDs
+        if type(list) ~= "table" then
+            list = {}
+            saved.packIDs = list
+        end
+        list[#list + 1] = id
+    end
+end
+
+local function RestoreLearnedPackIDs()
+    local saved = CharNemesis()
+    local list = saved and saved.packIDs
+    if type(list) ~= "table" then
+        return
+    end
+    for i = 1, #list do
+        LearnPackID(list[i], false)
+    end
+end
+
+local function HintFromEverythingDelves()
+    local E = _G.EverythingDelves
+    if type(E) ~= "table" or type(E.db) ~= "table" then
+        return nil
+    end
+    local ar = E.db.activeRun
+    if type(ar) == "table" and type(ar.nemesisKilled) == "number" and ar.nemesisKilled > 0 then
+        return ar.nemesisKilled
+    end
+    return nil
+end
+
+local function PersistNemesisKilled(killed)
+    local saved = CharNemesis()
+    if not saved or type(nemesisRun.key) ~= "string" or nemesisRun.key == "" then
+        return
+    end
+    killed = tonumber(killed) or 0
+    local prev = tonumber(saved.killed) or 0
+    if saved.key == nemesisRun.key then
+        killed = math.max(killed, prev)
+    end
+    saved.key = nemesisRun.key
+    saved.killed = killed
+    if (tonumber(nemesisRun.packNeed) or 0) > 0 then
+        saved.packNeed = nemesisRun.packNeed
+    end
 end
 
 local function ResetNemesisRun(key)
@@ -379,9 +477,19 @@ local function ResetNemesisRun(key)
     nemesisRun.sawDundun = false
     nemesisRun.dundunGossip = false
     nemesisRun.wasBountiful = false
+    local saved = CharNemesis()
+    if saved and saved.key == key then
+        nemesisRun.killedBase = tonumber(saved.killed) or 0
+        nemesisRun.packNeed = tonumber(saved.packNeed) or 0
+    end
+    local ed = HintFromEverythingDelves()
+    if type(ed) == "number" and ed > (nemesisRun.killedBase or 0) then
+        nemesisRun.killedBase = ed
+    end
 end
 
 local function EnsureNemesisRun()
+    RestoreLearnedPackIDs()
     local key = RunKey()
     if key ~= "" and nemesisRun.key ~= key then
         ResetNemesisRun(key)
@@ -393,6 +501,11 @@ end
 local function IsNemesisPackVignette(vignetteID)
     for i = 1, #NEMESIS_PACK_VIGNETTES do
         if SafeEq(vignetteID, NEMESIS_PACK_VIGNETTES[i]) then
+            return true
+        end
+    end
+    for i = 1, #learnedPackIDs do
+        if SafeEq(vignetteID, learnedPackIDs[i]) then
             return true
         end
     end
@@ -570,7 +683,11 @@ local function InfoLooksLikePack(info)
         return true
     end
     local blob = VignetteNameLower(info.name) .. " " .. VignetteNameLower(info.atlasName)
-    return BlobHas(blob, PACK_NAME_WORDS)
+    if BlobHas(blob, PACK_NAME_WORDS) then
+        LearnPackID(info.vignetteID)
+        return true
+    end
+    return false
 end
 
 local function NoteBonusFlavor(ln)
@@ -601,11 +718,15 @@ end
 
 local function RememberPackKey(info, vigGuid)
     local key = SafeKey(info and info.objectGUID) or SafeKey(vigGuid)
-    if not key or nemesisRun.seen[key] then
-        return
+    if not key then
+        return false
+    end
+    if nemesisRun.seen[key] then
+        return false
     end
     nemesisRun.seen[key] = true
     nemesisRun.seenCount = nemesisRun.seenCount + 1
+    return true
 end
 
 local function CollectVignetteGuids()
@@ -613,15 +734,18 @@ local function CollectVignetteGuids()
     if not (C_VignetteInfo and C_VignetteInfo.GetVignettes) then
         return out
     end
-    local ok, packed = pcall(function()
-        return { C_VignetteInfo.GetVignettes() }
-    end)
-    if not ok or type(packed) ~= "table" or #packed == 0 then
-        return out
-    end
-    if type(packed[1]) == "table" and packed[2] == nil then
-        for k, v in pairs(packed[1]) do
-            if type(v) == "string" then
+    local ok, vigs = pcall(C_VignetteInfo.GetVignettes)
+    if ok and type(vigs) == "table" then
+        for i = 1, #vigs do
+            if vigs[i] ~= nil then
+                out[#out + 1] = vigs[i]
+            end
+        end
+        if #out > 0 then
+            return out
+        end
+        for k, v in pairs(vigs) do
+            if type(v) == "string" or type(v) == "number" then
                 out[#out + 1] = v
             elseif type(k) == "string" then
                 out[#out + 1] = k
@@ -629,8 +753,14 @@ local function CollectVignetteGuids()
         end
         return out
     end
+    local packedOk, packed = pcall(function()
+        return { C_VignetteInfo.GetVignettes() }
+    end)
+    if not packedOk or type(packed) ~= "table" then
+        return out
+    end
     for i = 1, #packed do
-        if type(packed[i]) == "string" then
+        if packed[i] ~= nil and type(packed[i]) ~= "table" then
             out[#out + 1] = packed[i]
         end
     end
@@ -644,6 +774,7 @@ local function ScanDelveVignettes()
     local boxSeen = false
     local ragerUp = false
     local bannerLeft = 0
+    local seenBefore = tonumber(nemesisRun.seenCount) or 0
     for i = 1, #vigs do
         local vigGuid = vigs[i]
         pcall(function()
@@ -673,6 +804,13 @@ local function ScanDelveVignettes()
     local prev = tonumber(nemesisRun.remaining) or 0
     if nemesisRun.haveSeenPack and packCount < prev then
         nemesisRun.killedFromDespawn = (nemesisRun.killedFromDespawn or 0) + (prev - packCount)
+    end
+    if packCount > prev then
+        local grew = packCount - prev
+        local gained = (tonumber(nemesisRun.seenCount) or 0) - seenBefore
+        if gained < grew then
+            nemesisRun.seenCount = (tonumber(nemesisRun.seenCount) or 0) + (grew - gained)
+        end
     end
     if packCount > 0 then
         nemesisRun.haveSeenPack = true
@@ -1082,14 +1220,21 @@ local function AddNemesisExtras(rows, delve, sp, tip, tier)
             fromWidget = 0
         end
     end
-    local fromGuids = (nemesisRun.killedBase or 0) + math.max(0, (nemesisRun.seenCount or 0) - (tonumber(nemesisRun.remaining) or 0))
+    local edHint = HintFromEverythingDelves()
+    if type(edHint) == "number" and edHint > (nemesisRun.killedBase or 0) then
+        nemesisRun.killedBase = edHint
+    end
+    local fromGuids = (nemesisRun.killedBase or 0) + math.max(0, (nemesisRun.seenCount or 0) - remaining)
     local fromDespawn = tonumber(nemesisRun.killedFromDespawn) or 0
-    local killed = fromWidget
-    if fromGuids > killed then
-        killed = fromGuids
+    local killed = fromGuids
+    if fromWidget > killed then
+        killed = fromWidget
     end
     if fromDespawn > killed then
         killed = fromDespawn
+    end
+    if type(edHint) == "number" and edHint > killed then
+        killed = edHint
     end
     if type(auraStacks) == "number" and auraStacks > killed then
         killed = auraStacks
@@ -1105,8 +1250,9 @@ local function AddNemesisExtras(rows, delve, sp, tip, tier)
     if killed > total then
         killed = total
     end
+    PersistNemesisKilled(killed)
     local packDone = (boxEarned or nemesisRun.boxEarned or (killed >= total and (nemesisRun.haveSeenPack or widgetRemaining ~= nil or killed > 0))) and true or false
-    AddDelveExtraRow(rows, "Nemesis Strong Box", killed, total, packDone, "Nemesis Strong Box", "packs")
+    AddDelveExtraRow(rows, PACK_UNIT, killed, total, packDone, PACK_UNIT, PACK_UNIT)
     NoteBonusNpcUnits()
     if DelveIsBountiful(delve) then
         AddBonusLootRow(rows, delve)
@@ -1135,7 +1281,7 @@ local function AttachNemesisExtras(rows, delve, sp, tip, tier, afterIndex)
         if need <= 0 then
             need = 4
         end
-        AddDelveExtraRow(extras, "Nemesis Strong Box", 0, need, false, "Nemesis Strong Box", "packs")
+        AddDelveExtraRow(extras, PACK_UNIT, 0, need, false, PACK_UNIT, PACK_UNIT)
         if DelveIsBountiful(delve) then
             AddBonusLootRow(extras, delve)
         end
