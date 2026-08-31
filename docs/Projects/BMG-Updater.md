@@ -3,11 +3,11 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.1.9** (`updaterVersion` + GitHub tag `v1.1.9`) |
+| Version | **1.2.0** (`updaterVersion` + GitHub tag `v1.2.0`) |
 | Type | Desktop installer/updater for **all** BMG addons and first-run desktop apps |
 | Folder | `updater/` (source mostly local; **`catalog.json` tracked**) |
 | Catalog URL | GitHub `main` · `updater/catalog.json` in repo `charswebdev/Blind-Mice-Gaming` |
-| Setup | `https://github.com/charswebdev/Blind-Mice-Gaming/releases/download/v1.1.9/BMG-Updater-Setup-1.1.9.exe` |
+| Setup | `https://github.com/charswebdev/Blind-Mice-Gaming/releases/download/v1.2.0/BMG-Updater-Setup-1.2.0.exe` |
 | Author tools | `Tools/updater/` logo previews / installer art |
 
 ## Description
@@ -26,6 +26,7 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 - 1.1.8: download progress immediately; self-update runs **before** app installs.
 - Addon updates (auto and manual) install even while World of Warcraft is open. Status tells the player to `/reload` in-game. If a folder is locked, files are overwritten in place.
 - **1.1.9:** automatic addon updates no longer wait for Wow.exe to close.
+- **1.2.0:** self-update starts as soon as the catalog shows a newer `updaterVersion` (not after the addon TOC scan, and not only when the addon auto-update box is checked). Rechecks every 10 minutes. Silent Setup relaunches the new exe.
 
 ## Development plan
 
@@ -54,6 +55,7 @@ Version compare for addons is catalog `version` vs installed toc. **Short versio
 - Running app installs before updater self-update (1.1.8 orders self-update first).
 - Progress UI that stayed empty until the download finished (1.1.8).
 - Waiting for Wow.exe to close before automatic addon updates. Addons load from disk on `/reload`; the game does not need to quit.
+- 1.1.8 self-update waited until every addon TOC was fetched, and only ran if “Automatically update installed addons and apps” was on. A long-running instance never re-checked. Silent Setup also skipped launching the new exe (`skipifsilent`).
 
 ## Open work
 
