@@ -50,7 +50,7 @@ function Panel:Create()
 	end
 
 	local f = CreateFrame("Frame", "FPSDiagPanel", UIParent, "BackdropTemplate")
-	f:SetSize(660, 650)
+	f:SetSize(660, 748)
 	f:SetFrameStrata("HIGH")
 	f:SetToplevel(true)
 	f:SetClampedToScreen(true)
@@ -138,9 +138,40 @@ function Panel:Create()
 		{ key = "memory", label = "Memory", x = 544, w = 84, justify = "RIGHT" },
 	}
 
+	local minuteBack = CreateFrame("Frame", nil, f, "BackdropTemplate")
+	minuteBack:SetPoint("TOPLEFT", barLabel, "BOTTOMLEFT", 0, -10)
+	minuteBack:SetPoint("TOPRIGHT", barLabel, "BOTTOMRIGHT", 0, -10)
+	minuteBack:SetHeight(92)
+	Backdrop(minuteBack, { 0.10, 0.11, 0.14, 1 }, { 0.28, 0.30, 0.34, 1 })
+
+	local minuteHead = minuteBack:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	minuteHead:SetPoint("TOPLEFT", 10, -6)
+	minuteHead:SetText("Hardest hit in the last 60 seconds")
+
+	local minuteRows = {}
+	local minuteLabels = { "Hardest", "Next" }
+	local prev = minuteHead
+	for i = 1, 2 do
+		local label = minuteBack:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+		label:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", 0, i == 1 and -6 or -8)
+		label:SetText(minuteLabels[i])
+		local value = minuteBack:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+		value:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -2)
+		value:SetPoint("RIGHT", -10, 0)
+		value:SetJustifyH("LEFT")
+		value:SetWordWrap(false)
+		if i == 1 then
+			value:SetText("Collecting samples…")
+		end
+		minuteRows[i] = { label = label, value = value }
+		prev = value
+	end
+	minuteRows[2].label:Hide()
+	minuteRows[2].value:Hide()
+
 	local header = CreateFrame("Frame", nil, f)
-	header:SetPoint("TOPLEFT", 16, -158)
-	header:SetPoint("TOPRIGHT", -16, -158)
+	header:SetPoint("TOPLEFT", minuteBack, "BOTTOMLEFT", 0, -10)
+	header:SetPoint("TOPRIGHT", minuteBack, "BOTTOMRIGHT", 0, -10)
 	header:SetHeight(18)
 	for _, col in ipairs(COLS) do
 		local fs = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -236,6 +267,7 @@ function Panel:Create()
 	self.hitchText = hitchText
 	self.advice = advice
 	self.record = record
+	self.minuteRows = minuteRows
 	return f
 end
 
@@ -360,6 +392,36 @@ function Panel:Refresh()
 			row.peak:SetText("")
 			row.over:SetText("")
 			row.memory:SetText("")
+		end
+	end
+
+	local minute = ns.Profiler.GetMinuteWorst and ns.Profiler:GetMinuteWorst()
+	local rows = self.minuteRows
+	if not minute or #minute == 0 then
+		rows[1].label:SetText("Hardest")
+		rows[1].value:SetText("Collecting samples. Keep the overlay on, or leave this panel open.")
+		rows[1].value:SetTextColor(0.70, 0.70, 0.70)
+		rows[2].label:Hide()
+		rows[2].value:Hide()
+	else
+		local headers = { "Hardest", "Next" }
+		for i = 1, 2 do
+			local data = minute[i]
+			if data and (data.ms or 0) > 0 then
+				local kind = data.kind == "game" and "Game UI" or "Addon"
+				rows[i].label:SetText(headers[i])
+				rows[i].label:Show()
+				rows[i].value:SetText(string.format("%s  ·  %s  ·  peak %s", data.title or data.name, kind, ns.FormatMs(data.ms)))
+				if data.kind == "game" then
+					rows[i].value:SetTextColor(0.40, 0.70, 1.00)
+				else
+					rows[i].value:SetTextColor(0.95, 0.70, 0.30)
+				end
+				rows[i].value:Show()
+			else
+				rows[i].label:Hide()
+				rows[i].value:Hide()
+			end
 		end
 	end
 

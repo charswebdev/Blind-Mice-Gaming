@@ -1,7 +1,7 @@
 local ADDON_NAME, ns = ...
 
 ns.ADDON_NAME = ADDON_NAME
-ns.VERSION = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version") or "0.3.0"
+ns.VERSION = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version") or "0.3.1"
 ns.GAME_UI_TITLE = "Game UI"
 
 ns.defaults = {

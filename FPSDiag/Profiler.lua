@@ -22,6 +22,9 @@ local snapshot = {
 
 local hitches = {}
 local recordSamples = {}
+local minuteLog = {}
+local MINUTE_WINDOW = 60
+local MAX_MINUTE_SAMPLES = 180
 
 local function MetricEnum()
 	return Enum and Enum.AddOnProfilerMetric
@@ -66,6 +69,62 @@ end
 
 function Profiler:GetRecordSamples()
 	return recordSamples
+end
+
+function Profiler:_NoteMinute(entry)
+	if not entry or not entry.name then
+		return
+	end
+	local now = GetTime()
+	minuteLog[#minuteLog + 1] = {
+		time = now,
+		name = entry.name,
+		title = entry.title or entry.name,
+		kind = entry.kind or "addon",
+		ms = tonumber(entry.ms) or 0,
+	}
+	local cutoff = now - MINUTE_WINDOW
+	while minuteLog[1] and minuteLog[1].time < cutoff do
+		table.remove(minuteLog, 1)
+	end
+	while #minuteLog > MAX_MINUTE_SAMPLES do
+		table.remove(minuteLog, 1)
+	end
+end
+
+function Profiler:GetMinuteWorst()
+	local cutoff = GetTime() - MINUTE_WINDOW
+	local peaks = {}
+	for i = 1, #minuteLog do
+		local entry = minuteLog[i]
+		if entry.time >= cutoff then
+			local row = peaks[entry.name]
+			if not row then
+				row = {
+					name = entry.name,
+					title = entry.title,
+					kind = entry.kind,
+					ms = 0,
+					hits = 0,
+				}
+				peaks[entry.name] = row
+			end
+			if entry.ms > row.ms then
+				row.ms = entry.ms
+				row.title = entry.title
+				row.kind = entry.kind
+			end
+			row.hits = row.hits + 1
+		end
+	end
+	local list = {}
+	for _, row in pairs(peaks) do
+		list[#list + 1] = row
+	end
+	table.sort(list, function(a, b)
+		return a.ms > b.ms
+	end)
+	return list
 end
 
 function Profiler:IsLive()
@@ -336,6 +395,35 @@ function Profiler:Sample(full)
 	end
 	snapshot.top = top
 	self:_SetHeaviest()
+
+	local minuteEntry = snapshot.heaviest
+	if full then
+		local lastAddon
+		for i = 1, #snapshot.top do
+			local row = snapshot.top[i]
+			if row and row.kind == "addon" and not row.self then
+				lastAddon = row
+				break
+			end
+		end
+		local lastMs = lastAddon and lastAddon.last or 0
+		if lastMs > (minuteEntry and minuteEntry.ms or 0) then
+			minuteEntry = {
+				kind = "addon",
+				name = lastAddon.name,
+				title = lastAddon.title,
+				ms = lastMs,
+			}
+		elseif gameLast > (minuteEntry and minuteEntry.ms or 0) then
+			minuteEntry = {
+				kind = "game",
+				name = "GameUI",
+				title = ns.GAME_UI_TITLE,
+				ms = gameLast,
+			}
+		end
+	end
+	self:_NoteMinute(minuteEntry)
 
 	local worstAddon
 	for i = 1, #snapshot.top do

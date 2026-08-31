@@ -146,8 +146,8 @@
       "id": "FPSDiag",
       "name": "FPSDiag",
       "folders": ["FPSDiag"],
-      "version": "0.3.0",
-      "updated": "2026-08-22",
+      "version": "0.3.1",
+      "updated": "2026-08-30",
       "interfaces": [110007, 111000, 111500, 111700, 120000, 120001, 120005, 120100],
       "saved": ["FPSDiagDB"]
     },
