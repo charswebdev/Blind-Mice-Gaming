@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** (journal data plan phases 0–5 complete) |
-| Version | **1.1.2** (addon toc + updater catalog; data packs are `1.0.0` with `X-AllQuest-AutoLoad`) |
+| Version | **1.1.3** (addon toc + updater catalog; data packs are `1.0.0` with `X-AllQuest-AutoLoad`) |
 | Type | In-game quest tracker + questline journal + expansion data plugins |
 | Folders | `AllQuest/` (runtime) · `AllQuest_Data_*` (one pack per expansion) |
 | Author tools | `Tools/AllQuest/` — extractors, wago DB2 cache, ID census (gitignored) |
@@ -25,7 +25,7 @@ World-quest / repeatable journal buckets stay **visible** by default (setting ca
 
 - Custom tracker (can hide Blizzard’s).
 - Sections: popups, quests, world quests, scenarios, campaigns, achievements, recipes, activities, events, collectibles, pets, rares.
-- Delve instance block: under Nemesis Influence, **Nemesis Packs** shows live `3/4` (vignette remaining + persisted kills, same method as Everything Delves). Label is **Nemesis Packs**, not `packs`. Total comes from the live “Enemy groups affected” tooltip when known, otherwise the tier table. At `4/4` the line keeps the count and gets a green check. **Find Shrine of Abundance** only appears in a **Bountiful** delve. After Dundun gossip / an Abundantly Bountiful widget or aura / a bonus-named cast, the line checks off as spoils secured.
+- Delve instance block: under Nemesis Influence, **Nemesis Packs** uses Blizzard scenario data first — `C_ScenarioInfo.GetCriteriaInfo` / bonus steps / widget-set bars — the same `quantity` / `totalQuantity` Blizzard’s tracker prints (`3/4`). Vignettes are only a fallback. No shrine / Dundun / banner line.
 - Auto-accept / auto-turn-in (Shift at NPC skips).
 - Super-track, items, sounds, colors, filters, profiles.
 - Speech of focused rows (AH queue if loaded).
@@ -109,11 +109,16 @@ Classic after phase 5: **822** chains, **5,519** unique IDs, Era QuestV2 **4,807
 - Shipping `1.0.10` / `1.0.11`. Patch stays a single digit on every project; this build is **1.1.0**.
 - Opening a tracker quest from the journal used the first indexed chain. Census leftovers like **Unlisted 28523-28666** won over a named questline, titles clipped to `Warchief's C…`, and the detail pane never opened.
 - Nemesis pack line said `0/4 packs` after three packs were dead: the unit was hardcoded `packs`, and the run key used `GetRealZoneText` (resets the tally). Progress now persists per instance, credits secret GUIDs, and can take Everything Delves’ `activeRun.nemesisKilled` as a floor.
+- Clicking the Shrine of Abundance cleared the Instance block: gossip hid `ScenarioHeaderDelves` and `IsInScenario` could go false, so `GetRows` returned empty. Hold the last delve snapshot while instance difficulty is 208.
+- Same click also auto-collapsed the tracker: `IsInInstance` flickered off, then “enter instance” set `trackerCollapsed`. Leave is now debounced 2s and a delve key is kept through gossip.
+- Shrine of Abundance / Dundun tracking: the extra line was wrong more often than it helped, and gossip cleared the Instance block. Removed; packs only.
+- Treating the in-delve Nemesis `stackDisplay` / tooltip slash as remaining. That number is the entrance picker leftover and pinned the line at `0/4`. Packs are vignette IDs + persisted kills only. Keying seen packs on the regenerating vignette GUID also double-counted; creature `objectGUID` only.
+- Inventing pack kills from vignettes while **skipping** Blizzard’s own scenario criteria (`nemesis pack` / `strongbox`). The default tracker already had `3/4`; AllQuest hid that and showed `0/4`. Pack line now reads `GetCriteriaInfo` / bonus steps first.
 
 ## Open work
 
 - Delve Nemesis extras: live screenshot at Shadowguard Point showed Influence but no Strong Box / Bonus loot — extras only fired on a classified nemesis *spell*. Midnight can list Influence as a currency or a spell without a numeric id; attach now keys off any “nemesis” chrome row.
-- Confirm live tooltip/vignette names if a season renames Ula'tek packs or bonus spoils. Append new pack vignette IDs; do not replace 7531/7869. Season 2 bonus object is **Shrine of Abundance** (not Sanctified Banner).
+- Confirm live tooltip/vignette IDs if a season adds new Nemesis pack vignettes. Append; do not replace 7531/7869. Pack count prefers Blizzard scenario criteria. Shrine / Dundun tracking was removed.
 - Hand starter overlays past Elwynn/Durotar (Westfall, Barrens, Loch Modan, …) — overlay work, not another extract phase.
 - Playtest on Era (`/reload`); Retail will not show the Classic pack.
 - TBC/Wrath/WoD remaining linear dumps.

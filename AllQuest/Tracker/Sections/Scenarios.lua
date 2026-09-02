@@ -13,22 +13,6 @@ local NEMESIS_SPELL = {
     [472952] = true,
 }
 
--- Fill/upgrade auras on the Strongbox itself — not Nemesis Influence (1270179).
-local STRONGBOX_AURA_SPELLS = {
-    1239535,
-    472952,
-}
-
-local DELVE_SPELL_WIDGETS = {
-    7526,
-    7591,
-    7592,
-    7624,
-    7761,
-    7764,
-    7861,
-}
-
 local function Clock(sec)
     sec = math.floor(tonumber(sec) or 0)
     if sec < 0 then
@@ -199,12 +183,11 @@ local function ClassifyDelveSpell(info)
     return "affix", name, tip
 end
 
--- Everything Delves: Strongbox has no in-delve widget (picker only). One
--- vignette ID per remaining pack; each season appends a new ID. Banner is
--- player auras + interact casts; vignette names can be Midnight secrets.
+-- Everything Delves: no in-delve Strongbox widget (picker only). One
+-- vignette ID per remaining pack; each season appends a new ID.
 local NEMESIS_PACK_VIGNETTES = {
     7531, -- S1 Nullaeus' Minions
-    7869, -- S2 Ula'tek's Chosen
+    7869, -- S2 Ula'tek's Chosen (confirmed live 2026-08-21)
 }
 local learnedPackIDs = {}
 local PACK_UNIT = "Nemesis Packs"
@@ -215,46 +198,23 @@ local PACK_NAME_WORDS = {
     "ula'tek's chosen",
     "pactsworn",
     "nullaeus",
+    "nulleus",
     "nemesis pack",
     "nemesis packs",
     "azta'rec",
     "aztarec",
-}
-local BANNER_INTERACT_SPELLS = {
-    [1269411] = true,
-    [1269412] = true,
-    [1269416] = true,
-}
-local BANNER_BUFF_SPELLS = {
-    [1271918] = true,
-    [1271945] = true,
-    [1272609] = true,
-    [1272666] = true,
-    [1272756] = true,
-    [1272769] = true,
-    [1272809] = true,
-    [1272810] = true,
-    [1272813] = true,
-    [1272814] = true,
-    [1273058] = true,
-    [1273066] = true,
-}
--- Aura sweep only (Everything Delves). Combat log is forbidden on Midnight.
-local RAGER_AURA_SPELLS = {
-    [1271184] = true, -- Voidfused Rager Spawn
-    [1271189] = true, -- Voidfused Rager
+    "venomborne",
+    "amphisbaena",
 }
 local EXTRA_CRITERIA_WORDS = {
     "nemesis pack",
     "nemesis packs",
     "strong box",
     "strongbox",
-    "bonus loot",
-    "sanctified banner",
-    "abundant spoils",
-    "shrine of abundance",
-    "dundun",
 }
+
+-- Filled after ReadCriteria exists. Returns killed, total, done from Blizzard.
+local ReadBlizzardPackProgress
 
 local nemesisRun = {
     key = nil,
@@ -263,18 +223,9 @@ local nemesisRun = {
     seenCount = 0,
     killedBase = 0,
     killedFromDespawn = 0,
+    toastKills = 0,
     haveSeenPack = false,
     packNeed = 0,
-    bannerState = nil,
-    bannerLeft = 0,
-    bannerNeed = 0,
-    sawBanner = false,
-    sawRager = false,
-    ragerUp = false,
-    bonusFlavor = "s2",
-    sawDundun = false,
-    dundunGossip = false,
-    wasBountiful = false,
 }
 
 local function SafeText(value)
@@ -360,19 +311,18 @@ local function SafeKey(value)
 end
 
 local function RunKey()
+    -- Map + difficulty only. Zone text flickers during gossip and used to
+    -- reset the tally mid-run. Cleared after a real leave (not 208).
     local inst = InstanceBits()
-    local name = inst and inst.name
-    if type(name) ~= "string" or name == "" then
-        if GetRealZoneText then
-            local ok, zone = pcall(GetRealZoneText)
-            name = ok and SafeText(zone) or ""
-        end
+    local mapID = inst and inst.instanceID
+    local diff = inst and inst.difficultyID
+    if type(mapID) == "number" and mapID > 0 then
+        return tostring(mapID) .. "#" .. tostring(diff or 208)
     end
-    local id = inst and inst.instanceID
-    if type(name) == "string" and name ~= "" then
-        return name .. "#" .. tostring(id or 0)
+    if type(diff) == "number" then
+        return "diff#" .. tostring(diff)
     end
-    return SafeText(id)
+    return "delve"
 end
 
 local function CharNemesis()
@@ -463,20 +413,9 @@ local function ResetNemesisRun(key)
     nemesisRun.seenCount = 0
     nemesisRun.killedBase = 0
     nemesisRun.killedFromDespawn = 0
+    nemesisRun.toastKills = 0
     nemesisRun.haveSeenPack = false
-    nemesisRun.boxSeen = false
-    nemesisRun.boxEarned = false
     nemesisRun.packNeed = 0
-    nemesisRun.bannerState = nil
-    nemesisRun.bannerLeft = 0
-    nemesisRun.bannerNeed = 0
-    nemesisRun.sawBanner = false
-    nemesisRun.sawRager = false
-    nemesisRun.ragerUp = false
-    nemesisRun.bonusFlavor = "s2"
-    nemesisRun.sawDundun = false
-    nemesisRun.dundunGossip = false
-    nemesisRun.wasBountiful = false
     local saved = CharNemesis()
     if saved and saved.key == key then
         nemesisRun.killedBase = tonumber(saved.killed) or 0
@@ -486,6 +425,24 @@ local function ResetNemesisRun(key)
     if type(ed) == "number" and ed > (nemesisRun.killedBase or 0) then
         nemesisRun.killedBase = ed
     end
+end
+
+local function ClearNemesisPersist()
+    local saved = CharNemesis()
+    if saved then
+        saved.key = nil
+        saved.killed = 0
+        saved.packNeed = nil
+    end
+    nemesisRun.key = nil
+    nemesisRun.remaining = 0
+    nemesisRun.seen = {}
+    nemesisRun.seenCount = 0
+    nemesisRun.killedBase = 0
+    nemesisRun.killedFromDespawn = 0
+    nemesisRun.toastKills = 0
+    nemesisRun.haveSeenPack = false
+    nemesisRun.packNeed = 0
 end
 
 local function EnsureNemesisRun()
@@ -498,167 +455,30 @@ local function EnsureNemesisRun()
     end
 end
 
+local function VignetteNum(value)
+    if value == nil then
+        return nil
+    end
+    local ok, n = pcall(tonumber, value)
+    if ok == true and type(n) == "number" then
+        return n
+    end
+    return nil
+end
+
 local function IsNemesisPackVignette(vignetteID)
+    local id = VignetteNum(vignetteID)
+    if not id then
+        return SafeEq(vignetteID, NEMESIS_PACK_VIGNETTES[1]) or SafeEq(vignetteID, NEMESIS_PACK_VIGNETTES[2])
+    end
     for i = 1, #NEMESIS_PACK_VIGNETTES do
-        if SafeEq(vignetteID, NEMESIS_PACK_VIGNETTES[i]) then
+        if id == NEMESIS_PACK_VIGNETTES[i] then
             return true
         end
     end
     for i = 1, #learnedPackIDs do
-        if SafeEq(vignetteID, learnedPackIDs[i]) then
+        if id == learnedPackIDs[i] then
             return true
-        end
-    end
-    return false
-end
-
-local function PlayerHasSpellAura(idSet)
-    local byId = C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID
-    if type(byId) ~= "function" or type(idSet) ~= "table" then
-        return false
-    end
-    for sid in pairs(idSet) do
-        local ok, aura = pcall(byId, sid)
-        if ok and aura then
-            return true
-        end
-    end
-    return false
-end
-
-local function BlobLooksBonusSecured(blob)
-    blob = SafeLower(blob)
-    if blob == "" then
-        return false
-    end
-    return blob:find("abundant spoils", 1, true)
-        or blob:find("abundantly bountiful", 1, true)
-        or blob:find("grand sanctified", 1, true)
-        or blob:find("sanctified spoils", 1, true)
-        or blob:find("bonus spoils", 1, true)
-end
-
-local function BlobLooksBonusFind(blob)
-    blob = SafeLower(blob)
-    if blob == "" then
-        return false
-    end
-    return blob:find("shrine of abundance", 1, true)
-        or blob:find("sanctified banner", 1, true)
-        or blob:find("dundun", 1, true)
-end
-
-local function SpellLooksLikeBonus(id)
-    id = tonumber(id)
-    if not id then
-        return false
-    end
-    if BANNER_INTERACT_SPELLS[id] or BANNER_BUFF_SPELLS[id] then
-        return true
-    end
-    local blob = SafeLower(SpellName(id)) .. " " .. SafeLower(SpellDesc(id))
-    return BlobLooksBonusSecured(blob) or BlobLooksBonusFind(blob)
-end
-
-local function PlayerHasNamedBonusAura()
-    local get = C_UnitAuras and C_UnitAuras.GetAuraDataByIndex
-    if type(get) ~= "function" then
-        return false
-    end
-    for i = 1, 40 do
-        local ok, aura = pcall(get, "player", i, "HELPFUL")
-        if not ok or type(aura) ~= "table" then
-            break
-        end
-        local blob = SafeLower(aura.name)
-        if blob == "" and aura.spellId then
-            blob = SafeLower(SpellName(tonumber(aura.spellId)))
-        end
-        if BlobLooksBonusSecured(blob) or BlobLooksBonusFind(blob) then
-            return true
-        end
-    end
-    return false
-end
-
-local function UnitLooksLikeBonusNpc(unit)
-    if type(unit) ~= "string" or unit == "" then
-        return false
-    end
-    local ok, name = pcall(UnitName, unit)
-    if not ok then
-        return false
-    end
-    local ln = SafeLower(name)
-    return BlobLooksBonusFind(ln)
-end
-
-local function NoteBonusNpcUnits()
-    local units = { "npc", "target", "softinteract", "mouseover" }
-    for i = 1, #units do
-        if UnitLooksLikeBonusNpc(units[i]) then
-            EnsureNemesisRun()
-            nemesisRun.sawBanner = true
-            nemesisRun.sawDundun = true
-            nemesisRun.bonusFlavor = "s2"
-            if not nemesisRun.bannerState then
-                nemesisRun.bannerState = "announced"
-            end
-            return true
-        end
-    end
-    return false
-end
-
-local function DelveIsBountiful(delve)
-    if nemesisRun.wasBountiful or nemesisRun.sawDundun then
-        return true
-    end
-    if type(delve) ~= "table" then
-        return false
-    end
-    if type(delve.rewardInfo) == "table" and IsShownState(delve.rewardInfo.shownState) then
-        nemesisRun.wasBountiful = true
-        return true
-    end
-    local blob = SafeLower(delve.tooltip) .. " " .. SafeLower(delve.headerText)
-    if blob:find("bountiful", 1, true) then
-        nemesisRun.wasBountiful = true
-        return true
-    end
-    if type(delve.spells) == "table" then
-        for i = 1, #delve.spells do
-            local extra = delve.spells[i]
-            if type(extra) == "table" and ClassifyDelveSpell(extra) == "bountiful" then
-                nemesisRun.wasBountiful = true
-                return true
-            end
-        end
-    end
-    return false
-end
-
-local function DelveShowsBonusSecured(delve)
-    if type(delve) ~= "table" then
-        return false
-    end
-    if BlobLooksBonusSecured(delve.tooltip) or BlobLooksBonusSecured(delve.headerText) then
-        return true
-    end
-    if type(delve.rewardInfo) == "table" then
-        if BlobLooksBonusSecured(delve.rewardInfo.earnedTooltip) then
-            return true
-        end
-    end
-    if type(delve.spells) == "table" then
-        for i = 1, #delve.spells do
-            local extra = delve.spells[i]
-            if type(extra) == "table" then
-                local blob = SafeLower(extra.text) .. " " .. SafeLower(extra.tooltip) .. " " .. SafeLower(SpellName(tonumber(extra.spellID))) .. " " .. SafeLower(SpellDesc(tonumber(extra.spellID)))
-                if BlobLooksBonusSecured(blob) then
-                    return true
-                end
-            end
         end
     end
     return false
@@ -690,34 +510,9 @@ local function InfoLooksLikePack(info)
     return false
 end
 
-local function NoteBonusFlavor(ln)
-    if ln:find("sanctified banner", 1, true) or ln:find("sanctified spoils", 1, true) or ln:find("grand sanctified", 1, true) then
-        nemesisRun.bonusFlavor = "s1"
-    elseif ln:find("shrine of abundance", 1, true) or ln:find("abundant spoils", 1, true) or ln:find("dundun", 1, true) or ln:find("abundantly bountiful", 1, true) then
-        nemesisRun.bonusFlavor = "s2"
-    end
-end
-
-local function NoteBannerName(ln)
-    if ln == "" then
-        return
-    end
-    NoteBonusFlavor(ln)
-    if ln:find("grand sanctified", 1, true) then
-        nemesisRun.bannerState = "grand"
-    elseif ln:find("sanctified spoils", 1, true) or ln:find("abundant spoils", 1, true) or ln:find("abundantly bountiful", 1, true) then
-        if nemesisRun.bannerState ~= "grand" then
-            nemesisRun.bannerState = "clicked"
-        end
-    elseif ln:find("sanctified banner", 1, true) or ln:find("shrine of abundance", 1, true) or ln:find("dundun", 1, true) then
-        if not nemesisRun.bannerState then
-            nemesisRun.bannerState = "announced"
-        end
-    end
-end
-
-local function RememberPackKey(info, vigGuid)
-    local key = SafeKey(info and info.objectGUID) or SafeKey(vigGuid)
+-- Creature GUID only. Vignette GUIDs regenerate and double-count (ED).
+local function RememberPackKey(info)
+    local key = SafeKey(info and info.objectGUID)
     if not key then
         return false
     end
@@ -770,34 +565,18 @@ end
 local function ScanDelveVignettes()
     EnsureNemesisRun()
     local vigs = CollectVignetteGuids()
+    -- Loading screens flush the list. Do not treat that as every pack dying.
+    if #vigs == 0 then
+        return
+    end
     local packCount = 0
-    local boxSeen = false
-    local ragerUp = false
-    local bannerLeft = 0
-    local seenBefore = tonumber(nemesisRun.seenCount) or 0
     for i = 1, #vigs do
         local vigGuid = vigs[i]
         pcall(function()
             local ok2, info = pcall(C_VignetteInfo.GetVignetteInfo, vigGuid)
-            if ok2 and type(info) == "table" then
-                local ln = VignetteNameLower(info.name) .. " " .. VignetteNameLower(info.atlasName)
-                if InfoLooksLikePack(info) then
-                    packCount = packCount + 1
-                    RememberPackKey(info, vigGuid)
-                end
-                if ln:find("strongbox", 1, true) or ln:find("strong box", 1, true) then
-                    boxSeen = true
-                    if ln:find("earned", 1, true) or ln:find("unlocked", 1, true) then
-                        nemesisRun.boxEarned = true
-                    end
-                end
-                NoteBannerName(VignetteNameLower(info.name))
-                if ln:find("voidfused", 1, true) then
-                    ragerUp = true
-                end
-                if ln:find("sanctified banner", 1, true) or ln:find("shrine of abundance", 1, true) or ln:find("dundun", 1, true) then
-                    bannerLeft = bannerLeft + 1
-                end
+            if ok2 and type(info) == "table" and InfoLooksLikePack(info) then
+                packCount = packCount + 1
+                RememberPackKey(info)
             end
         end)
     end
@@ -805,187 +584,21 @@ local function ScanDelveVignettes()
     if nemesisRun.haveSeenPack and packCount < prev then
         nemesisRun.killedFromDespawn = (nemesisRun.killedFromDespawn or 0) + (prev - packCount)
     end
-    if packCount > prev then
-        local grew = packCount - prev
-        local gained = (tonumber(nemesisRun.seenCount) or 0) - seenBefore
-        if gained < grew then
-            nemesisRun.seenCount = (tonumber(nemesisRun.seenCount) or 0) + (grew - gained)
-        end
-    end
     if packCount > 0 then
         nemesisRun.haveSeenPack = true
     end
-    if boxSeen then
-        nemesisRun.boxSeen = true
-    elseif nemesisRun.boxSeen then
-        nemesisRun.boxEarned = true
-    end
     nemesisRun.remaining = packCount
-    if ragerUp then
-        nemesisRun.sawRager = true
-        nemesisRun.ragerUp = true
-        if nemesisRun.bannerState ~= "grand" and nemesisRun.bannerState ~= "clicked" and nemesisRun.bannerState ~= "buffed" then
-            nemesisRun.bannerState = "eliteUp"
-        end
-    else
-        nemesisRun.ragerUp = false
-        if nemesisRun.sawRager and nemesisRun.bannerState == "eliteUp" then
-            nemesisRun.bannerState = "grand"
-        end
+    local killed = (tonumber(nemesisRun.killedBase) or 0)
+        + math.max(0, (tonumber(nemesisRun.seenCount) or 0) - packCount)
+    local fromDespawn = tonumber(nemesisRun.killedFromDespawn) or 0
+    local fromToast = tonumber(nemesisRun.toastKills) or 0
+    if fromDespawn > killed then
+        killed = fromDespawn
     end
-    if bannerLeft > 0 then
-        nemesisRun.sawBanner = true
-        if (nemesisRun.bannerNeed or 0) < bannerLeft then
-            nemesisRun.bannerNeed = bannerLeft
-        end
-    elseif nemesisRun.sawBanner and nemesisRun.bannerState == "announced" then
-        nemesisRun.bannerState = "clicked"
+    if fromToast > killed then
+        killed = fromToast
     end
-    nemesisRun.bannerLeft = bannerLeft
-end
-
--- Tooltip/stackDisplay is remaining/total (forum: 2/3 after one of three packs).
--- "Enemy groups affected: 7" is the Strong Box requirement (total), not remaining.
-local function ParseAffectedTotal(text)
-    if type(text) ~= "string" or text == "" or IsSecret(text) then
-        return nil
-    end
-    local ok, blob = pcall(string.lower, text)
-    if not ok or type(blob) ~= "string" then
-        return nil
-    end
-    local n = string.match(blob, "groups affected:%s*(%d+)")
-        or string.match(blob, "affected:%s*(%d+)")
-        or string.match(blob, "(%d+)%s+enemy groups")
-    return tonumber(n)
-end
-
-local function ParseRemainingSlash(text)
-    if type(text) ~= "string" or text == "" or IsSecret(text) then
-        return nil
-    end
-    local ok, blob = pcall(string.lower, text)
-    if not ok or type(blob) ~= "string" then
-        return nil
-    end
-    local a, b = string.match(text, "(%d+)%s*/%s*(%d+)")
-    a, b = tonumber(a), tonumber(b)
-    if a and b and b > 0 and a <= b then
-        return a, b
-    end
-    if blob:find("affected", 1, true) and not blob:find("remaining", 1, true) then
-        return nil
-    end
-    local n = tonumber(string.match(text, "(%d+)"))
-    if n and (blob:find("remaining", 1, true) or blob:find("left", 1, true) or blob:find("alive", 1, true)) then
-        return n, nil
-    end
-    return nil
-end
-
-local function SafeStack(v)
-    if v == nil or IsSecret(v) then
-        return nil
-    end
-    return tonumber(v)
-end
-
-local function ReadSpellProgress(sp)
-    if type(sp) ~= "table" then
-        return nil
-    end
-    local earned = sp.showAsEarned == true
-    local rem, tot = ParseRemainingSlash(sp.tooltip)
-    if not rem then
-        rem, tot = ParseRemainingSlash(SpellDesc(tonumber(sp.spellID)))
-    end
-    if not rem then
-        rem = SafeStack(sp.stackDisplay)
-    end
-    return rem, tot, earned
-end
-
-local function ReadStrongboxAuras()
-    local byId = C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID
-    if type(byId) ~= "function" then
-        return nil, false
-    end
-    for i = 1, #STRONGBOX_AURA_SPELLS do
-        local ok, aura = pcall(byId, STRONGBOX_AURA_SPELLS[i])
-        if ok == true and type(aura) == "table" then
-            local stacks = SafeStack(aura.applications)
-            return stacks or 0, true
-        end
-    end
-    return nil, false
-end
-
-local function ReadSpellDisplayWidget(widgetID)
-    local getter = C_UIWidgetManager and C_UIWidgetManager.GetSpellDisplayVisualizationInfo
-    if type(getter) ~= "function" or type(widgetID) ~= "number" then
-        return nil
-    end
-    local ok, viz = pcall(getter, widgetID)
-    if ok ~= true or type(viz) ~= "table" or type(viz.spellInfo) ~= "table" then
-        return nil
-    end
-    return viz.spellInfo
-end
-
-local function CollectNemesisSpells(delve, hint)
-    local list = {}
-    local function add(sp)
-        if type(sp) ~= "table" then
-            return
-        end
-        local kind = ClassifyDelveSpell(sp)
-        if kind == "nemesis" or LooksLikeNemesis(sp.text, sp.tooltip, SpellName(tonumber(sp.spellID))) then
-            list[#list + 1] = sp
-        end
-    end
-    add(hint)
-    if type(delve) == "table" and type(delve.spells) == "table" then
-        for i = 1, #delve.spells do
-            add(delve.spells[i])
-        end
-    end
-    for i = 1, #DELVE_SPELL_WIDGETS do
-        add(ReadSpellDisplayWidget(DELVE_SPELL_WIDGETS[i]))
-    end
-    local setID
-    if C_Scenario and C_Scenario.GetStepInfo then
-        local okStep, _, _, _, _, _, _, _, _, _, _, _, widgetSetID = pcall(C_Scenario.GetStepInfo)
-        if okStep and type(widgetSetID) == "number" then
-            setID = widgetSetID
-        end
-    end
-    if type(setID) == "number" and setID > 0 and C_UIWidgetManager and C_UIWidgetManager.GetAllWidgetsBySetID then
-        local widgets = AQ:SafeCall(C_UIWidgetManager.GetAllWidgetsBySetID, setID)
-        if type(widgets) == "table" then
-            for i = 1, #widgets do
-                local w = widgets[i]
-                if type(w) == "table" and type(w.widgetID) == "number" then
-                    add(ReadSpellDisplayWidget(w.widgetID))
-                end
-            end
-        end
-    end
-    return list
-end
-
-local function BannerIsDone()
-    if nemesisRun.bannerState == "grand" or nemesisRun.bannerState == "clicked" or nemesisRun.bannerState == "buffed" then
-        return true
-    end
-    if PlayerHasSpellAura(BANNER_BUFF_SPELLS) or PlayerHasSpellAura(BANNER_INTERACT_SPELLS) then
-        nemesisRun.bannerState = "buffed"
-        return true
-    end
-    if PlayerHasNamedBonusAura() then
-        nemesisRun.bannerState = "buffed"
-        return true
-    end
-    return false
+    PersistNemesisKilled(killed)
 end
 
 local function ExpectedNemesisPacks(tier)
@@ -1005,27 +618,16 @@ local function ExpectedNemesisPacks(tier)
     return 4
 end
 
-local function NoteBonusMessage(msg)
+local function NotePackKillMessage(msg)
     local blob = SafeLower(msg)
     if blob == "" then
         return
     end
-    if BlobLooksBonusSecured(blob) or (blob:find("dundun", 1, true) and (blob:find("reward", 1, true) or blob:find("bless", 1, true) or blob:find("glorif", 1, true) or blob:find("secured", 1, true))) then
+    if (blob:find("strongbox", 1, true) or blob:find("nemesis", 1, true))
+        and (blob:find("upgrad", 1, true) or blob:find("improv", 1, true)) then
         EnsureNemesisRun()
-        NoteBonusFlavor(blob)
-        nemesisRun.bannerState = blob:find("grand", 1, true) and "grand" or "clicked"
-    elseif blob:find("sanctified banner", 1, true) or blob:find("shrine of abundance", 1, true) or blob:find("dundun", 1, true) then
-        EnsureNemesisRun()
-        NoteBonusFlavor(blob)
-        if not nemesisRun.bannerState then
-            nemesisRun.bannerState = "announced"
-        end
-    elseif blob:find("strongbox", 1, true) or blob:find("nemesis", 1, true) then
-        if blob:find("upgrad", 1, true) or blob:find("improv", 1, true) then
-            EnsureNemesisRun()
-            nemesisRun.killedFromDespawn = (nemesisRun.killedFromDespawn or 0) + 1
-            nemesisRun.haveSeenPack = true
-        end
+        nemesisRun.toastKills = (tonumber(nemesisRun.toastKills) or 0) + 1
+        nemesisRun.haveSeenPack = true
     end
 end
 
@@ -1045,218 +647,42 @@ local function AddDelveExtraRow(rows, title, have, need, finished, speech, unit)
     })
 end
 
-local function LooksLikeBonusText(text)
-    local blob = SafeLower(text)
-    if blob == "" then
-        return false
-    end
-    if blob:find("nemesis", 1, true) or blob:find("groups affected", 1, true) or blob:find("enemy groups", 1, true) then
-        return false
-    end
-    return blob:find("banner", 1, true)
-        or blob:find("sanctified", 1, true)
-        or blob:find("spoils", 1, true)
-        or blob:find("voidfused", 1, true)
-        or blob:find("rager", 1, true)
-        or blob:find("bountiful", 1, true)
-        or blob:find("coffer", 1, true)
-        or blob:find("shrine of abundance", 1, true)
-        or blob:find("dundun", 1, true)
-        or blob:find("abundant", 1, true)
-end
-
-local function CollectBonusTexts(delve)
-    local texts = {}
-    local function add(text)
-        if LooksLikeBonusText(text) then
-            texts[#texts + 1] = text
-        end
-    end
-    if type(delve) == "table" then
-        add(delve.tooltip)
-        if type(delve.rewardInfo) == "table" then
-            add(delve.rewardInfo.earnedTooltip)
-            add(delve.rewardInfo.unearnedTooltip)
-        end
-        if type(delve.spells) == "table" then
-            for i = 1, #delve.spells do
-                local extra = delve.spells[i]
-                if type(extra) == "table" then
-                    add(extra.tooltip)
-                    add(extra.text)
-                    add(SpellDesc(tonumber(extra.spellID)))
-                end
-            end
-        end
-    end
-    for sid in pairs(BANNER_INTERACT_SPELLS) do
-        add(SpellDesc(sid))
-    end
-    return texts
-end
-
-local function ReadBannerSlash(delve)
-    local have, need
-    local texts = CollectBonusTexts(delve)
-    for i = 1, #texts do
-        local rem, tot = ParseRemainingSlash(texts[i])
-        if tot and tot > 0 then
-            local got = tot - (rem or 0)
-            if got < 0 then
-                got = 0
-            end
-            if not need or tot > need then
-                need = tot
-                have = got
-            end
-        end
-        local blob = SafeLower(texts[i])
-        if blob:find("voidfused", 1, true) or blob:find("rager", 1, true) then
-            nemesisRun.sawRager = true
-        end
-    end
-    return have, need
-end
-
-local function AddBonusLootRow(rows, delve)
-    NoteBonusNpcUnits()
-    if DelveShowsBonusSecured(delve) then
-        if nemesisRun.bannerState ~= "grand" then
-            nemesisRun.bannerState = "clicked"
-        end
-    end
-    if PlayerHasSpellAura(RAGER_AURA_SPELLS) then
-        nemesisRun.sawRager = true
-        nemesisRun.ragerUp = true
-        if nemesisRun.bannerState ~= "grand" and nemesisRun.bannerState ~= "clicked" and nemesisRun.bannerState ~= "buffed" then
-            nemesisRun.bannerState = "eliteUp"
-        end
-    end
-    local title
-    local finished = false
-    local have, need
-    local unit
-    local s1 = nemesisRun.bonusFlavor == "s1"
-    local findName = s1 and "Sanctified Banner" or "Shrine of Abundance"
-    if nemesisRun.bannerState == "grand" then
-        title = s1 and "Sanctified Banner — Grand Spoils earned" or "Shrine of Abundance — Grand Spoils earned"
-        finished = true
-    elseif BannerIsDone() then
-        title = s1 and "Sanctified Banner found — bonus Spoils secured" or "Shrine of Abundance found — Abundant Spoils secured"
-        finished = true
-    elseif nemesisRun.ragerUp or nemesisRun.bannerState == "eliteUp" then
-        title = "Kill the Voidfused Rager"
-    else
-        have, need = ReadBannerSlash(delve)
-        if need and need > 0 then
-            title = findName
-            unit = findName
-        else
-            title = "Find " .. findName
-        end
-    end
-    AddDelveExtraRow(rows, title, have, need, finished, title, unit)
-end
-
 local function AddNemesisExtras(rows, delve, sp, tip, tier)
-    EnsureNemesisRun()
-    ScanDelveVignettes()
-    local expect = ExpectedNemesisPacks(tier)
-    if expect <= 0 then
-        expect = 4
+    local killed, total, packDone
+    if ReadBlizzardPackProgress then
+        killed, total, packDone = ReadBlizzardPackProgress(tier)
     end
-    local widgetRemaining, total, boxEarned
-    total = tonumber(nemesisRun.packNeed) or 0
-    if total < 1 then
-        total = expect
-    end
-    local function NoteNeed(n)
-        n = tonumber(n)
-        if n and n > total then
-            total = n
+    if type(killed) ~= "number" or type(total) ~= "number" then
+        EnsureNemesisRun()
+        ScanDelveVignettes()
+        local remaining = tonumber(nemesisRun.remaining) or 0
+        local seen = tonumber(nemesisRun.seenCount) or 0
+        local base = tonumber(nemesisRun.killedBase) or 0
+        local expect = ExpectedNemesisPacks(tier)
+        total = math.max(expect, base + seen, tonumber(nemesisRun.packNeed) or 0)
+        killed = base + math.max(0, seen - remaining)
+        local fromDespawn = tonumber(nemesisRun.killedFromDespawn) or 0
+        local fromToast = tonumber(nemesisRun.toastKills) or 0
+        if fromDespawn > killed then
+            killed = fromDespawn
         end
-    end
-    local function NoteText(text)
-        NoteNeed(ParseAffectedTotal(text))
-        local rem, tot = ParseRemainingSlash(text)
-        if tot then
-            NoteNeed(tot)
+        if fromToast > killed then
+            killed = fromToast
         end
-        return rem, tot
-    end
-    NoteText(tip)
-    NoteText(type(delve) == "table" and delve.tooltip or nil)
-    for sid in pairs(NEMESIS_SPELL) do
-        NoteText(SpellDesc(sid))
-    end
-    local spells = CollectNemesisSpells(delve, sp)
-    for i = 1, #spells do
-        local rem, tot, earned = ReadSpellProgress(spells[i])
-        if earned then
-            boxEarned = true
+        if remaining > 0 then
+            total = math.max(total, killed + remaining)
         end
-        NoteNeed(tot)
-        NoteText(type(spells[i]) == "table" and spells[i].tooltip or nil)
-        if rem and (tot or rem > 0 or earned) then
-            widgetRemaining = rem
+        if total < 1 then
+            total = 4
         end
-    end
-    if type(tip) == "string" and widgetRemaining == nil then
-        local rem = ParseRemainingSlash(tip)
-        if rem then
-            widgetRemaining = rem
+        if killed > total then
+            total = killed
         end
+        packDone = killed >= total and (killed > 0 or (remaining == 0 and nemesisRun.haveSeenPack))
+        PersistNemesisKilled(killed)
     end
     nemesisRun.packNeed = total
-    local auraStacks = ReadStrongboxAuras()
-    local remaining = widgetRemaining
-    if remaining == nil then
-        remaining = tonumber(nemesisRun.remaining) or 0
-    end
-    local fromWidget = 0
-    if widgetRemaining ~= nil then
-        fromWidget = total - widgetRemaining
-        if fromWidget < 0 then
-            fromWidget = 0
-        end
-    end
-    local edHint = HintFromEverythingDelves()
-    if type(edHint) == "number" and edHint > (nemesisRun.killedBase or 0) then
-        nemesisRun.killedBase = edHint
-    end
-    local fromGuids = (nemesisRun.killedBase or 0) + math.max(0, (nemesisRun.seenCount or 0) - remaining)
-    local fromDespawn = tonumber(nemesisRun.killedFromDespawn) or 0
-    local killed = fromGuids
-    if fromWidget > killed then
-        killed = fromWidget
-    end
-    if fromDespawn > killed then
-        killed = fromDespawn
-    end
-    if type(edHint) == "number" and edHint > killed then
-        killed = edHint
-    end
-    if type(auraStacks) == "number" and auraStacks > killed then
-        killed = auraStacks
-    end
-    if boxEarned or nemesisRun.boxEarned then
-        if killed < total then
-            killed = total
-        end
-    end
-    if killed + remaining > total and remaining > 0 then
-        total = killed + remaining
-    end
-    if killed > total then
-        killed = total
-    end
-    PersistNemesisKilled(killed)
-    local packDone = (boxEarned or nemesisRun.boxEarned or (killed >= total and (nemesisRun.haveSeenPack or widgetRemaining ~= nil or killed > 0))) and true or false
     AddDelveExtraRow(rows, PACK_UNIT, killed, total, packDone, PACK_UNIT, PACK_UNIT)
-    NoteBonusNpcUnits()
-    if DelveIsBountiful(delve) then
-        AddBonusLootRow(rows, delve)
-    end
 end
 
 local function InsertRowsAfter(rows, afterIndex, extras)
@@ -1282,9 +708,6 @@ local function AttachNemesisExtras(rows, delve, sp, tip, tier, afterIndex)
             need = 4
         end
         AddDelveExtraRow(extras, PACK_UNIT, 0, need, false, PACK_UNIT, PACK_UNIT)
-        if DelveIsBountiful(delve) then
-            AddBonusLootRow(extras, delve)
-        end
     end
     InsertRowsAfter(rows, afterIndex, extras)
 end
@@ -1303,19 +726,69 @@ local function ShortProgressLabel(text, fallback)
     return fallback
 end
 
+-- Difficulty 208 = Delves. Stays true when the header widget or IsInScenario flickers.
+local lastDelve
+local lastDelveSetID
+
+local function PlayerInDelve()
+    if GetInstanceInfo then
+        local ok, _, _, difficultyID = pcall(GetInstanceInfo)
+        if ok and tonumber(difficultyID) == 208 then
+            return true
+        end
+    end
+    if C_DelvesUI and C_DelvesUI.HasActiveDelve then
+        local ok, active = pcall(C_DelvesUI.HasActiveDelve)
+        if ok and active then
+            return true
+        end
+    end
+    return false
+end
+
+local function RememberDelve(info, setID)
+    if type(info) == "table" then
+        lastDelve = info
+    end
+    if type(setID) == "number" and setID > 0 then
+        lastDelveSetID = setID
+    end
+end
+
+local function ClearDelveCache()
+    lastDelve = nil
+    lastDelveSetID = nil
+end
+
 local function GetDelveWidget()
-    if not (C_Scenario and C_Scenario.GetStepInfo and C_UIWidgetManager) then
+    if not C_UIWidgetManager then
+        if PlayerInDelve() then
+            return lastDelve
+        end
         return nil
     end
-    local ok, _, _, _, _, _, _, _, _, _, _, _, widgetSetID = pcall(C_Scenario.GetStepInfo)
-    if not ok or type(widgetSetID) ~= "number" or widgetSetID == 0 then
-        return nil
+    local widgetSetID
+    if C_Scenario and C_Scenario.GetStepInfo then
+        local ok, _, _, _, _, _, _, _, _, _, _, _, setID = pcall(C_Scenario.GetStepInfo)
+        if ok and type(setID) == "number" and setID > 0 then
+            widgetSetID = setID
+            lastDelveSetID = setID
+        end
     end
-    if not C_UIWidgetManager.GetAllWidgetsBySetID then
+    if not widgetSetID then
+        widgetSetID = lastDelveSetID
+    end
+    if type(widgetSetID) ~= "number" or widgetSetID == 0 or not C_UIWidgetManager.GetAllWidgetsBySetID then
+        if PlayerInDelve() then
+            return lastDelve
+        end
         return nil
     end
     local widgets = AQ:SafeCall(C_UIWidgetManager.GetAllWidgetsBySetID, widgetSetID)
     if type(widgets) ~= "table" then
+        if PlayerInDelve() then
+            return lastDelve
+        end
         return nil
     end
     local delveType = 29
@@ -1324,15 +797,32 @@ local function GetDelveWidget()
     end
     local getter = C_UIWidgetManager.GetScenarioHeaderDelvesWidgetVisualizationInfo
     if type(getter) ~= "function" then
+        if PlayerInDelve() then
+            return lastDelve
+        end
         return nil
     end
+    local hidden
     for i = 1, #widgets do
         local w = widgets[i]
         if type(w) == "table" and w.widgetType == delveType and w.widgetID then
             local info = AQ:SafeCall(getter, w.widgetID)
-            if type(info) == "table" and IsShownState(info.shownState) then
-                return info
+            if type(info) == "table" then
+                if IsShownState(info.shownState) then
+                    RememberDelve(info, widgetSetID)
+                    return info
+                end
+                hidden = info
             end
+        end
+    end
+    if PlayerInDelve() then
+        if lastDelve then
+            return lastDelve
+        end
+        if hidden then
+            RememberDelve(hidden, widgetSetID)
+            return hidden
         end
     end
     return nil
@@ -1479,6 +969,223 @@ local function ReadCriteria(i)
     }
 end
 
+local function CriteriaFromInfo(info)
+    if type(info) ~= "table" then
+        return nil
+    end
+    local isWeightedProgress = FlagOn(info.isWeightedProgress)
+    local quantityString = info.quantityString
+    if not isWeightedProgress and type(quantityString) == "string" and quantityString:find("%%", 1, true) then
+        isWeightedProgress = true
+    end
+    local have, need = CriteriaCounts(info.quantity, info.totalQuantity, quantityString)
+    return {
+        text = info.description,
+        completed = info.completed and true or false,
+        have = have,
+        need = need,
+        isWeightedProgress = isWeightedProgress,
+        isFormatted = FlagOn(info.isFormatted),
+        quantityString = quantityString,
+        objType = info.criteriaType,
+    }
+end
+
+local function ReadCriteriaByStep(stepID, i)
+    if C_ScenarioInfo and C_ScenarioInfo.GetCriteriaInfoByStep then
+        local info = AQ:SafeCall(C_ScenarioInfo.GetCriteriaInfoByStep, stepID, i)
+        local c = CriteriaFromInfo(info)
+        if c then
+            return c
+        end
+    end
+    if C_Scenario and C_Scenario.GetCriteriaInfoByStep then
+        local a, b, c, d, e, _, _, h, _, _, _, _, m = AQ:SafeCall(C_Scenario.GetCriteriaInfoByStep, stepID, i)
+        if a or d then
+            local isWeightedProgress = FlagOn(m)
+            if not isWeightedProgress and type(h) == "string" and h:find("%%", 1, true) then
+                isWeightedProgress = true
+            end
+            local have, need = CriteriaCounts(d, e, h)
+            return {
+                text = a,
+                completed = c and true or false,
+                have = have,
+                need = need,
+                isWeightedProgress = isWeightedProgress,
+                quantityString = h,
+                objType = b,
+            }
+        end
+    end
+    return nil
+end
+
+local function BonusStepIDs()
+    local out = {}
+    if not (C_Scenario and C_Scenario.GetBonusSteps) then
+        return out
+    end
+    local ok, result = pcall(C_Scenario.GetBonusSteps)
+    if ok and type(result) == "table" then
+        for i = 1, #result do
+            if type(result[i]) == "number" then
+                out[#out + 1] = result[i]
+            end
+        end
+        if #out > 0 then
+            return out
+        end
+    end
+    local packedOk, packed = pcall(function()
+        return { C_Scenario.GetBonusSteps() }
+    end)
+    if packedOk and type(packed) == "table" then
+        for i = 1, #packed do
+            if type(packed[i]) == "number" then
+                out[#out + 1] = packed[i]
+            end
+        end
+    end
+    return out
+end
+
+local function CollectBonusCriteria()
+    local list = {}
+    local steps = BonusStepIDs()
+    for s = 1, #steps do
+        local stepID = steps[s]
+        local num = 0
+        if C_ScenarioInfo and C_ScenarioInfo.GetScenarioStepInfo then
+            local info = AQ:SafeCall(C_ScenarioInfo.GetScenarioStepInfo, stepID)
+            if type(info) == "table" then
+                num = tonumber(info.numCriteria) or 0
+            end
+        end
+        if num < 1 then
+            num = 8
+        end
+        for i = 1, num do
+            local c = ReadCriteriaByStep(stepID, i)
+            if c and type(c.text) == "string" and c.text ~= "" then
+                list[#list + 1] = c
+            end
+        end
+    end
+    return list
+end
+
+local function LooksLikePackCriteria(c)
+    if type(c) ~= "table" or c.isWeightedProgress then
+        return false
+    end
+    local blob = SafeLower(c.text) .. " " .. SafeLower(c.quantityString)
+    if BlobHas(blob, EXTRA_CRITERIA_WORDS) or BlobHas(blob, PACK_NAME_WORDS) then
+        return true
+    end
+    return blob:find("chosen", 1, true) and (blob:find("ula", 1, true) or blob:find("nemesis", 1, true))
+end
+
+local function PackCountsFromCriteria(c)
+    if type(c) ~= "table" then
+        return nil
+    end
+    local have, need = c.have, c.need
+    if type(have) ~= "number" or type(need) ~= "number" or need <= 0 then
+        return nil
+    end
+    if c.completed then
+        have = need
+    end
+    if have < 0 then
+        have = 0
+    end
+    if have > need then
+        have = need
+    end
+    return have, need, have >= need
+end
+
+local function ReadWidgetSetPackProgress(setID)
+    if type(setID) ~= "number" or setID <= 0 or not C_UIWidgetManager or not C_UIWidgetManager.GetAllWidgetsBySetID then
+        return nil
+    end
+    local widgets = AQ:SafeCall(C_UIWidgetManager.GetAllWidgetsBySetID, setID)
+    if type(widgets) ~= "table" then
+        return nil
+    end
+    local function consider(have, need, blob)
+        blob = SafeLower(blob)
+        if type(have) ~= "number" or type(need) ~= "number" or need < 1 or need > 8 then
+            return nil
+        end
+        if blob:find("remaining", 1, true) or blob:find("left", 1, true) or blob:find("alive", 1, true) then
+            have = need - have
+            if have < 0 then
+                have = 0
+            end
+        end
+        local packish = BlobHas(blob, EXTRA_CRITERIA_WORDS) or BlobHas(blob, PACK_NAME_WORDS) or blob:find("nemesis", 1, true)
+        if not packish then
+            return nil
+        end
+        return have, need, have >= need
+    end
+    for i = 1, #widgets do
+        local w = widgets[i]
+        local id = type(w) == "table" and w.widgetID
+        if type(id) == "number" then
+            local bar = C_UIWidgetManager.GetStatusBarWidgetVisualizationInfo
+                and AQ:SafeCall(C_UIWidgetManager.GetStatusBarWidgetVisualizationInfo, id)
+            if type(bar) == "table" then
+                local have, need, done = consider(tonumber(bar.barValue), tonumber(bar.barMax), (bar.text or "") .. " " .. (bar.tooltip or ""))
+                if have then
+                    return have, need, done
+                end
+            end
+            local txt = C_UIWidgetManager.GetTextWithStateWidgetVisualizationInfo
+                and AQ:SafeCall(C_UIWidgetManager.GetTextWithStateWidgetVisualizationInfo, id)
+            if type(txt) == "table" and type(txt.text) == "string" then
+                local a, b = string.match(txt.text, "(%d+)%s*/%s*(%d+)")
+                local have, need, done = consider(tonumber(a), tonumber(b), txt.text .. " " .. (txt.tooltip or ""))
+                if have then
+                    return have, need, done
+                end
+            end
+        end
+    end
+    return nil
+end
+
+ReadBlizzardPackProgress = function(tier)
+    local step = ReadStepInfo()
+    local num = step and tonumber(step.numCriteria) or 0
+    for i = 1, num do
+        local c = ReadCriteria(i)
+        if LooksLikePackCriteria(c) then
+            local have, need, done = PackCountsFromCriteria(c)
+            if have then
+                return have, need, done
+            end
+        end
+    end
+    local bonus = CollectBonusCriteria()
+    for i = 1, #bonus do
+        if LooksLikePackCriteria(bonus[i]) then
+            local have, need, done = PackCountsFromCriteria(bonus[i])
+            if have then
+                return have, need, done
+            end
+        end
+    end
+    local setID = step and step.widgetSetID
+    local have, need, done = ReadWidgetSetPackProgress(setID)
+    if have then
+        return have, need, done
+    end
+    return nil
+end
+
 local function AddProgressRow(rows, spec)
     local extra = ""
     if spec.have and spec.need then
@@ -1497,9 +1204,34 @@ local function AddProgressRow(rows, spec)
     })
 end
 
+local function AddBonusCriteriaRows(rows)
+    local bonus = CollectBonusCriteria()
+    for i = 1, #bonus do
+        local extra = bonus[i]
+        if extra and not extra.isWeightedProgress and type(extra.text) == "string" and extra.text ~= "" and not SkipExtraCriteria(extra.text) then
+            local title = extra.text
+            if not extra.isFormatted and extra.have and extra.need and not title:find("%d+%s*/%s*%d+") then
+                title = string.format("%d/%d %s", extra.have, extra.need, extra.text)
+            end
+            AddRow(rows, {
+                kind = "objective",
+                title = title,
+                finished = extra.completed,
+                numFulfilled = extra.have,
+                numNeeded = extra.need,
+                quantityString = extra.quantityString,
+                objType = extra.objType,
+                goldBullet = true,
+                speech = extra.text,
+            })
+        end
+    end
+end
+
 local function AddCriteria(rows)
     local step = ReadStepInfo()
     if not step then
+        AddBonusCriteriaRows(rows)
         return
     end
     local numCriteria = step.numCriteria or 0
@@ -1539,6 +1271,7 @@ local function AddCriteria(rows)
                 })
             end
         end
+        AddBonusCriteriaRows(rows)
         return
     end
     local progress
@@ -1599,6 +1332,7 @@ local function AddCriteria(rows)
     if progress then
         AddProgressRow(rows, progress)
     end
+    AddBonusCriteriaRows(rows)
 end
 
 local function AddInstanceHeader(rows, spec)
@@ -1636,11 +1370,15 @@ local function DelveLives(delve)
     return nil
 end
 
-local function GetRows()
+local lastDelveRows
+
+local function BuildInstanceRows()
     local rows = {}
     local inScenario = C_Scenario and AQ:SafeCall(C_Scenario.IsInScenario)
     local inMplus = C_ChallengeMode and AQ:SafeCall(C_ChallengeMode.IsChallengeModeActive)
-    if not inScenario and not inMplus then
+    local inDelve = PlayerInDelve()
+    if not inScenario and not inMplus and not inDelve then
+        ClearDelveCache()
         return rows
     end
 
@@ -1828,6 +1566,21 @@ local function GetRows()
         return rows
     end
 
+    -- Shrine / Dundun gossip hides the delve header widget and can drop
+    -- IsInScenario. Keep the instance block from the last good snapshot.
+    if inDelve then
+        local tier = ActiveDelveTier()
+        AddInstanceHeader(rows, {
+            title = headerTitle,
+            badge = tier,
+            instanceType = "delve",
+            speech = (tier and ("Tier " .. tostring(tier) .. " ") or "") .. headerTitle,
+        })
+        AttachNemesisExtras(rows, lastDelve or {}, nil, nil, tier, #rows)
+        AddCriteria(rows)
+        return rows
+    end
+
     local diffLabel = inst and inst.difficultyName
     local instanceType = "scenario"
     if inst and inst.instanceType == "raid" then
@@ -1875,6 +1628,25 @@ local function GetRows()
     return rows
 end
 
+local function GetRows()
+    local ok, rows = pcall(BuildInstanceRows)
+    if ok and type(rows) == "table" and #rows > 0 then
+        if PlayerInDelve() or (rows[1] and rows[1].instanceType == "delve") then
+            lastDelveRows = rows
+        else
+            lastDelveRows = nil
+        end
+        return rows
+    end
+    if lastDelveRows and PlayerInDelve() then
+        return lastDelveRows
+    end
+    if ok and type(rows) == "table" then
+        return rows
+    end
+    return lastDelveRows or {}
+end
+
 AQ.Tracker.RegisterSection({
     id = "scenarios",
     title = "Instance",
@@ -1889,7 +1661,7 @@ local function RefreshIfInside()
     end
     local inScenario = C_Scenario and AQ:SafeCall(C_Scenario.IsInScenario)
     local inMplus = C_ChallengeMode and AQ:SafeCall(C_ChallengeMode.IsChallengeModeActive)
-    if inScenario or inMplus then
+    if inScenario or inMplus or PlayerInDelve() then
         AQ.Tracker.Refresh()
     end
 end
@@ -1897,6 +1669,8 @@ end
 AQ.Events.Register("SCENARIO_UPDATE", RefreshIfInside)
 AQ.Events.Register("SCENARIO_CRITERIA_UPDATE", RefreshIfInside)
 AQ.Events.Register("SCENARIO_SPELL_UPDATE", RefreshIfInside)
+AQ.Events.Register("SCENARIO_BONUS_OBJECTIVE_COMPLETE", RefreshIfInside)
+AQ.Events.Register("SCENARIO_BONUS_VISIBILITY_UPDATE", RefreshIfInside)
 AQ.Events.Register("CHALLENGE_MODE_START", function()
     if AQ.Tracker then
         AQ.Tracker.Refresh()
@@ -1913,54 +1687,48 @@ AQ.Events.Register("WORLD_STATE_TIMER_STOP", RefreshIfInside)
 AQ.Events.Register("ACTIVE_DELVE_DATA_UPDATE", RefreshIfInside)
 AQ.Events.Register("CURRENCY_DISPLAY_UPDATE", RefreshIfInside)
 AQ.Events.Register("UPDATE_UI_WIDGET", RefreshIfInside)
-AQ.Events.Register("VIGNETTE_MINIMAP_UPDATED", RefreshIfInside)
-AQ.Events.Register("VIGNETTES_UPDATED", RefreshIfInside)
+local function ScanPacksThenRefresh()
+    if PlayerInDelve() then
+        ScanDelveVignettes()
+    end
+    RefreshIfInside()
+end
+AQ.Events.Register("VIGNETTE_MINIMAP_UPDATED", ScanPacksThenRefresh)
+AQ.Events.Register("VIGNETTES_UPDATED", ScanPacksThenRefresh)
+AQ.Events.Register("PLAYER_ENTERING_WORLD", function()
+    if PlayerInDelve() then
+        EnsureNemesisRun()
+        ScanDelveVignettes()
+        RefreshIfInside()
+        return
+    end
+    if C_Timer and C_Timer.After then
+        C_Timer.After(3, function()
+            if not PlayerInDelve() then
+                ClearNemesisPersist()
+                ClearDelveCache()
+            end
+        end)
+    elseif not PlayerInDelve() then
+        ClearNemesisPersist()
+        ClearDelveCache()
+    end
+end)
 AQ.Events.Register("UNIT_AURA", function(_, unit)
     if unit == "player" then
         RefreshIfInside()
     end
 end)
-AQ.Events.Register("UNIT_SPELLCAST_SUCCEEDED", function(_, unit, _, spellID)
-    if unit == "player" and SpellLooksLikeBonus(spellID) then
-        EnsureNemesisRun()
-        nemesisRun.bannerState = "clicked"
-        RefreshIfInside()
-    end
-end)
-AQ.Events.Register("GOSSIP_SHOW", function()
-    if NoteBonusNpcUnits() then
-        nemesisRun.dundunGossip = true
-        RefreshIfInside()
-    end
-end)
-AQ.Events.Register("GOSSIP_CLOSED", function()
-    if nemesisRun.dundunGossip then
-        nemesisRun.dundunGossip = false
-        if nemesisRun.bannerState ~= "grand" then
-            nemesisRun.bannerState = "clicked"
-        end
-        RefreshIfInside()
-    end
-end)
-local function NoteBonusThenRefresh(msg)
-    NoteBonusMessage(msg)
+local function NotePackThenRefresh(msg)
+    NotePackKillMessage(msg)
     RefreshIfInside()
 end
 AQ.Events.Register("CHAT_MSG_RAID_BOSS_EMOTE", function(_, msg)
-    NoteBonusThenRefresh(msg)
-end)
-AQ.Events.Register("CHAT_MSG_RAID_BOSS_WHISPER", function(_, msg)
-    NoteBonusThenRefresh(msg)
+    NotePackThenRefresh(msg)
 end)
 AQ.Events.Register("UI_INFO_MESSAGE", function(_, _, msg)
-    NoteBonusThenRefresh(msg)
+    NotePackThenRefresh(msg)
 end)
 AQ.Events.Register("CHAT_MSG_SYSTEM", function(_, msg)
-    NoteBonusThenRefresh(msg)
-end)
-AQ.Events.Register("CHAT_MSG_MONSTER_SAY", function(_, msg)
-    NoteBonusThenRefresh(msg)
-end)
-AQ.Events.Register("CHAT_MSG_MONSTER_YELL", function(_, msg)
-    NoteBonusThenRefresh(msg)
+    NotePackThenRefresh(msg)
 end)

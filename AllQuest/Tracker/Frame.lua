@@ -1713,7 +1713,32 @@ function Tracker.MoveFocus(delta)
     Tracker.Focus(focused + delta)
 end
 
-local instanceState = nil
+local instanceKey = nil
+local instanceLeaveAt = nil
+
+local function CurrentInstanceKey()
+    if not GetInstanceInfo then
+        if AQ.Compat and AQ.Compat.IsInInstance and AQ.Compat.IsInInstance() then
+            return instanceKey or "instance"
+        end
+        return nil
+    end
+    local ok, name, instanceType, difficultyID, _, _, _, _, id = pcall(GetInstanceInfo)
+    if not ok then
+        return instanceKey
+    end
+    if tonumber(difficultyID) == 208 then
+        return "delve:" .. tostring(id or name or "208")
+    end
+    -- Shrine gossip can report a non-delve type for a moment. Keep the run.
+    if instanceKey and string.sub(instanceKey, 1, 6) == "delve:" then
+        return instanceKey
+    end
+    if AQ.Compat and AQ.Compat.IsInInstance and AQ.Compat.IsInInstance() and type(name) == "string" and name ~= "" then
+        return name .. ":" .. tostring(id or difficultyID or instanceType or "")
+    end
+    return nil
+end
 
 function Tracker.Refresh()
     if refreshPending then
@@ -1733,25 +1758,32 @@ function Tracker.Refresh()
             end
             return
         end
-        local inInst = AQ.Compat.IsInInstance()
+        local key = CurrentInstanceKey()
         if DB().trackerCollapseInInstance then
-            if inInst then
-                if instanceState ~= true then
-                    if instanceState == false then
+            local now = (GetTime and GetTime()) or 0
+            if key then
+                instanceLeaveAt = nil
+                if instanceKey ~= key then
+                    if instanceKey == nil then
                         Char()._preInstanceCollapsed = Char().trackerCollapsed
                     end
                     Char().trackerCollapsed = true
+                    instanceKey = key
                 end
-                instanceState = true
-            else
-                if instanceState == true then
+            elseif instanceKey then
+                -- Shrine gossip can flicker IsInInstance off. Wait before treating as a leave.
+                if not instanceLeaveAt then
+                    instanceLeaveAt = now
+                elseif (now - instanceLeaveAt) >= 2 then
                     Char().trackerCollapsed = Char()._preInstanceCollapsed and true or false
                     Char()._preInstanceCollapsed = nil
+                    instanceKey = nil
+                    instanceLeaveAt = nil
                 end
-                instanceState = false
             end
         else
-            instanceState = inInst and true or false
+            instanceKey = key
+            instanceLeaveAt = nil
         end
         Layout()
         if AQ.HideBlizzard then
