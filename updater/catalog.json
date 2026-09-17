@@ -128,37 +128,51 @@
       "id": "BMG-Unit-frames",
       "name": "BMG Unit Frames",
       "folders": ["BMG-Unit-frames"],
-      "version": "1.0.0",
+      "version": "1.1.0",
       "updated": "2026-09-17",
       "interfaces": [120100, 120007, 120005, 120001],
-      "saved": ["BMGUnitFramesDB"]
+      "saved": ["BMGUnitFramesDB"],
+      "client": "retail"
     },
     {
       "id": "BMG-Unit-frames-classic-era",
       "name": "BMG Unit Frames - Classic Era",
       "folders": ["BMG-Unit-frames-classic-era"],
-      "version": "1.0.0",
+      "version": "1.1.0",
       "updated": "2026-09-17",
       "interfaces": [11509, 11508],
-      "saved": ["BMGUnitFramesClassicEraDB"]
+      "saved": ["BMGUnitFramesClassicEraDB"],
+      "client": "era"
     },
     {
       "id": "BMG-Unit-frames-anniversary",
       "name": "BMG Unit Frames - Anniversary",
       "folders": ["BMG-Unit-frames-anniversary"],
-      "version": "1.0.0",
+      "version": "1.1.0",
       "updated": "2026-09-17",
       "interfaces": [20506, 20505],
-      "saved": ["BMGUnitFramesAnniversaryDB"]
+      "saved": ["BMGUnitFramesAnniversaryDB"],
+      "client": "anniversary"
     },
     {
       "id": "BMG-Unit-frames-classic",
       "name": "BMG Unit Frames - Classic (MoP)",
       "folders": ["BMG-Unit-frames-classic"],
-      "version": "1.0.0",
+      "version": "1.1.0",
       "updated": "2026-09-17",
       "interfaces": [50504, 50503],
-      "saved": ["BMGUnitFramesClassicDB"]
+      "saved": ["BMGUnitFramesClassicDB"],
+      "client": "classic"
+    },
+    {
+      "id": "BMG-Unit-frames-forever",
+      "name": "BMG Unit Frames - WoW Forever",
+      "folders": ["BMG-Unit-frames-forever"],
+      "version": "1.1.0",
+      "updated": "2026-09-17",
+      "interfaces": [121500, 121000],
+      "saved": ["BMGUnitFramesForeverDB"],
+      "client": "forever"
     },
     {
       "id": "CooldownAssist",

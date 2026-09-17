@@ -135,7 +135,7 @@ local function Start()
     end
     local iface = UF.Compat.interface or "?"
     local title = (UF.Flavor and UF.Flavor.title) or "BMG Unit Frames"
-    print("|cff00ff00[" .. title .. "]|r v1.0.0 loaded. Interface: " .. tostring(iface))
+    print("|cff00ff00[" .. title .. "]|r v1.1.0 loaded. Interface: " .. tostring(iface))
     print("|cff00ff00[" .. title .. "]|r |cff00ff00/bmguf|r settings · Key Bindings: Open settings")
 end
 

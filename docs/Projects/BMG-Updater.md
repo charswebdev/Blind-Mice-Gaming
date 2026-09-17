@@ -17,7 +17,7 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 ## Features
 
 - Catalog-driven list of addons (folder lists, toc interfaces, SavedVariables names) and apps (flavor, status shipped/planned, exe prefix).
-- **2026-09-17:** catalog lists **four** BMG Unit Frames packages (`BMG-Unit-frames`, `-classic-era`, `-anniversary`, `-classic`) at 1.0.0. No updater exe bump — players refresh the catalog from `main`.
+- **2026-09-17:** catalog lists **five** BMG Unit Frames packages (`BMG-Unit-frames`, `-classic-era`, `-anniversary`, `-classic`, `-forever`) at 1.1.0. Forever installs only into `_forever_` / `_wow_forever_` / `_camelot_`. No updater exe bump — players refresh the catalog from `main` and use a build that includes the Forever client list.
 - Install/update addons into the correct WoW `_retail_` / `_classic_era_` / … `Interface/AddOns` trees.
 - Download GitHub release Setups for desktop apps.
 - Self-update of the updater exe.

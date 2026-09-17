@@ -2,8 +2,8 @@
 
 | Field | Value |
 |-------|--------|
-| Status | **Shipped** (four flavor packages) |
-| Version | **1.0.0** (each toc + `updater/catalog.json`) |
+| Status | **Shipped** (five flavor packages) |
+| Version | **1.1.0** (each toc + `updater/catalog.json`) |
 | Type | In-game unit frames (high-contrast, movable, accessible) |
 | Optional deps | AccessibilityHelper (TTS if present) |
 
@@ -15,6 +15,7 @@ Separate package per WoW flavor — own folder, own SavedVariables, own updater 
 | Classic Era + Hardcore | `_classic_era_` | `BMG-Unit-frames-classic-era/` | `BMGUnitFramesClassicEraDB` | `11509`, `11508` |
 | Anniversary (TBC) | `_anniversary_` | `BMG-Unit-frames-anniversary/` | `BMGUnitFramesAnniversaryDB` | `20506`, `20505` |
 | Classic (MoP) | `_classic_` | `BMG-Unit-frames-classic/` | `BMGUnitFramesClassicDB` | `50504`, `50503` |
+| WoW Forever | `_forever_` / `_wow_forever_` / `_camelot_` | `BMG-Unit-frames-forever/` | `BMGUnitFramesForeverDB` | `121500`, `121000` |
 
 Interface numbers match the current live patch plus the previous one so a weekly bump does not unload the addon.
 
@@ -24,7 +25,7 @@ Slash `/bmguf` · `/uf` · Key Bindings → **BMG Unit Frames** (open settings, 
 
 High-contrast player, pet, target, focus, target-of-target, party, raid, and arena frames. Players move and resize them, pick classic Blizzard or modern class colors, and export a layout code. Built for blind and visually impaired players.
 
-Focus and arena are capability-gated: off on Classic Era, on for Anniversary, MoP, and Retail. First load snaps to Blizzard / Edit Mode positions. Midnight hides raw health numbers; the Retail package then shows percent only.
+Focus and arena are capability-gated: off on Classic Era, on for Anniversary, MoP, Retail, and Forever. First load snaps to Blizzard / Edit Mode positions. Midnight and Forever hide raw health numbers; those packages then show percent only.
 
 ## Features
 
@@ -60,6 +61,7 @@ Focus and arena are capability-gated: off on Classic Era, on for Anniversary, Mo
 | **0.8.9** | Group role indicator: Tank, Healer, or DPS |
 | **0.9.0** | Role icons use one Blizzard sheet: shield = tank, cross = healer, swords = DPS |
 | **1.0.0** | First public release: four flavor packages, bar styles, grouped settings, group roles |
+| **1.1.0** | WoW Forever package (Mainline / Camelot, secrets, own SavedVariables) |
 
 ## Sources and data
 
@@ -82,4 +84,5 @@ Focus and arena are capability-gated: off on Classic Era, on for Anniversary, Mo
 ## Open work
 
 - Playtest fill layout after `/reload` (Retail + Era first). Existing saved frames keep their height; health now fills that window.
+- Confirm the live Forever Battle.net folder name when the client ships (`_forever_`, `_wow_forever_`, or `_camelot_`).
 - Season of Discovery package later (names still open).

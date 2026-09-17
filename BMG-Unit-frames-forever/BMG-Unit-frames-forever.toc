@@ -1,13 +1,13 @@
-## Interface: 50504, 50503
-## Title: BMG Unit Frames - Classic (MoP)
-## Notes: High-contrast, movable unit frames for Mists of Pandaria Classic. Classic or modern class colors. Exportable layout codes. Accessible for blind players.
+## Interface: 121500, 121000
+## Title: BMG Unit Frames - WoW Forever
+## Notes: High-contrast, movable unit frames for WoW Forever. Midnight-style secrets. Classic or modern class colors. Exportable layout codes. Accessible for blind players.
 ## Author: Blind Mice Gaming
 ## Version: 1.1.0
 ## Category: Blind Mice Gaming
 ## Category-enUS: Blind Mice Gaming
-## IconTexture: Interface\AddOns\BMG-Unit-frames-classic\Media\Icon.png
+## IconTexture: Interface\AddOns\BMG-Unit-frames-forever\Media\Icon.png
 ## OptionalDeps: AccessibilityHelper
-## SavedVariables: BMGUnitFramesClassicDB
+## SavedVariables: BMGUnitFramesForeverDB
 ## AddonCompartmentFunc: BMGUnitFrames_OnAddonCompartmentClick
 ## DefaultState: enabled
 

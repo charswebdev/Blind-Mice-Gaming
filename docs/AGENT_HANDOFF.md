@@ -95,6 +95,7 @@ Every flavor is **LPL + LPLM + LPTM**. Separate folder, SavedVariables or AppDat
 | Anniversary (TBC) | `_anniversary_` | planned | planned | planned |
 | Classic / MoP | `_classic_` | planned | planned | planned |
 | Season of Discovery | SoD client | later | later | later |
+| WoW Forever | `_forever_` / `_wow_forever_` / `_camelot_` | later | later | later |
 
 **Build order:** Era addon + LPTM (done) → **Era LPLM** → Anniversary trio → Classic/MoP trio → SoD.
 
@@ -108,7 +109,7 @@ Classic flavors: keep vault UX; rewrite talent engines; drop CDM / Retail PvP / 
 
 Versions: `docs/Projects/README.md` + catalog/toc. Do not copy versions into this file.
 
-**Addons:** `AccessibilityHelper/` · `AllQuest/` + `AllQuest_Data_*` · `BMG-Unit-frames/` · `CooldownAssist/` · `Exploration/` · `FPSDiag/` · `wowgps/` · `lpl/` · `lpl-classic-era/` · planned `lpl-anniversary/` · `lpl-classic/` · SoD TBD
+**Addons:** `AccessibilityHelper/` · `AllQuest/` + `AllQuest_Data_*` · `BMG-Unit-frames/` · `BMG-Unit-frames-classic-era/` · `BMG-Unit-frames-anniversary/` · `BMG-Unit-frames-classic/` · `BMG-Unit-frames-forever/` · `CooldownAssist/` · `Exploration/` · `FPSDiag/` · `wowgps/` · `lpl/` · `lpl-classic-era/` · planned `lpl-anniversary/` · `lpl-classic/` · SoD TBD
 
 **Desktop:** `talent-manager/` · `talent-manager-classic-era/` · `loadout-manager/` · `updater/` · planned `loadout-manager-classic-era/` (stub) · planned Anniversary/MoP LPTM/LPLM folders
 
