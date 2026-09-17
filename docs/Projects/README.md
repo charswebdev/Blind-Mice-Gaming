@@ -25,7 +25,7 @@ Commit, push, and GitHub releases happen **only when asked**.
 |----------|--------|-------------------------|
 | [Accessibility Helper](Accessibility-Helper.md) | Shipped | 3.6.5 |
 | [AllQuest](AllQuest.md) | Shipped | 1.1.3 |
-| [BMG Unit Frames](BMG-Unit-Frames.md) | Shipped (Retail + Era + Anniversary + MoP + Forever) | 1.1.0 |
+| [BMG Unit Frames](BMG-Unit-Frames.md) | Shipped (Retail + Era + Anniversary + MoP + Forever) | 1.1.1 |
 | [Cooldown Assist](Cooldown-Assist.md) | Shipped | 1.1.0 |
 | [Exploration](Exploration.md) | Shipped | 2.0.2 |
 | [FPSDiag](FPSDiag.md) | Shipped | 0.3.1 |
@@ -67,6 +67,6 @@ Every flavor is **three products**: in-game LPL + desktop LPLM + desktop LPTM. S
 | Anniversary (TBC) | `_anniversary_` | planned | planned | planned |
 | Classic / MoP | `_classic_` (one client today) | planned | planned | planned |
 | Season of Discovery | SoD client | later | later | later |
-| WoW Forever | `_forever_` / `_wow_forever_` / `_camelot_` | later | later | later |
+| WoW Forever | `_classic_beta_` (live) / `_forever_` / `_wow_forever_` / `_camelot_` | later | later | later |
 
 **Build order:** Era addon + LPTM (done) → Era LPLM → Anniversary trio → Classic/MoP trio → SoD. Do not start Anniversary/MoP/SoD **code** until assigned.

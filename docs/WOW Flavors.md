@@ -10,7 +10,7 @@ Fill **one flavor at a time** in chat, or from `docs/Artifacts/` distillations.
 | [WOW Classic Era](WOW%20Classic%20Era/WOW%20Classic%20Era.md) | `_classic_era_` | Era + Hardcore (same client family) |
 | [WOW Anniversary](WOW%20Anniversary/WOW%20Anniversary.md) | `_anniversary_` | TBC Anniversary |
 | [WOW Classic](WOW%20Classic/WOW%20Classic.md) | `_classic_` | MoP Classic today (one client; not Era) |
-| [WOW Forever](WOW%20Forever/WOW%20Forever.md) | `_forever_` / `_wow_forever_` / `_camelot_` | Mainline family (Camelot). Midnight secrets. 12.1.5 |
+| [WOW Forever](WOW%20Forever/WOW%20Forever.md) | `_classic_beta_` (live) / `_forever_` / `_wow_forever_` / `_camelot_` | ForeverBeta 1.60.1 (`16001`). Camelot / Mainline UI family. |
 
 Agent / pipeline rules from the same pack: [Cursor](Cursor/Cursor.md).
 

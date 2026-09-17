@@ -95,7 +95,7 @@ Every flavor is **LPL + LPLM + LPTM**. Separate folder, SavedVariables or AppDat
 | Anniversary (TBC) | `_anniversary_` | planned | planned | planned |
 | Classic / MoP | `_classic_` | planned | planned | planned |
 | Season of Discovery | SoD client | later | later | later |
-| WoW Forever | `_forever_` / `_wow_forever_` / `_camelot_` | later | later | later |
+| WoW Forever | `_classic_beta_` (live) / `_forever_` / `_wow_forever_` / `_camelot_` | later | later | later |
 
 **Build order:** Era addon + LPTM (done) → **Era LPLM** → Anniversary trio → Classic/MoP trio → SoD.
 

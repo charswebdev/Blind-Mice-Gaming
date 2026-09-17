@@ -11,6 +11,6 @@ BMGUF.Flavor = {
     folder = "BMG-Unit-frames-forever",
     product = "BMG-Unit-frames-forever",
     saved = "BMGUnitFramesForeverDB",
-    client = "_forever_",
+    client = "_classic_beta_",
     defaultPortrait = "3d",
 }

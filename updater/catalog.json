@@ -168,9 +168,9 @@
       "id": "BMG-Unit-frames-forever",
       "name": "BMG Unit Frames - WoW Forever",
       "folders": ["BMG-Unit-frames-forever"],
-      "version": "1.1.0",
+      "version": "1.1.1",
       "updated": "2026-09-17",
-      "interfaces": [121500, 121000],
+      "interfaces": [16001, 121500, 121000],
       "saved": ["BMGUnitFramesForeverDB"],
       "client": "forever"
     },
