@@ -125,6 +125,15 @@
       "saved": ["AllQuestDB", "AllQuestCharDB"]
     },
     {
+      "id": "BMG-Unit-frames",
+      "name": "BMG Unit Frames",
+      "folders": ["BMG-Unit-frames"],
+      "version": "0.7.1",
+      "updated": "2026-09-17",
+      "interfaces": [120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508],
+      "saved": ["BMGUnitFramesDB"]
+    },
+    {
       "id": "CooldownAssist",
       "name": "Cooldown Assist",
       "folders": ["CooldownAssist"],

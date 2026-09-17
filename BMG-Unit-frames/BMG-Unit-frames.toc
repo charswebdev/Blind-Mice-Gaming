@@ -1,0 +1,30 @@
+## Interface: 120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508
+## Title: BMG Unit Frames
+## Notes: High-contrast, movable unit frames for Classic Era and later. Classic or modern class colors. Exportable layout codes. Accessible for blind players.
+## Author: Blind Mice Gaming
+## Version: 0.7.1
+## Category: Blind Mice Gaming
+## Category-enUS: Blind Mice Gaming
+## IconTexture: Interface\AddOns\BMG-Unit-frames\Media\Icon.png
+## OptionalDeps: AccessibilityHelper
+## SavedVariables: BMGUnitFramesDB
+## AddonCompartmentFunc: BMGUnitFrames_OnAddonCompartmentClick
+## DefaultState: enabled
+
+Core\Compat.lua
+Core\Pos.lua
+Core\Power.lua
+Core\DB.lua
+Core\Share.lua
+Core\Speech.lua
+Theme\Colors.lua
+Theme\Widgets.lua
+Frames\HideBlizzard.lua
+Frames\Factory.lua
+Frames\Auras.lua
+Frames\Indicators.lua
+Frames\Extras.lua
+Frames\Layout.lua
+UI\Config.lua
+Core\Bindings.lua
+Core\Addon.lua

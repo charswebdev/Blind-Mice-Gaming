@@ -108,7 +108,7 @@ Classic flavors: keep vault UX; rewrite talent engines; drop CDM / Retail PvP / 
 
 Versions: `docs/Projects/README.md` + catalog/toc. Do not copy versions into this file.
 
-**Addons:** `AccessibilityHelper/` · `AllQuest/` + `AllQuest_Data_*` · `CooldownAssist/` · `Exploration/` · `FPSDiag/` · `wowgps/` · `lpl/` · `lpl-classic-era/` · planned `lpl-anniversary/` · `lpl-classic/` · SoD TBD
+**Addons:** `AccessibilityHelper/` · `AllQuest/` + `AllQuest_Data_*` · `BMG-Unit-frames/` · `CooldownAssist/` · `Exploration/` · `FPSDiag/` · `wowgps/` · `lpl/` · `lpl-classic-era/` · planned `lpl-anniversary/` · `lpl-classic/` · SoD TBD
 
 **Desktop:** `talent-manager/` · `talent-manager-classic-era/` · `loadout-manager/` · `updater/` · planned `loadout-manager-classic-era/` (stub) · planned Anniversary/MoP LPTM/LPLM folders
 
