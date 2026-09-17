@@ -1,13 +1,13 @@
-## Interface: 120100, 120007, 120005, 120001
-## Title: BMG Unit Frames
-## Notes: High-contrast, movable unit frames for Retail Midnight. Classic or modern class colors. Exportable layout codes. Accessible for blind players.
+## Interface: 20506, 20505
+## Title: BMG Unit Frames - Anniversary
+## Notes: High-contrast, movable unit frames for Burning Crusade Classic Anniversary. Classic or modern class colors. Exportable layout codes. Accessible for blind players.
 ## Author: Blind Mice Gaming
 ## Version: 1.0.0
 ## Category: Blind Mice Gaming
 ## Category-enUS: Blind Mice Gaming
-## IconTexture: Interface\AddOns\BMG-Unit-frames\Media\Icon.png
+## IconTexture: Interface\AddOns\BMG-Unit-frames-anniversary\Media\Icon.png
 ## OptionalDeps: AccessibilityHelper
-## SavedVariables: BMGUnitFramesDB
+## SavedVariables: BMGUnitFramesAnniversaryDB
 ## AddonCompartmentFunc: BMGUnitFrames_OnAddonCompartmentClick
 ## DefaultState: enabled
 

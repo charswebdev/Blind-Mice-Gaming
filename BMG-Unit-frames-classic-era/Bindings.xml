@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WoW loads Bindings.xml from this folder; do not list it in the .toc. -->
+<Bindings>
+    <Binding name="BMGUNITFRAMES_OPENSETTINGS" description="Open BMG Unit Frames settings." category="BMG Unit Frames">
+        BMGUnitFrames_OpenSettingsBinding();
+    </Binding>
+    <Binding name="BMGUNITFRAMES_TOGGLELOCK" description="Lock or unlock BMG Unit Frames." category="BMG Unit Frames">
+        BMGUnitFrames_ToggleLockBinding();
+    </Binding>
+    <Binding name="BMGUNITFRAMES_READTARGET" description="Read the current target." category="BMG Unit Frames">
+        BMGUnitFrames_ReadTargetBinding();
+    </Binding>
+</Bindings>

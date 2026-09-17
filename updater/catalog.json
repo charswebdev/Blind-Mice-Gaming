@@ -128,10 +128,37 @@
       "id": "BMG-Unit-frames",
       "name": "BMG Unit Frames",
       "folders": ["BMG-Unit-frames"],
-      "version": "0.7.1",
+      "version": "1.0.0",
       "updated": "2026-09-17",
-      "interfaces": [120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508],
+      "interfaces": [120100, 120007, 120005, 120001],
       "saved": ["BMGUnitFramesDB"]
+    },
+    {
+      "id": "BMG-Unit-frames-classic-era",
+      "name": "BMG Unit Frames - Classic Era",
+      "folders": ["BMG-Unit-frames-classic-era"],
+      "version": "1.0.0",
+      "updated": "2026-09-17",
+      "interfaces": [11509, 11508],
+      "saved": ["BMGUnitFramesClassicEraDB"]
+    },
+    {
+      "id": "BMG-Unit-frames-anniversary",
+      "name": "BMG Unit Frames - Anniversary",
+      "folders": ["BMG-Unit-frames-anniversary"],
+      "version": "1.0.0",
+      "updated": "2026-09-17",
+      "interfaces": [20506, 20505],
+      "saved": ["BMGUnitFramesAnniversaryDB"]
+    },
+    {
+      "id": "BMG-Unit-frames-classic",
+      "name": "BMG Unit Frames - Classic (MoP)",
+      "folders": ["BMG-Unit-frames-classic"],
+      "version": "1.0.0",
+      "updated": "2026-09-17",
+      "interfaces": [50504, 50503],
+      "saved": ["BMGUnitFramesClassicDB"]
     },
     {
       "id": "CooldownAssist",

@@ -1,13 +1,13 @@
-## Interface: 120100, 120007, 120005, 120001
-## Title: BMG Unit Frames
-## Notes: High-contrast, movable unit frames for Retail Midnight. Classic or modern class colors. Exportable layout codes. Accessible for blind players.
+## Interface: 11509, 11508
+## Title: BMG Unit Frames - Classic Era
+## Notes: High-contrast, movable unit frames for Classic Era and Hardcore. Classic or modern class colors. Exportable layout codes. Accessible for blind players.
 ## Author: Blind Mice Gaming
 ## Version: 1.0.0
 ## Category: Blind Mice Gaming
 ## Category-enUS: Blind Mice Gaming
-## IconTexture: Interface\AddOns\BMG-Unit-frames\Media\Icon.png
+## IconTexture: Interface\AddOns\BMG-Unit-frames-classic-era\Media\Icon.png
 ## OptionalDeps: AccessibilityHelper
-## SavedVariables: BMGUnitFramesDB
+## SavedVariables: BMGUnitFramesClassicEraDB
 ## AddonCompartmentFunc: BMGUnitFrames_OnAddonCompartmentClick
 ## DefaultState: enabled
 
