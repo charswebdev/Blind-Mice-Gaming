@@ -1,0 +1,15 @@
+## Interface: 16001, 121500, 121000
+## Title: AllQuest: WoW Forever
+## Notes: WoW Forever questline stub for AllQuest. Tracker uses live Blizzard APIs; journal chains fill later from a Forever extract.
+## Version: 1.0.0
+## Author: Blind Mice Gaming
+## Dependencies: AllQuest-forever
+## LoadOnDemand: 1
+## X-AllQuest-Expansion: 60
+## X-AllQuest-Expansion-Name: WoW Forever
+## X-AllQuest-AutoLoad: 1
+## Group: AllQuest-forever
+## Category-enUS: Blind Mice Gaming
+
+Expansion.lua
+Generated.lua

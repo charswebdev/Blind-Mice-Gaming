@@ -1,0 +1,1734 @@
+--[[
+  AllQuest — scenario / dungeon / Mythic+ / delve tracker
+  Lua 5.1 only. Nil-guard Retail APIs for Classic.
+]]
+
+AllQuest = AllQuest or {}
+local AQ = AllQuest
+
+local NEMESIS_SPELL = {
+    [1270179] = true,
+    [1307638] = true,
+    [1239535] = true,
+    [472952] = true,
+}
+
+local function Clock(sec)
+    sec = math.floor(tonumber(sec) or 0)
+    if sec < 0 then
+        sec = 0
+    end
+    if SecondsToClock then
+        local ok, text = pcall(SecondsToClock, sec)
+        if ok and type(text) == "string" then
+            return text
+        end
+    end
+    local m = math.floor(sec / 60)
+    local s = sec - m * 60
+    if m >= 60 then
+        local h = math.floor(m / 60)
+        m = m - h * 60
+        return string.format("%d:%02d:%02d", h, m, s)
+    end
+    return string.format("%d:%02d", m, s)
+end
+
+local function SpellName(id)
+    if type(id) ~= "number" then
+        return nil
+    end
+    if C_Spell and C_Spell.GetSpellName then
+        return AQ:SafeCall(C_Spell.GetSpellName, id)
+    end
+    if GetSpellInfo then
+        return AQ:SafeCall(GetSpellInfo, id)
+    end
+    return nil
+end
+
+local function SpellIcon(id)
+    if type(id) ~= "number" then
+        return nil
+    end
+    if C_Spell and C_Spell.GetSpellTexture then
+        return AQ:SafeCall(C_Spell.GetSpellTexture, id)
+    end
+    if GetSpellTexture then
+        return AQ:SafeCall(GetSpellTexture, id)
+    end
+    return nil
+end
+
+local function SpellDesc(id)
+    if type(id) ~= "number" then
+        return nil
+    end
+    if C_Spell and C_Spell.GetSpellDescription then
+        return AQ:SafeCall(C_Spell.GetSpellDescription, id)
+    end
+    return nil
+end
+
+local function IsShownState(state)
+    if state == nil then
+        return true
+    end
+    if Enum and Enum.WidgetShownState and Enum.WidgetShownState.Hidden then
+        return state ~= Enum.WidgetShownState.Hidden
+    end
+    return state ~= 0
+end
+
+local function ChallengeType()
+    if LE_SCENARIO_TYPE_CHALLENGE_MODE then
+        return LE_SCENARIO_TYPE_CHALLENGE_MODE
+    end
+    if Enum and Enum.ScenarioType and Enum.ScenarioType.ChallengeMode then
+        return Enum.ScenarioType.ChallengeMode
+    end
+    return 8
+end
+
+local function TimerTypeChallenge()
+    if Enum and Enum.WorldElapsedTimerTypes and Enum.WorldElapsedTimerTypes.ChallengeMode then
+        return Enum.WorldElapsedTimerTypes.ChallengeMode
+    end
+    return 1
+end
+
+local function TimerTypeProving()
+    if Enum and Enum.WorldElapsedTimerTypes and Enum.WorldElapsedTimerTypes.ProvingGround then
+        return Enum.WorldElapsedTimerTypes.ProvingGround
+    end
+    return 2
+end
+
+local function InstanceBits()
+    if not GetInstanceInfo then
+        return nil
+    end
+    local name, instanceType, difficultyID, difficultyName, maxPlayers = AQ:SafeCall(GetInstanceInfo)
+    if type(difficultyName) ~= "string" or difficultyName == "" then
+        if type(difficultyID) == "number" and GetDifficultyInfo then
+            difficultyName = AQ:SafeCall(GetDifficultyInfo, difficultyID)
+        end
+    end
+    local instanceID
+    if GetInstanceInfo then
+        local ok, n, _, _, _, _, _, _, id = pcall(GetInstanceInfo)
+        if ok and type(n) == "string" then
+            name = name or n
+        end
+        if ok and type(id) == "number" then
+            instanceID = id
+        end
+    end
+    return {
+        name = name,
+        instanceType = instanceType,
+        difficultyID = difficultyID,
+        difficultyName = difficultyName,
+        maxPlayers = maxPlayers,
+        instanceID = instanceID,
+    }
+end
+
+local function AddRow(rows, spec)
+    rows[#rows + 1] = spec
+end
+
+local function AddAffixRows(rows, affixes)
+    if type(affixes) ~= "table" then
+        return
+    end
+    local icons = {}
+    for i = 1, #affixes do
+        local affixID = affixes[i]
+        if type(affixID) == "number" and C_ChallengeMode and C_ChallengeMode.GetAffixInfo then
+            local name, description, file = AQ:SafeCall(C_ChallengeMode.GetAffixInfo, affixID)
+            if type(name) == "string" and name ~= "" then
+                icons[#icons + 1] = { file = file, tooltip = name }
+                AddRow(rows, {
+                    kind = "quest",
+                    title = name,
+                    icon = file,
+                    detail = description,
+                    speech = "Affix " .. name,
+                })
+            end
+        end
+    end
+    return icons
+end
+
+local function ClassifyDelveSpell(info)
+    local id = tonumber(info and info.spellID)
+    local name = info and info.text
+    if type(name) ~= "string" or name == "" then
+        name = SpellName(id) or "Modifier"
+    end
+    local tip = (info and info.tooltip) or SpellDesc(id) or ""
+    local blob = ""
+    local ok, lower = pcall(string.lower, tostring(name or "") .. " " .. tostring(tip or ""))
+    if ok and type(lower) == "string" then
+        blob = lower
+    end
+    if (id and NEMESIS_SPELL[id]) or blob:find("nemesis", 1, true) then
+        return "nemesis", name, tip
+    end
+    if blob:find("bountiful", 1, true) or blob:find("coffer", 1, true) then
+        return "bountiful", name, tip
+    end
+    return "affix", name, tip
+end
+
+-- Everything Delves: no in-delve Strongbox widget (picker only). One
+-- vignette ID per remaining pack; each season appends a new ID.
+local NEMESIS_PACK_VIGNETTES = {
+    7531, -- S1 Nullaeus' Minions
+    7869, -- S2 Ula'tek's Chosen (confirmed live 2026-08-21)
+}
+local learnedPackIDs = {}
+local PACK_UNIT = "Nemesis Packs"
+local PACK_NAME_WORDS = {
+    "ula'tek",
+    "ulatek",
+    "ula tek",
+    "ula'tek's chosen",
+    "pactsworn",
+    "nullaeus",
+    "nulleus",
+    "nemesis pack",
+    "nemesis packs",
+    "azta'rec",
+    "aztarec",
+    "venomborne",
+    "amphisbaena",
+}
+local EXTRA_CRITERIA_WORDS = {
+    "nemesis pack",
+    "nemesis packs",
+    "strong box",
+    "strongbox",
+}
+
+-- Filled after ReadCriteria exists. Returns killed, total, done from Blizzard.
+local ReadBlizzardPackProgress
+
+local nemesisRun = {
+    key = nil,
+    remaining = 0,
+    seen = {},
+    seenCount = 0,
+    killedBase = 0,
+    killedFromDespawn = 0,
+    toastKills = 0,
+    haveSeenPack = false,
+    packNeed = 0,
+}
+
+local function SafeText(value)
+    if value == nil then
+        return ""
+    end
+    local ok, text = pcall(tostring, value)
+    if ok and type(text) == "string" then
+        return text
+    end
+    return ""
+end
+
+local function SafeLower(value)
+    local text = SafeText(value)
+    if text == "" then
+        return ""
+    end
+    local ok, lower = pcall(string.lower, text)
+    if ok and type(lower) == "string" then
+        return lower
+    end
+    return ""
+end
+
+local function BlobHas(blob, words)
+    if type(blob) ~= "string" or blob == "" or type(words) ~= "table" then
+        return false
+    end
+    for i = 1, #words do
+        if blob:find(words[i], 1, true) then
+            return true
+        end
+    end
+    return false
+end
+
+local function LooksLikeNemesis(...)
+    local blob = ""
+    local n = select("#", ...)
+    for i = 1, n do
+        blob = blob .. " " .. SafeLower(select(i, ...))
+    end
+    return blob:find("nemesis", 1, true) and true or false
+end
+
+local function SkipExtraCriteria(text)
+    return BlobHas(SafeLower(text), EXTRA_CRITERIA_WORDS)
+end
+
+local function IsSecret(value)
+    if not issecretvalue then
+        return false
+    end
+    local ok, secret = pcall(issecretvalue, value)
+    return ok == true and secret == true
+end
+
+local function SafeEq(a, b)
+    local ok, same = pcall(function()
+        return a == b
+    end)
+    return ok == true and same == true
+end
+
+--- Plain table key, or nil. Never index with a secret (Midnight throws).
+local function SafeKey(value)
+    if IsSecret(value) then
+        local ok, text = pcall(tostring, value)
+        if ok == true and type(text) == "string" and text ~= "" and not IsSecret(text) then
+            return text
+        end
+        return nil
+    end
+    if value == nil then
+        return nil
+    end
+    local ok, text = pcall(tostring, value)
+    if ok ~= true or type(text) ~= "string" or text == "" then
+        return nil
+    end
+    return text
+end
+
+local function RunKey()
+    -- Map + difficulty only. Zone text flickers during gossip and used to
+    -- reset the tally mid-run. Cleared after a real leave (not 208).
+    local inst = InstanceBits()
+    local mapID = inst and inst.instanceID
+    local diff = inst and inst.difficultyID
+    if type(mapID) == "number" and mapID > 0 then
+        return tostring(mapID) .. "#" .. tostring(diff or 208)
+    end
+    if type(diff) == "number" then
+        return "diff#" .. tostring(diff)
+    end
+    return "delve"
+end
+
+local function CharNemesis()
+    local char = AQ.DB and AQ.DB.Char and AQ.DB.Char()
+    if type(char) ~= "table" then
+        return nil
+    end
+    if type(char.delveNemesis) ~= "table" then
+        char.delveNemesis = {}
+    end
+    return char.delveNemesis
+end
+
+local function LearnPackID(id, persist)
+    id = tonumber(id)
+    if not id then
+        return
+    end
+    for i = 1, #NEMESIS_PACK_VIGNETTES do
+        if NEMESIS_PACK_VIGNETTES[i] == id then
+            return
+        end
+    end
+    for i = 1, #learnedPackIDs do
+        if learnedPackIDs[i] == id then
+            return
+        end
+    end
+    learnedPackIDs[#learnedPackIDs + 1] = id
+    if persist == false then
+        return
+    end
+    local saved = CharNemesis()
+    if saved then
+        local list = saved.packIDs
+        if type(list) ~= "table" then
+            list = {}
+            saved.packIDs = list
+        end
+        list[#list + 1] = id
+    end
+end
+
+local function RestoreLearnedPackIDs()
+    local saved = CharNemesis()
+    local list = saved and saved.packIDs
+    if type(list) ~= "table" then
+        return
+    end
+    for i = 1, #list do
+        LearnPackID(list[i], false)
+    end
+end
+
+local function HintFromEverythingDelves()
+    local E = _G.EverythingDelves
+    if type(E) ~= "table" or type(E.db) ~= "table" then
+        return nil
+    end
+    local ar = E.db.activeRun
+    if type(ar) == "table" and type(ar.nemesisKilled) == "number" and ar.nemesisKilled > 0 then
+        return ar.nemesisKilled
+    end
+    return nil
+end
+
+local function PersistNemesisKilled(killed)
+    local saved = CharNemesis()
+    if not saved or type(nemesisRun.key) ~= "string" or nemesisRun.key == "" then
+        return
+    end
+    killed = tonumber(killed) or 0
+    local prev = tonumber(saved.killed) or 0
+    if saved.key == nemesisRun.key then
+        killed = math.max(killed, prev)
+    end
+    saved.key = nemesisRun.key
+    saved.killed = killed
+    if (tonumber(nemesisRun.packNeed) or 0) > 0 then
+        saved.packNeed = nemesisRun.packNeed
+    end
+end
+
+local function ResetNemesisRun(key)
+    nemesisRun.key = key
+    nemesisRun.remaining = 0
+    nemesisRun.seen = {}
+    nemesisRun.seenCount = 0
+    nemesisRun.killedBase = 0
+    nemesisRun.killedFromDespawn = 0
+    nemesisRun.toastKills = 0
+    nemesisRun.haveSeenPack = false
+    nemesisRun.packNeed = 0
+    local saved = CharNemesis()
+    if saved and saved.key == key then
+        nemesisRun.killedBase = tonumber(saved.killed) or 0
+        nemesisRun.packNeed = tonumber(saved.packNeed) or 0
+    end
+    local ed = HintFromEverythingDelves()
+    if type(ed) == "number" and ed > (nemesisRun.killedBase or 0) then
+        nemesisRun.killedBase = ed
+    end
+end
+
+local function ClearNemesisPersist()
+    local saved = CharNemesis()
+    if saved then
+        saved.key = nil
+        saved.killed = 0
+        saved.packNeed = nil
+    end
+    nemesisRun.key = nil
+    nemesisRun.remaining = 0
+    nemesisRun.seen = {}
+    nemesisRun.seenCount = 0
+    nemesisRun.killedBase = 0
+    nemesisRun.killedFromDespawn = 0
+    nemesisRun.toastKills = 0
+    nemesisRun.haveSeenPack = false
+    nemesisRun.packNeed = 0
+end
+
+local function EnsureNemesisRun()
+    RestoreLearnedPackIDs()
+    local key = RunKey()
+    if key ~= "" and nemesisRun.key ~= key then
+        ResetNemesisRun(key)
+    elseif not nemesisRun.seen then
+        ResetNemesisRun(key)
+    end
+end
+
+local function VignetteNum(value)
+    if value == nil then
+        return nil
+    end
+    local ok, n = pcall(tonumber, value)
+    if ok == true and type(n) == "number" then
+        return n
+    end
+    return nil
+end
+
+local function IsNemesisPackVignette(vignetteID)
+    local id = VignetteNum(vignetteID)
+    if not id then
+        return SafeEq(vignetteID, NEMESIS_PACK_VIGNETTES[1]) or SafeEq(vignetteID, NEMESIS_PACK_VIGNETTES[2])
+    end
+    for i = 1, #NEMESIS_PACK_VIGNETTES do
+        if id == NEMESIS_PACK_VIGNETTES[i] then
+            return true
+        end
+    end
+    for i = 1, #learnedPackIDs do
+        if id == learnedPackIDs[i] then
+            return true
+        end
+    end
+    return false
+end
+
+local function VignetteNameLower(name)
+    if type(name) ~= "string" then
+        return ""
+    end
+    local ok, lower = pcall(string.lower, name)
+    if ok and type(lower) == "string" then
+        return lower
+    end
+    return ""
+end
+
+local function InfoLooksLikePack(info)
+    if type(info) ~= "table" then
+        return false
+    end
+    if IsNemesisPackVignette(info.vignetteID) then
+        return true
+    end
+    local blob = VignetteNameLower(info.name) .. " " .. VignetteNameLower(info.atlasName)
+    if BlobHas(blob, PACK_NAME_WORDS) then
+        LearnPackID(info.vignetteID)
+        return true
+    end
+    return false
+end
+
+-- Creature GUID only. Vignette GUIDs regenerate and double-count (ED).
+local function RememberPackKey(info)
+    local key = SafeKey(info and info.objectGUID)
+    if not key then
+        return false
+    end
+    if nemesisRun.seen[key] then
+        return false
+    end
+    nemesisRun.seen[key] = true
+    nemesisRun.seenCount = nemesisRun.seenCount + 1
+    return true
+end
+
+local function CollectVignetteGuids()
+    local out = {}
+    if not (C_VignetteInfo and C_VignetteInfo.GetVignettes) then
+        return out
+    end
+    local ok, vigs = pcall(C_VignetteInfo.GetVignettes)
+    if ok and type(vigs) == "table" then
+        for i = 1, #vigs do
+            if vigs[i] ~= nil then
+                out[#out + 1] = vigs[i]
+            end
+        end
+        if #out > 0 then
+            return out
+        end
+        for k, v in pairs(vigs) do
+            if type(v) == "string" or type(v) == "number" then
+                out[#out + 1] = v
+            elseif type(k) == "string" then
+                out[#out + 1] = k
+            end
+        end
+        return out
+    end
+    local packedOk, packed = pcall(function()
+        return { C_VignetteInfo.GetVignettes() }
+    end)
+    if not packedOk or type(packed) ~= "table" then
+        return out
+    end
+    for i = 1, #packed do
+        if packed[i] ~= nil and type(packed[i]) ~= "table" then
+            out[#out + 1] = packed[i]
+        end
+    end
+    return out
+end
+
+local function ScanDelveVignettes()
+    EnsureNemesisRun()
+    local vigs = CollectVignetteGuids()
+    -- Loading screens flush the list. Do not treat that as every pack dying.
+    if #vigs == 0 then
+        return
+    end
+    local packCount = 0
+    for i = 1, #vigs do
+        local vigGuid = vigs[i]
+        pcall(function()
+            local ok2, info = pcall(C_VignetteInfo.GetVignetteInfo, vigGuid)
+            if ok2 and type(info) == "table" and InfoLooksLikePack(info) then
+                packCount = packCount + 1
+                RememberPackKey(info)
+            end
+        end)
+    end
+    local prev = tonumber(nemesisRun.remaining) or 0
+    if nemesisRun.haveSeenPack and packCount < prev then
+        nemesisRun.killedFromDespawn = (nemesisRun.killedFromDespawn or 0) + (prev - packCount)
+    end
+    if packCount > 0 then
+        nemesisRun.haveSeenPack = true
+    end
+    nemesisRun.remaining = packCount
+    local killed = (tonumber(nemesisRun.killedBase) or 0)
+        + math.max(0, (tonumber(nemesisRun.seenCount) or 0) - packCount)
+    local fromDespawn = tonumber(nemesisRun.killedFromDespawn) or 0
+    local fromToast = tonumber(nemesisRun.toastKills) or 0
+    if fromDespawn > killed then
+        killed = fromDespawn
+    end
+    if fromToast > killed then
+        killed = fromToast
+    end
+    PersistNemesisKilled(killed)
+end
+
+local function ExpectedNemesisPacks(tier)
+    tier = tonumber(tier) or 0
+    if tier < 4 then
+        return 0
+    end
+    if tier < 6 then
+        return 1
+    end
+    if tier < 8 then
+        return 2
+    end
+    if tier < 10 then
+        return 3
+    end
+    return 4
+end
+
+local function NotePackKillMessage(msg)
+    local blob = SafeLower(msg)
+    if blob == "" then
+        return
+    end
+    if (blob:find("strongbox", 1, true) or blob:find("nemesis", 1, true))
+        and (blob:find("upgrad", 1, true) or blob:find("improv", 1, true)) then
+        EnsureNemesisRun()
+        nemesisRun.toastKills = (tonumber(nemesisRun.toastKills) or 0) + 1
+        nemesisRun.haveSeenPack = true
+    end
+end
+
+local function AddDelveExtraRow(rows, title, have, need, finished, speech, unit)
+    local text = title
+    if have and need then
+        text = string.format("%d/%d %s", have, need, unit or title)
+    end
+    AddRow(rows, {
+        kind = "objective",
+        title = text,
+        finished = finished and true or false,
+        numFulfilled = have,
+        numNeeded = need,
+        goldBullet = not finished,
+        speech = speech or text,
+    })
+end
+
+local function AddNemesisExtras(rows, delve, sp, tip, tier)
+    local killed, total, packDone
+    if ReadBlizzardPackProgress then
+        killed, total, packDone = ReadBlizzardPackProgress(tier)
+    end
+    if type(killed) ~= "number" or type(total) ~= "number" then
+        EnsureNemesisRun()
+        ScanDelveVignettes()
+        local remaining = tonumber(nemesisRun.remaining) or 0
+        local seen = tonumber(nemesisRun.seenCount) or 0
+        local base = tonumber(nemesisRun.killedBase) or 0
+        local expect = ExpectedNemesisPacks(tier)
+        total = math.max(expect, base + seen, tonumber(nemesisRun.packNeed) or 0)
+        killed = base + math.max(0, seen - remaining)
+        local fromDespawn = tonumber(nemesisRun.killedFromDespawn) or 0
+        local fromToast = tonumber(nemesisRun.toastKills) or 0
+        if fromDespawn > killed then
+            killed = fromDespawn
+        end
+        if fromToast > killed then
+            killed = fromToast
+        end
+        if remaining > 0 then
+            total = math.max(total, killed + remaining)
+        end
+        if total < 1 then
+            total = 4
+        end
+        if killed > total then
+            total = killed
+        end
+        packDone = killed >= total and (killed > 0 or (remaining == 0 and nemesisRun.haveSeenPack))
+        PersistNemesisKilled(killed)
+    end
+    nemesisRun.packNeed = total
+    AddDelveExtraRow(rows, PACK_UNIT, killed, total, packDone, PACK_UNIT, PACK_UNIT)
+end
+
+local function InsertRowsAfter(rows, afterIndex, extras)
+    if type(rows) ~= "table" or type(extras) ~= "table" or #extras == 0 then
+        return
+    end
+    local at = tonumber(afterIndex)
+    if not at or at < 0 then
+        at = #rows
+    end
+    for i = 1, #extras do
+        table.insert(rows, at + i, extras[i])
+    end
+end
+
+local function AttachNemesisExtras(rows, delve, sp, tip, tier, afterIndex)
+    local extras = {}
+    local ok = pcall(AddNemesisExtras, extras, delve, sp, tip, tier)
+    if not ok or #extras == 0 then
+        extras = {}
+        local need = ExpectedNemesisPacks(tier)
+        if need <= 0 then
+            need = 4
+        end
+        AddDelveExtraRow(extras, PACK_UNIT, 0, need, false, PACK_UNIT, PACK_UNIT)
+    end
+    InsertRowsAfter(rows, afterIndex, extras)
+end
+
+local function ShortProgressLabel(text, fallback)
+    if type(text) ~= "string" then
+        return fallback
+    end
+    text = AQ:Trim(text)
+    if text == "" then
+        return fallback
+    end
+    if #text <= 28 then
+        return text
+    end
+    return fallback
+end
+
+-- Difficulty 208 = Delves. Stays true when the header widget or IsInScenario flickers.
+local lastDelve
+local lastDelveSetID
+
+local function PlayerInDelve()
+    if GetInstanceInfo then
+        local ok, _, _, difficultyID = pcall(GetInstanceInfo)
+        if ok and tonumber(difficultyID) == 208 then
+            return true
+        end
+    end
+    if C_DelvesUI and C_DelvesUI.HasActiveDelve then
+        local ok, active = pcall(C_DelvesUI.HasActiveDelve)
+        if ok and active then
+            return true
+        end
+    end
+    return false
+end
+
+local function RememberDelve(info, setID)
+    if type(info) == "table" then
+        lastDelve = info
+    end
+    if type(setID) == "number" and setID > 0 then
+        lastDelveSetID = setID
+    end
+end
+
+local function ClearDelveCache()
+    lastDelve = nil
+    lastDelveSetID = nil
+end
+
+local function GetDelveWidget()
+    if not C_UIWidgetManager then
+        if PlayerInDelve() then
+            return lastDelve
+        end
+        return nil
+    end
+    local widgetSetID
+    if C_Scenario and C_Scenario.GetStepInfo then
+        local ok, _, _, _, _, _, _, _, _, _, _, _, setID = pcall(C_Scenario.GetStepInfo)
+        if ok and type(setID) == "number" and setID > 0 then
+            widgetSetID = setID
+            lastDelveSetID = setID
+        end
+    end
+    if not widgetSetID then
+        widgetSetID = lastDelveSetID
+    end
+    if type(widgetSetID) ~= "number" or widgetSetID == 0 or not C_UIWidgetManager.GetAllWidgetsBySetID then
+        if PlayerInDelve() then
+            return lastDelve
+        end
+        return nil
+    end
+    local widgets = AQ:SafeCall(C_UIWidgetManager.GetAllWidgetsBySetID, widgetSetID)
+    if type(widgets) ~= "table" then
+        if PlayerInDelve() then
+            return lastDelve
+        end
+        return nil
+    end
+    local delveType = 29
+    if Enum and Enum.UIWidgetVisualizationType and Enum.UIWidgetVisualizationType.ScenarioHeaderDelves then
+        delveType = Enum.UIWidgetVisualizationType.ScenarioHeaderDelves
+    end
+    local getter = C_UIWidgetManager.GetScenarioHeaderDelvesWidgetVisualizationInfo
+    if type(getter) ~= "function" then
+        if PlayerInDelve() then
+            return lastDelve
+        end
+        return nil
+    end
+    local hidden
+    for i = 1, #widgets do
+        local w = widgets[i]
+        if type(w) == "table" and w.widgetType == delveType and w.widgetID then
+            local info = AQ:SafeCall(getter, w.widgetID)
+            if type(info) == "table" then
+                if IsShownState(info.shownState) then
+                    RememberDelve(info, widgetSetID)
+                    return info
+                end
+                hidden = info
+            end
+        end
+    end
+    if PlayerInDelve() then
+        if lastDelve then
+            return lastDelve
+        end
+        if hidden then
+            RememberDelve(hidden, widgetSetID)
+            return hidden
+        end
+    end
+    return nil
+end
+
+local function ActiveDelveTier()
+    if C_DelvesUI and C_DelvesUI.GetActiveDelveTier then
+        local info = AQ:SafeCall(C_DelvesUI.GetActiveDelveTier)
+        if type(info) == "table" and type(info.tier) == "number" then
+            return info.tier
+        end
+        if type(info) == "number" then
+            return info
+        end
+    end
+    return nil
+end
+
+local function FindTimersOfType(wantType)
+    if not GetWorldElapsedTimers or not GetWorldElapsedTime or wantType == nil then
+        return nil
+    end
+    local ok, a, b, c, d, e, f, g = pcall(GetWorldElapsedTimers)
+    if not ok then
+        return nil
+    end
+    local ids = { a, b, c, d, e, f, g }
+    for i = 1, #ids do
+        local timerID = ids[i]
+        if type(timerID) == "number" then
+            local ok2, r1, r2, r3 = pcall(GetWorldElapsedTime, timerID)
+            if ok2 then
+                local elapsed, typ
+                if type(r3) == "number" then
+                    elapsed, typ = r2, r3
+                else
+                    elapsed, typ = r1, r2
+                end
+                if typ == wantType then
+                    return timerID, tonumber(elapsed) or 0
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local function FindChallengeTimer()
+    return FindTimersOfType(TimerTypeChallenge())
+end
+
+local function FindProvingTimer()
+    return FindTimersOfType(TimerTypeProving())
+end
+
+local function SafeNum(v)
+    if AQ.Compat and AQ.Compat.CanUseNumber and not AQ.Compat.CanUseNumber(v) then
+        return nil
+    end
+    return tonumber(v)
+end
+
+local function CriteriaCounts(quantity, totalQuantity, quantityString)
+    local have = SafeNum(quantity)
+    local need = SafeNum(totalQuantity)
+    if type(quantityString) == "string" and quantityString ~= "" then
+        local a, b = string.match(quantityString, "(%d+)%s*/%s*(%d+)")
+        if a and b then
+            have, need = tonumber(a), tonumber(b)
+        else
+            local n = tonumber(string.match(quantityString, "%d+"))
+            if n and not quantityString:find("%%", 1, true) then
+                have = n
+            end
+        end
+    end
+    return have, need
+end
+
+local function FlagOn(v)
+    return v == true or v == 1
+end
+
+local function ReadStepInfo()
+    if C_ScenarioInfo and C_ScenarioInfo.GetScenarioStepInfo then
+        local info = AQ:SafeCall(C_ScenarioInfo.GetScenarioStepInfo)
+        if type(info) == "table" then
+            return {
+                name = info.title or info.stepName or info.name,
+                description = info.description,
+                numCriteria = info.numCriteria or 0,
+                weightedProgress = FlagOn(info.weightedProgress),
+                widgetSetID = info.widgetSetID,
+            }
+        end
+    end
+    if not (C_Scenario and C_Scenario.GetStepInfo) then
+        return nil
+    end
+    local name, desc, numCriteria, _, _, _, _, _, _, weightedProgress, _, widgetSetID = AQ:SafeCall(C_Scenario.GetStepInfo)
+    return {
+        name = name,
+        description = desc,
+        numCriteria = numCriteria or 0,
+        weightedProgress = FlagOn(weightedProgress),
+        widgetSetID = widgetSetID,
+    }
+end
+
+local function ReadCriteria(i)
+    local criteriaString, completed, quantity, totalQuantity
+    local isWeightedProgress, isFormatted, quantityString, objType
+    if C_ScenarioInfo and C_ScenarioInfo.GetCriteriaInfo then
+        local info = AQ:SafeCall(C_ScenarioInfo.GetCriteriaInfo, i)
+        if type(info) == "table" then
+            criteriaString = info.description
+            completed = info.completed
+            quantity = info.quantity
+            totalQuantity = info.totalQuantity
+            isWeightedProgress = FlagOn(info.isWeightedProgress)
+            isFormatted = FlagOn(info.isFormatted)
+            quantityString = info.quantityString
+            objType = info.criteriaType
+        end
+    elseif C_Scenario and C_Scenario.GetCriteriaInfo then
+        local a, b, c, d, e, _, _, h, _, _, _, _, m = AQ:SafeCall(C_Scenario.GetCriteriaInfo, i)
+        criteriaString, objType, completed, quantity, totalQuantity = a, b, c, d, e
+        quantityString = h
+        isWeightedProgress = FlagOn(m)
+    end
+    if not isWeightedProgress and type(quantityString) == "string" and quantityString:find("%%", 1, true) then
+        isWeightedProgress = true
+    end
+    local have, need = CriteriaCounts(quantity, totalQuantity, quantityString)
+    return {
+        text = criteriaString,
+        completed = completed and true or false,
+        have = have,
+        need = need,
+        isWeightedProgress = isWeightedProgress,
+        isFormatted = isFormatted,
+        quantityString = quantityString,
+        objType = objType,
+    }
+end
+
+local function CriteriaFromInfo(info)
+    if type(info) ~= "table" then
+        return nil
+    end
+    local isWeightedProgress = FlagOn(info.isWeightedProgress)
+    local quantityString = info.quantityString
+    if not isWeightedProgress and type(quantityString) == "string" and quantityString:find("%%", 1, true) then
+        isWeightedProgress = true
+    end
+    local have, need = CriteriaCounts(info.quantity, info.totalQuantity, quantityString)
+    return {
+        text = info.description,
+        completed = info.completed and true or false,
+        have = have,
+        need = need,
+        isWeightedProgress = isWeightedProgress,
+        isFormatted = FlagOn(info.isFormatted),
+        quantityString = quantityString,
+        objType = info.criteriaType,
+    }
+end
+
+local function ReadCriteriaByStep(stepID, i)
+    if C_ScenarioInfo and C_ScenarioInfo.GetCriteriaInfoByStep then
+        local info = AQ:SafeCall(C_ScenarioInfo.GetCriteriaInfoByStep, stepID, i)
+        local c = CriteriaFromInfo(info)
+        if c then
+            return c
+        end
+    end
+    if C_Scenario and C_Scenario.GetCriteriaInfoByStep then
+        local a, b, c, d, e, _, _, h, _, _, _, _, m = AQ:SafeCall(C_Scenario.GetCriteriaInfoByStep, stepID, i)
+        if a or d then
+            local isWeightedProgress = FlagOn(m)
+            if not isWeightedProgress and type(h) == "string" and h:find("%%", 1, true) then
+                isWeightedProgress = true
+            end
+            local have, need = CriteriaCounts(d, e, h)
+            return {
+                text = a,
+                completed = c and true or false,
+                have = have,
+                need = need,
+                isWeightedProgress = isWeightedProgress,
+                quantityString = h,
+                objType = b,
+            }
+        end
+    end
+    return nil
+end
+
+local function BonusStepIDs()
+    local out = {}
+    if not (C_Scenario and C_Scenario.GetBonusSteps) then
+        return out
+    end
+    local ok, result = pcall(C_Scenario.GetBonusSteps)
+    if ok and type(result) == "table" then
+        for i = 1, #result do
+            if type(result[i]) == "number" then
+                out[#out + 1] = result[i]
+            end
+        end
+        if #out > 0 then
+            return out
+        end
+    end
+    local packedOk, packed = pcall(function()
+        return { C_Scenario.GetBonusSteps() }
+    end)
+    if packedOk and type(packed) == "table" then
+        for i = 1, #packed do
+            if type(packed[i]) == "number" then
+                out[#out + 1] = packed[i]
+            end
+        end
+    end
+    return out
+end
+
+local function CollectBonusCriteria()
+    local list = {}
+    local steps = BonusStepIDs()
+    for s = 1, #steps do
+        local stepID = steps[s]
+        local num = 0
+        if C_ScenarioInfo and C_ScenarioInfo.GetScenarioStepInfo then
+            local info = AQ:SafeCall(C_ScenarioInfo.GetScenarioStepInfo, stepID)
+            if type(info) == "table" then
+                num = tonumber(info.numCriteria) or 0
+            end
+        end
+        if num < 1 then
+            num = 8
+        end
+        for i = 1, num do
+            local c = ReadCriteriaByStep(stepID, i)
+            if c and type(c.text) == "string" and c.text ~= "" then
+                list[#list + 1] = c
+            end
+        end
+    end
+    return list
+end
+
+local function LooksLikePackCriteria(c)
+    if type(c) ~= "table" or c.isWeightedProgress then
+        return false
+    end
+    local blob = SafeLower(c.text) .. " " .. SafeLower(c.quantityString)
+    if BlobHas(blob, EXTRA_CRITERIA_WORDS) or BlobHas(blob, PACK_NAME_WORDS) then
+        return true
+    end
+    return blob:find("chosen", 1, true) and (blob:find("ula", 1, true) or blob:find("nemesis", 1, true))
+end
+
+local function PackCountsFromCriteria(c)
+    if type(c) ~= "table" then
+        return nil
+    end
+    local have, need = c.have, c.need
+    if type(have) ~= "number" or type(need) ~= "number" or need <= 0 then
+        return nil
+    end
+    if c.completed then
+        have = need
+    end
+    if have < 0 then
+        have = 0
+    end
+    if have > need then
+        have = need
+    end
+    return have, need, have >= need
+end
+
+local function ReadWidgetSetPackProgress(setID)
+    if type(setID) ~= "number" or setID <= 0 or not C_UIWidgetManager or not C_UIWidgetManager.GetAllWidgetsBySetID then
+        return nil
+    end
+    local widgets = AQ:SafeCall(C_UIWidgetManager.GetAllWidgetsBySetID, setID)
+    if type(widgets) ~= "table" then
+        return nil
+    end
+    local function consider(have, need, blob)
+        blob = SafeLower(blob)
+        if type(have) ~= "number" or type(need) ~= "number" or need < 1 or need > 8 then
+            return nil
+        end
+        if blob:find("remaining", 1, true) or blob:find("left", 1, true) or blob:find("alive", 1, true) then
+            have = need - have
+            if have < 0 then
+                have = 0
+            end
+        end
+        local packish = BlobHas(blob, EXTRA_CRITERIA_WORDS) or BlobHas(blob, PACK_NAME_WORDS) or blob:find("nemesis", 1, true)
+        if not packish then
+            return nil
+        end
+        return have, need, have >= need
+    end
+    for i = 1, #widgets do
+        local w = widgets[i]
+        local id = type(w) == "table" and w.widgetID
+        if type(id) == "number" then
+            local bar = C_UIWidgetManager.GetStatusBarWidgetVisualizationInfo
+                and AQ:SafeCall(C_UIWidgetManager.GetStatusBarWidgetVisualizationInfo, id)
+            if type(bar) == "table" then
+                local have, need, done = consider(tonumber(bar.barValue), tonumber(bar.barMax), (bar.text or "") .. " " .. (bar.tooltip or ""))
+                if have then
+                    return have, need, done
+                end
+            end
+            local txt = C_UIWidgetManager.GetTextWithStateWidgetVisualizationInfo
+                and AQ:SafeCall(C_UIWidgetManager.GetTextWithStateWidgetVisualizationInfo, id)
+            if type(txt) == "table" and type(txt.text) == "string" then
+                local a, b = string.match(txt.text, "(%d+)%s*/%s*(%d+)")
+                local have, need, done = consider(tonumber(a), tonumber(b), txt.text .. " " .. (txt.tooltip or ""))
+                if have then
+                    return have, need, done
+                end
+            end
+        end
+    end
+    return nil
+end
+
+ReadBlizzardPackProgress = function(tier)
+    local step = ReadStepInfo()
+    local num = step and tonumber(step.numCriteria) or 0
+    for i = 1, num do
+        local c = ReadCriteria(i)
+        if LooksLikePackCriteria(c) then
+            local have, need, done = PackCountsFromCriteria(c)
+            if have then
+                return have, need, done
+            end
+        end
+    end
+    local bonus = CollectBonusCriteria()
+    for i = 1, #bonus do
+        if LooksLikePackCriteria(bonus[i]) then
+            local have, need, done = PackCountsFromCriteria(bonus[i])
+            if have then
+                return have, need, done
+            end
+        end
+    end
+    local setID = step and step.widgetSetID
+    local have, need, done = ReadWidgetSetPackProgress(setID)
+    if have then
+        return have, need, done
+    end
+    return nil
+end
+
+local function AddProgressRow(rows, spec)
+    local extra = ""
+    if spec.have and spec.need then
+        extra = string.format(" %d/%d", spec.have, spec.need)
+    end
+    AddRow(rows, {
+        kind = "progress",
+        title = spec.title,
+        finished = spec.completed and true or false,
+        numFulfilled = spec.have,
+        numNeeded = spec.need,
+        isWeightedProgress = true,
+        quantityString = spec.quantityString,
+        objType = spec.objType,
+        speech = (spec.title or "Progress") .. extra .. (spec.completed and " complete" or ""),
+    })
+end
+
+local function AddBonusCriteriaRows(rows)
+    local bonus = CollectBonusCriteria()
+    for i = 1, #bonus do
+        local extra = bonus[i]
+        if extra and not extra.isWeightedProgress and type(extra.text) == "string" and extra.text ~= "" and not SkipExtraCriteria(extra.text) then
+            local title = extra.text
+            if not extra.isFormatted and extra.have and extra.need and not title:find("%d+%s*/%s*%d+") then
+                title = string.format("%d/%d %s", extra.have, extra.need, extra.text)
+            end
+            AddRow(rows, {
+                kind = "objective",
+                title = title,
+                finished = extra.completed,
+                numFulfilled = extra.have,
+                numNeeded = extra.need,
+                quantityString = extra.quantityString,
+                objType = extra.objType,
+                goldBullet = true,
+                speech = extra.text,
+            })
+        end
+    end
+end
+
+local function AddCriteria(rows)
+    local step = ReadStepInfo()
+    if not step then
+        AddBonusCriteriaRows(rows)
+        return
+    end
+    local numCriteria = step.numCriteria or 0
+    -- Kaliel: step-level weightedProgress is a bar for the stage, using criteria 1.
+    if step.weightedProgress then
+        local c = (numCriteria > 0) and ReadCriteria(1) or {}
+        local inMplus = C_ChallengeMode and AQ:SafeCall(C_ChallengeMode.IsChallengeModeActive)
+        local label = ShortProgressLabel(c.text, nil)
+        if not label then
+            label = ShortProgressLabel(step.description, inMplus and "Enemy Forces" or "Progress")
+        end
+        AddProgressRow(rows, {
+            title = label,
+            completed = c.completed,
+            have = c.have,
+            need = c.need,
+            quantityString = c.quantityString,
+            objType = c.objType,
+        })
+        for i = 2, numCriteria do
+            local extra = ReadCriteria(i)
+            if not extra.isWeightedProgress and type(extra.text) == "string" and extra.text ~= "" and not SkipExtraCriteria(extra.text) then
+                local title = extra.text
+                if not extra.isFormatted and extra.have and extra.need and not title:find("%d+%s*/%s*%d+") then
+                    title = string.format("%d/%d %s", extra.have, extra.need, extra.text)
+                end
+                AddRow(rows, {
+                    kind = "objective",
+                    title = title,
+                    finished = extra.completed,
+                    numFulfilled = extra.have,
+                    numNeeded = extra.need,
+                    quantityString = extra.quantityString,
+                    objType = extra.objType,
+                    goldBullet = true,
+                    speech = extra.text,
+                })
+            end
+        end
+        AddBonusCriteriaRows(rows)
+        return
+    end
+    local progress
+    for i = 1, numCriteria do
+        local c = ReadCriteria(i)
+        if c.isWeightedProgress then
+            local label = c.text
+            if type(label) ~= "string" or label == "" then
+                local inMplus = C_ChallengeMode and AQ:SafeCall(C_ChallengeMode.IsChallengeModeActive)
+                label = inMplus and "Enemy Forces" or "Progress"
+            end
+            progress = {
+                title = label,
+                completed = c.completed,
+                have = c.have,
+                need = c.need,
+                quantityString = c.quantityString,
+                objType = c.objType,
+            }
+        elseif type(c.text) == "string" and c.text ~= "" and not SkipExtraCriteria(c.text) then
+            local title = c.text
+            if not c.isFormatted and c.have and c.need then
+                if not title:find("%d+%s*/%s*%d+") then
+                    title = string.format("%d/%d %s", c.have, c.need, c.text)
+                end
+            elseif AQ.Theme.EnsureObjectiveCounts then
+                title = AQ.Theme.EnsureObjectiveCounts(title, {
+                    numFulfilled = c.have,
+                    numNeeded = c.need,
+                    quantityString = c.quantityString,
+                })
+            end
+            local extra = ""
+            if c.have and c.need then
+                extra = string.format(" %d/%d", c.have, c.need)
+            end
+            AddRow(rows, {
+                kind = "objective",
+                title = title,
+                finished = c.completed,
+                numFulfilled = c.have,
+                numNeeded = c.need,
+                quantityString = c.quantityString,
+                objType = c.objType,
+                goldBullet = true,
+                speech = c.text .. extra .. (c.completed and " complete" or ""),
+            })
+        end
+    end
+    if type(step.name) == "string" and step.name ~= "" and #rows == 0 and not progress then
+        AddRow(rows, {
+            kind = "objective",
+            title = step.name,
+            goldBullet = true,
+            speech = step.name,
+        })
+    end
+    if progress then
+        AddProgressRow(rows, progress)
+    end
+    AddBonusCriteriaRows(rows)
+end
+
+local function AddInstanceHeader(rows, spec)
+    AddRow(rows, {
+        kind = "instance",
+        id = spec.id or "scenario-name",
+        title = spec.title,
+        badge = spec.badge,
+        lives = spec.lives,
+        livesIcon = spec.livesIcon,
+        instanceType = spec.instanceType,
+        speech = spec.speech or spec.title,
+        fontSize = 14,
+    })
+end
+
+local function DelveLives(delve)
+    if type(delve) ~= "table" or type(delve.currencies) ~= "table" then
+        return nil
+    end
+    for i = 1, #delve.currencies do
+        local cur = delve.currencies[i]
+        if type(cur) == "table" then
+            local blob = string.lower(tostring(cur.leadingText or "") .. " " .. tostring(cur.tooltip or ""))
+            local amount = tonumber(string.match(tostring(cur.text or ""), "%d+"))
+            local isLives = blob:find("life", 1, true) or blob:find("lives", 1, true)
+            if not isLives and i == 1 and amount and (type(cur.leadingText) ~= "string" or cur.leadingText == "") then
+                isLives = true
+            end
+            if amount and isLives then
+                return amount, cur.iconFileID, i
+            end
+        end
+    end
+    return nil
+end
+
+local lastDelveRows
+
+local function BuildInstanceRows()
+    local rows = {}
+    local inScenario = C_Scenario and AQ:SafeCall(C_Scenario.IsInScenario)
+    local inMplus = C_ChallengeMode and AQ:SafeCall(C_ChallengeMode.IsChallengeModeActive)
+    local inDelve = PlayerInDelve()
+    if not inScenario and not inMplus and not inDelve then
+        ClearDelveCache()
+        return rows
+    end
+
+    local name, currentStage, numStages, scenarioType
+    if C_Scenario and C_Scenario.GetInfo then
+        local ok, n, stage, stages, _, _, _, _, _, _, stype = pcall(C_Scenario.GetInfo)
+        if ok then
+            name, currentStage, numStages, scenarioType = n, stage, stages, stype
+        end
+    end
+    local inst = InstanceBits()
+    local delve = GetDelveWidget()
+    local isChallenge = inMplus or (scenarioType and scenarioType == ChallengeType())
+    local headerTitle = type(name) == "string" and name or (inst and inst.name) or "Scenario"
+    local headerKind = "Scenario"
+
+    if isChallenge and C_ChallengeMode and C_ChallengeMode.GetActiveKeystoneInfo then
+        local level, affixes, wasEnergized = AQ:SafeCall(C_ChallengeMode.GetActiveKeystoneInfo)
+        level = tonumber(level) or 0
+        headerKind = "Mythic+"
+        AddInstanceHeader(rows, {
+            title = headerTitle,
+            badge = level > 0 and level or "M+",
+            instanceType = "mythicplus",
+            speech = level > 0 and string.format("Mythic plus %d %s", level, headerTitle) or ("Mythic plus " .. headerTitle),
+        })
+        if wasEnergized == false then
+            AddRow(rows, {
+                kind = "objective",
+                title = "Keystone depleted at start",
+                status = "FAILED",
+                speech = "Keystone depleted at start",
+            })
+        end
+        local mapID = C_ChallengeMode.GetActiveChallengeMapID and AQ:SafeCall(C_ChallengeMode.GetActiveChallengeMapID)
+        local timeLimit
+        if type(mapID) == "number" and C_ChallengeMode.GetMapUIInfo then
+            local _, _, limit = AQ:SafeCall(C_ChallengeMode.GetMapUIInfo, mapID)
+            timeLimit = tonumber(limit)
+        end
+        local timerID, elapsed = FindChallengeTimer()
+        if timeLimit and timeLimit > 0 then
+            AddRow(rows, {
+                kind = "timer",
+                title = "Time remaining",
+                timerID = timerID,
+                timeLimit = timeLimit,
+                elapsed = elapsed or 0,
+                countdown = true,
+                speech = "Mythic plus timer",
+            })
+        end
+        if C_ChallengeMode.GetDeathCount then
+            local deaths, lost = AQ:SafeCall(C_ChallengeMode.GetDeathCount)
+            deaths = tonumber(deaths) or 0
+            lost = tonumber(lost) or 0
+            if deaths > 0 then
+                local extra = ""
+                if lost > 0 then
+                    extra = "  (-" .. Clock(lost) .. ")"
+                end
+                AddRow(rows, {
+                    kind = "objective",
+                    title = "Deaths  " .. tostring(deaths) .. extra,
+                    speech = "Deaths " .. tostring(deaths),
+                })
+            end
+        end
+        local affixIcons = AddAffixRows(rows, affixes)
+        if type(affixIcons) == "table" and #affixIcons > 0 then
+            rows[1].icons = affixIcons
+        end
+        AddCriteria(rows)
+        return rows
+    end
+
+    if delve then
+        local tier = tonumber(delve.tierText and string.match(delve.tierText, "%d+"))
+        if not tier then
+            tier = ActiveDelveTier()
+        end
+        headerKind = "Delve"
+        if type(delve.headerText) == "string" and delve.headerText ~= "" then
+            headerTitle = delve.headerText
+        end
+        local lives, livesIcon, livesIndex = DelveLives(delve)
+        AddInstanceHeader(rows, {
+            title = headerTitle,
+            badge = tier,
+            lives = lives,
+            livesIcon = livesIcon,
+            instanceType = "delve",
+            speech = (tier and ("Tier " .. tostring(tier) .. " ") or "") .. headerTitle,
+        })
+        local nemesisAt
+        local nemesisSp
+        local nemesisTip
+        if type(delve.currencies) == "table" then
+            for i = 1, #delve.currencies do
+                local cur = delve.currencies[i]
+                if type(cur) == "table" and i ~= livesIndex then
+                    local blob = SafeLower(cur.leadingText) .. " " .. SafeLower(cur.tooltip)
+                    if blob:find("life", 1, true) or blob:find("lives", 1, true) then
+                        -- lives sit on the instance header
+                    else
+                        local label = cur.leadingText or "Currency"
+                        local amount = cur.text or ""
+                        local title = AQ:Trim((label .. "  " .. amount))
+                        AddRow(rows, {
+                            kind = "quest",
+                            title = title,
+                            icon = cur.iconFileID,
+                            detail = cur.tooltip,
+                            speech = title,
+                        })
+                        if LooksLikeNemesis(title, cur.tooltip, cur.leadingText) then
+                            nemesisAt = #rows
+                            nemesisTip = cur.tooltip
+                        end
+                    end
+                end
+            end
+        end
+        if type(delve.rewardInfo) == "table" and IsShownState(delve.rewardInfo.shownState) then
+            local earned = delve.rewardInfo.shownState == 1
+                or (Enum and Enum.UIWidgetRewardShownState and delve.rewardInfo.shownState == Enum.UIWidgetRewardShownState.ShownEarned)
+            AddRow(rows, {
+                kind = "quest",
+                title = earned and "Bountiful reward earned" or "Bountiful reward",
+                status = earned and "DONE" or "ACTIVE",
+                detail = earned and delve.rewardInfo.earnedTooltip or delve.rewardInfo.unearnedTooltip,
+                speech = "Bountiful reward",
+            })
+        end
+        if type(delve.spells) == "table" then
+            for i = 1, #delve.spells do
+                local sp = delve.spells[i]
+                local spellID = type(sp) == "table" and tonumber(sp.spellID) or nil
+                local hasText = type(sp) == "table" and type(sp.text) == "string" and sp.text ~= ""
+                if type(sp) == "table" and IsShownState(sp.shownState) and (spellID or hasText) then
+                    if spellID then
+                        sp.spellID = spellID
+                    end
+                    local kind, sname, tip = ClassifyDelveSpell(sp)
+                    local prefix = ""
+                    local lower = SafeLower(sname)
+                    if kind == "nemesis" and not lower:find("nemesis", 1, true) then
+                        prefix = "Nemesis  "
+                    elseif kind == "bountiful" and not lower:find("bountiful", 1, true) then
+                        prefix = "Bountiful  "
+                    end
+                    AddRow(rows, {
+                        kind = "quest",
+                        title = prefix .. sname,
+                        icon = SpellIcon(spellID or sp.spellID),
+                        detail = (type(tip) == "string" and tip ~= "" and tip) or SpellDesc(spellID or sp.spellID),
+                        speech = prefix .. sname,
+                    })
+                    if kind == "nemesis" or LooksLikeNemesis(prefix .. sname, tip) then
+                        nemesisAt = #rows
+                        nemesisSp = sp
+                        nemesisTip = tip
+                    end
+                end
+            end
+        end
+        if not nemesisAt then
+            for i = 1, #rows do
+                local row = rows[i]
+                if type(row) == "table" and LooksLikeNemesis(row.title, row.detail, row.speech) then
+                    nemesisAt = i
+                end
+            end
+        end
+        if not nemesisAt and LooksLikeNemesis(headerTitle, delve.headerText, delve.tooltip) then
+            nemesisAt = #rows
+        end
+        if not nemesisAt and (tonumber(tier) or 0) >= 4 then
+            nemesisAt = #rows
+        end
+        if nemesisAt then
+            AttachNemesisExtras(rows, delve, nemesisSp, nemesisTip, tier, nemesisAt)
+        end
+        AddCriteria(rows)
+        return rows
+    end
+
+    -- Shrine / Dundun gossip hides the delve header widget and can drop
+    -- IsInScenario. Keep the instance block from the last good snapshot.
+    if inDelve then
+        local tier = ActiveDelveTier()
+        AddInstanceHeader(rows, {
+            title = headerTitle,
+            badge = tier,
+            instanceType = "delve",
+            speech = (tier and ("Tier " .. tostring(tier) .. " ") or "") .. headerTitle,
+        })
+        AttachNemesisExtras(rows, lastDelve or {}, nil, nil, tier, #rows)
+        AddCriteria(rows)
+        return rows
+    end
+
+    local diffLabel = inst and inst.difficultyName
+    local instanceType = "scenario"
+    if inst and inst.instanceType == "raid" then
+        headerKind = "Raid"
+        instanceType = "raid"
+    elseif inst and inst.instanceType == "party" then
+        headerKind = "Dungeon"
+        instanceType = "dungeon"
+    end
+    AddInstanceHeader(rows, {
+        title = headerTitle,
+        badge = (type(diffLabel) == "string" and diffLabel ~= "" and diffLabel) or nil,
+        instanceType = instanceType,
+        speech = headerKind .. " " .. headerTitle,
+    })
+    if currentStage and numStages and tonumber(numStages) and tonumber(numStages) > 1 then
+        AddRow(rows, {
+            kind = "objective",
+            title = string.format("Stage %s of %s", tostring(currentStage), tostring(numStages)),
+            numFulfilled = tonumber(currentStage),
+            numNeeded = tonumber(numStages),
+            goldBullet = true,
+            speech = string.format("Stage %s of %s", tostring(currentStage), tostring(numStages)),
+        })
+    end
+
+    local pgTimer, pgElapsed = FindProvingTimer()
+    if pgTimer and C_Scenario and C_Scenario.GetProvingGroundsInfo then
+        local diffID, currWave, maxWave, duration = AQ:SafeCall(C_Scenario.GetProvingGroundsInfo)
+        duration = tonumber(duration)
+        if duration and duration > 0 then
+            AddRow(rows, {
+                kind = "timer",
+                title = string.format("Wave %s / %s", tostring(currWave or "?"), tostring(maxWave or "?")),
+                timerID = pgTimer,
+                timeLimit = duration,
+                elapsed = pgElapsed or 0,
+                countdown = true,
+                speech = "Proving grounds timer",
+            })
+        end
+    end
+
+    AddCriteria(rows)
+    return rows
+end
+
+local function GetRows()
+    local ok, rows = pcall(BuildInstanceRows)
+    if ok and type(rows) == "table" and #rows > 0 then
+        if PlayerInDelve() or (rows[1] and rows[1].instanceType == "delve") then
+            lastDelveRows = rows
+        else
+            lastDelveRows = nil
+        end
+        return rows
+    end
+    if lastDelveRows and PlayerInDelve() then
+        return lastDelveRows
+    end
+    if ok and type(rows) == "table" then
+        return rows
+    end
+    return lastDelveRows or {}
+end
+
+AQ.Tracker.RegisterSection({
+    id = "scenarios",
+    title = "Instance",
+    order = 10,
+    flavor = "retail",
+    GetRows = GetRows,
+})
+
+local function RefreshIfInside()
+    if not AQ.Tracker then
+        return
+    end
+    local inScenario = C_Scenario and AQ:SafeCall(C_Scenario.IsInScenario)
+    local inMplus = C_ChallengeMode and AQ:SafeCall(C_ChallengeMode.IsChallengeModeActive)
+    if inScenario or inMplus or PlayerInDelve() then
+        AQ.Tracker.Refresh()
+    end
+end
+
+AQ.Events.Register("SCENARIO_UPDATE", RefreshIfInside)
+AQ.Events.Register("SCENARIO_CRITERIA_UPDATE", RefreshIfInside)
+AQ.Events.Register("SCENARIO_SPELL_UPDATE", RefreshIfInside)
+AQ.Events.Register("SCENARIO_BONUS_OBJECTIVE_COMPLETE", RefreshIfInside)
+AQ.Events.Register("SCENARIO_BONUS_VISIBILITY_UPDATE", RefreshIfInside)
+AQ.Events.Register("CHALLENGE_MODE_START", function()
+    if AQ.Tracker then
+        AQ.Tracker.Refresh()
+    end
+end)
+AQ.Events.Register("CHALLENGE_MODE_COMPLETED", function()
+    if AQ.Tracker then
+        AQ.Tracker.Refresh()
+    end
+end)
+AQ.Events.Register("CHALLENGE_MODE_DEATH_COUNT_UPDATED", RefreshIfInside)
+AQ.Events.Register("WORLD_STATE_TIMER_START", RefreshIfInside)
+AQ.Events.Register("WORLD_STATE_TIMER_STOP", RefreshIfInside)
+AQ.Events.Register("ACTIVE_DELVE_DATA_UPDATE", RefreshIfInside)
+AQ.Events.Register("CURRENCY_DISPLAY_UPDATE", RefreshIfInside)
+AQ.Events.Register("UPDATE_UI_WIDGET", RefreshIfInside)
+local function ScanPacksThenRefresh()
+    if PlayerInDelve() then
+        ScanDelveVignettes()
+    end
+    RefreshIfInside()
+end
+AQ.Events.Register("VIGNETTE_MINIMAP_UPDATED", ScanPacksThenRefresh)
+AQ.Events.Register("VIGNETTES_UPDATED", ScanPacksThenRefresh)
+AQ.Events.Register("PLAYER_ENTERING_WORLD", function()
+    if PlayerInDelve() then
+        EnsureNemesisRun()
+        ScanDelveVignettes()
+        RefreshIfInside()
+        return
+    end
+    if C_Timer and C_Timer.After then
+        C_Timer.After(3, function()
+            if not PlayerInDelve() then
+                ClearNemesisPersist()
+                ClearDelveCache()
+            end
+        end)
+    elseif not PlayerInDelve() then
+        ClearNemesisPersist()
+        ClearDelveCache()
+    end
+end)
+AQ.Events.Register("UNIT_AURA", function(_, unit)
+    if unit == "player" then
+        RefreshIfInside()
+    end
+end)
+local function NotePackThenRefresh(msg)
+    NotePackKillMessage(msg)
+    RefreshIfInside()
+end
+AQ.Events.Register("CHAT_MSG_RAID_BOSS_EMOTE", function(_, msg)
+    NotePackThenRefresh(msg)
+end)
+AQ.Events.Register("UI_INFO_MESSAGE", function(_, _, msg)
+    NotePackThenRefresh(msg)
+end)
+AQ.Events.Register("CHAT_MSG_SYSTEM", function(_, msg)
+    NotePackThenRefresh(msg)
+end)

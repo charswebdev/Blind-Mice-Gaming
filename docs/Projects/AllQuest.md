@@ -7,7 +7,7 @@
 | Type | In-game quest tracker + questline journal + expansion data plugins |
 | Folders | `AllQuest/` (runtime) · `AllQuest_Data_*` (one pack per expansion) |
 | Author tools | `Tools/AllQuest/` — extractors, wago DB2 cache, ID census (gitignored) |
-| Clients | Retail loads expansions **1–11**. Classic Era loads expansion **0** only. MoP/Cata/Wrath/TBC catalogs allow Classic packs plus older Retail-style IDs per `Compat.AllowedExpansionIDs()`. |
+| Clients | Retail loads expansions **1–11**. Classic Era loads expansion **0** only. MoP/Cata/Wrath/TBC catalogs allow Classic packs plus older Retail-style IDs per `Compat.AllowedExpansionIDs()`. WoW Forever is a **sibling package** (`AllQuest-forever/`) — do not add `16001` here. |
 | SavedVariables | `AllQuestDB` (account) · `AllQuestCharDB` (character, includes `/aqdebug` log) |
 | Optional plugins | Accessibility Helper (speech), TomTom, Masque, RareScanner, SilverDragon, PetTracker, Battle Pet Completionist, All The Things, Zygor, QuestCompletist, BtWQuests |
 
@@ -117,6 +117,7 @@ Classic after phase 5: **822** chains, **5,519** unique IDs, Era QuestV2 **4,807
 
 ## Open work
 
+- WoW Forever is a sibling package — see [`AllQuest-Forever.md`](AllQuest-Forever.md). Do not add Interface `16001` to this toc (flavor would fall through to Era).
 - Delve Nemesis extras: live screenshot at Shadowguard Point showed Influence but no Strong Box / Bonus loot — extras only fired on a classified nemesis *spell*. Midnight can list Influence as a currency or a spell without a numeric id; attach now keys off any “nemesis” chrome row.
 - Confirm live tooltip/vignette IDs if a season adds new Nemesis pack vignettes. Append; do not replace 7531/7869. Pack count prefers Blizzard scenario criteria. Shrine / Dundun tracking was removed.
 - Hand starter overlays past Elwynn/Durotar (Westfall, Barrens, Loch Modan, …) — overlay work, not another extract phase.
