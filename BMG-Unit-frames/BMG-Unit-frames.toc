@@ -2,7 +2,7 @@
 ## Title: BMG Unit Frames
 ## Notes: High-contrast, movable unit frames for Retail Midnight. Classic or modern class colors. Exportable layout codes. Accessible for blind players.
 ## Author: Blind Mice Gaming
-## Version: 1.1.0
+## Version: 1.1.1
 ## Category: Blind Mice Gaming
 ## Category-enUS: Blind Mice Gaming
 ## IconTexture: Interface\AddOns\BMG-Unit-frames\Media\Icon.png

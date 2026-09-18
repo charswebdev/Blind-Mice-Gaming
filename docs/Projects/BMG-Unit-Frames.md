@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** (five flavor packages) |
-| Version | **1.1.1** Forever; **1.1.0** Retail / Era / Anniversary / Classic |
+| Version | **1.1.2** Forever; **1.1.1** Retail / Era / Anniversary / Classic |
 | Type | In-game unit frames (high-contrast, movable, accessible) |
 | Optional deps | AccessibilityHelper (TTS if present) |
 
@@ -33,7 +33,8 @@ Focus and arena are capability-gated: off on Classic Era, on for Anniversary, Mo
 - Snap to existing Blizzard / Edit Mode positions (`/bmguf snap`).
 - Party includes the player’s own bar.
 - Growth for party / raid / arena: up, down, left, right.
-- Settings General tab groups options under the selected unit (Player Frame, Party Frame, and so on), then Name Bar, Health Bar, Power Bar, and Second Power Bar. Name bar background: Dark (default), Transparent, Black, Class color, Gold, or Health green. Bar style: Blizzard Classic (default), Blizzard Modern, or Blocky (flat solid fill with a hard edge).
+- Settings General tab groups options under the selected unit (Player Frame, Party Frame, and so on), then Name Bar, Health Bar, Power Bar, and Second Power Bar. Each unit keeps its own size, bars, portrait, and portrait side. Name bar background: Dark (default), Transparent, Black, Class color, Gold, or Health green. Bar style: Blizzard Classic (default), Blizzard Modern, or Blocky (flat solid fill with a hard edge).
+- Portrait: 3D / 2D / class icon / hidden, plus **Left or Right** per unit (target / tot / focus / arena default to the right).
 - Name bar includes unit level. Each bar (name, health, power, second power) has its own width and alignment. Name, level, health number, health percent, power number, and power percent each have a position.
 - Per-unit auras and indicators (including tank/healer/DPS, main tank or assist, rare, rare elite, elite, phased, out of range, quest). Each indicator has on/off, position, size, and a preview of the icon used on the frame.
 - Movable, resizable cast bar. Layout export/import codes.
@@ -62,7 +63,8 @@ Focus and arena are capability-gated: off on Classic Era, on for Anniversary, Mo
 | **0.9.0** | Role icons use one Blizzard sheet: shield = tank, cross = healer, swords = DPS |
 | **1.0.0** | First public release: four flavor packages, bar styles, grouped settings, group roles |
 | **1.1.0** | WoW Forever package (own folder and SavedVariables) |
-| **1.1.1** | Forever TOC `16001` for the live `_classic_beta_` ForeverBeta client |
+| **1.1.1** | Forever TOC `16001` for the live `_classic_beta_` ForeverBeta client. Retail / Era / Anniversary / Classic: durable `activeProfile`, per-unit portrait, left/right portrait. |
+| **1.1.2** | Forever gets the same save + per-unit + portrait-side fixes. |
 
 ## Sources and data
 
@@ -72,6 +74,9 @@ Focus and arena are capability-gated: off on Classic Era, on for Anniversary, Mo
 
 ## What worked
 
+- `root.activeProfile` so the current named profile survives a CharacterKey that changes between ADDON_LOADED and login (secret names / "player - Realm").
+- Seeding each unit with its own `portrait` and `portraitSide` so Player changes no longer fall back to one profile-wide portrait.
+- Committing stepper edit boxes before switching units, so Target does not inherit the number still typed for Player.
 - One folder per client so the updater copies `source/<folder>/` into the matching AddOns tree.
 - Flavor.lua for title, folder, product id, and SavedVariables name.
 - Capability gates so Era does not error on focus/arena.
@@ -79,6 +84,9 @@ Focus and arena are capability-gated: off on Classic Era, on for Anniversary, Mo
 
 ## What did not work
 
+- Relying only on `profileKeys[CharacterKey()]`. On Forever / Midnight the player name can be unusable at load, so a Save named profile looked gone after `/reload`.
+- Sharing `profile.portrait` across units. Changing Player looked like every frame changed, or Target forgot its setting.
+- Switching the unit list while a width/height box still had focus — the commit wrote Player's number onto Target.
 - One multi-interface zip for every client — user asked for separate folders, same as Light Paws.
 - Nesting addons under `AddOns/` in the repo.
 

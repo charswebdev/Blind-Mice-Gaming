@@ -59,6 +59,8 @@ local frame
 local selected = "player"
 local currentTab = "general"
 local RelayoutGeneral
+local applying = false
+local refreshing = false
 
 local function Speak(text)
     if UF.Speech and UF.Speech.Say then
@@ -161,10 +163,26 @@ local function ShowTab(id)
     end
 end
 
-local function Refresh()
-    if not frame then
+local function FlushEdits(commit)
+    if not frame or not frame.edits then
         return
     end
+    for i = 1, #frame.edits do
+        local row = frame.edits[i]
+        if row and row.Edit and row.Edit.HasFocus and row.Edit:HasFocus() then
+            if not commit then
+                row._skipCommit = true
+            end
+            row.Edit:ClearFocus()
+        end
+    end
+end
+
+local function Refresh()
+    if not frame or refreshing then
+        return
+    end
+    refreshing = true
     local p = Profile()
     local cfg = UnitCfg()
     if frame.profileBox then
@@ -201,6 +219,18 @@ local function Refresh()
             mode = "hidden"
         end
         frame.portraitDrop:SetValue(mode)
+    end
+    if frame.portraitSideDrop then
+        frame.portraitSideDrop:SetValue((cfg.portraitSide == "right") and "right" or "left")
+        local shown = (cfg.portrait or p.portrait or "2d")
+        if shown == "off" then
+            shown = "hidden"
+        end
+        if shown == "hidden" then
+            frame.portraitSideDrop:Hide()
+        else
+            frame.portraitSideDrop:Show()
+        end
     end
     if frame.barStyleDrop then
         local style = cfg.barStyle or "blizzard"
@@ -474,14 +504,22 @@ local function Refresh()
         frame.colorDrop:SetValue(p.classColors == "modern" and "modern" or "classic")
     end
     RelayoutGeneral()
+    refreshing = false
 end
 
 local function ApplyNow()
-    if UF.ApplyProfile then
+    if applying then
+        return
+    end
+    applying = true
+    if UF.Frames and UF.Frames.Apply then
+        UF.Frames.Apply(Profile())
+    elseif UF.ApplyProfile then
         UF.ApplyProfile(Profile())
     end
     RelayoutSelected()
     Refresh()
+    applying = false
 end
 
 local FRAME_NUM = {
@@ -634,6 +672,10 @@ local function BindEdit(row, fn)
     end
     row:SetOnCommit(fn)
     row._onEscape = Refresh
+    if frame then
+        frame.edits = frame.edits or {}
+        frame.edits[#frame.edits + 1] = row
+    end
 end
 
 local function ParseWidth(text)
@@ -738,6 +780,7 @@ local function SaveWindowPos()
         return
     end
     local p = Profile()
+    p.window = p.window or {}
     local point, _, _, x, y = frame:GetPoint(1)
     p.window.point = point or "CENTER"
     p.window.x = x or 0
@@ -764,6 +807,7 @@ end
 
 local function SelectUnit(id)
     CloseMenus()
+    FlushEdits(true)
     selected = id
     Refresh()
     local label = id
@@ -1018,6 +1062,16 @@ local function Build()
         Speak("Portrait " .. text .. ".")
     end)
     g(frame.portraitDrop, 32)
+    frame.portraitSideDrop = Drop(general, "Portrait side", 500, 140, {
+        { id = "left", label = "Left" },
+        { id = "right", label = "Right" },
+    }, "Portrait side", "Put this unit's portrait on the left or the right of the bars.")
+    frame.portraitSideDrop:SetOnChange(function(id, text)
+        UnitCfg().portraitSide = id
+        ApplyNow()
+        Speak("Portrait " .. text .. ".")
+    end)
+    g(frame.portraitSideDrop, 32)
     frame.barStyleDrop = Drop(general, "Bar style", 500, 200, {
         { id = "blizzard", label = "Blizzard Classic" },
         { id = "modern", label = "Blizzard Modern" },

@@ -125,10 +125,23 @@
       "saved": ["AllQuestDB", "AllQuestCharDB"]
     },
     {
+      "id": "AllQuest-forever",
+      "name": "AllQuest - WoW Forever",
+      "folders": [
+        "AllQuest-forever",
+        "AllQuest_Data_Forever"
+      ],
+      "version": "1.0.0",
+      "updated": "2026-09-17",
+      "interfaces": [16001, 121500, 121000],
+      "saved": ["AllQuestForeverDB", "AllQuestForeverCharDB"],
+      "client": "forever"
+    },
+    {
       "id": "BMG-Unit-frames",
       "name": "BMG Unit Frames",
       "folders": ["BMG-Unit-frames"],
-      "version": "1.1.0",
+      "version": "1.1.1",
       "updated": "2026-09-17",
       "interfaces": [120100, 120007, 120005, 120001],
       "saved": ["BMGUnitFramesDB"],
@@ -138,7 +151,7 @@
       "id": "BMG-Unit-frames-classic-era",
       "name": "BMG Unit Frames - Classic Era",
       "folders": ["BMG-Unit-frames-classic-era"],
-      "version": "1.1.0",
+      "version": "1.1.1",
       "updated": "2026-09-17",
       "interfaces": [11509, 11508],
       "saved": ["BMGUnitFramesClassicEraDB"],
@@ -148,7 +161,7 @@
       "id": "BMG-Unit-frames-anniversary",
       "name": "BMG Unit Frames - Anniversary",
       "folders": ["BMG-Unit-frames-anniversary"],
-      "version": "1.1.0",
+      "version": "1.1.1",
       "updated": "2026-09-17",
       "interfaces": [20506, 20505],
       "saved": ["BMGUnitFramesAnniversaryDB"],
@@ -158,7 +171,7 @@
       "id": "BMG-Unit-frames-classic",
       "name": "BMG Unit Frames - Classic (MoP)",
       "folders": ["BMG-Unit-frames-classic"],
-      "version": "1.1.0",
+      "version": "1.1.1",
       "updated": "2026-09-17",
       "interfaces": [50504, 50503],
       "saved": ["BMGUnitFramesClassicDB"],
@@ -168,7 +181,7 @@
       "id": "BMG-Unit-frames-forever",
       "name": "BMG Unit Frames - WoW Forever",
       "folders": ["BMG-Unit-frames-forever"],
-      "version": "1.1.1",
+      "version": "1.1.2",
       "updated": "2026-09-17",
       "interfaces": [16001, 121500, 121000],
       "saved": ["BMGUnitFramesForeverDB"],
@@ -218,6 +231,16 @@
       "updated": "2026-08-22",
       "interfaces": [11509, 11508],
       "saved": ["LPLClassicEraDB"]
+    },
+    {
+      "id": "lpl-forever",
+      "name": "Light Paws Loadouts - WoW Forever",
+      "folders": ["lpl-forever"],
+      "version": "1.0.0",
+      "updated": "2026-09-17",
+      "interfaces": [16001, 121500, 121000],
+      "saved": ["LPLForeverDB"],
+      "client": "forever"
     },
     {
       "id": "lpl-anniversary",

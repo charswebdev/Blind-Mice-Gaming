@@ -9,6 +9,22 @@ local UF = BMGUF
 UF.Factory = UF.Factory or {}
 local Factory = UF.Factory
 
+-- Forever Button:SetSize has been applying width/height swapped.
+-- Set each axis so the Width/Height steppers match the frame.
+function Factory.SetFrameSize(frame, width, height)
+    width = tonumber(width)
+    height = tonumber(height)
+    if not frame or not width or not height then
+        return
+    end
+    if frame.SetWidth then
+        frame:SetWidth(width)
+    end
+    if frame.SetHeight then
+        frame:SetHeight(height)
+    end
+end
+
 local LayoutVisual
 
 local function Templates()
@@ -732,7 +748,7 @@ local function PlaceHBar(bar, left, top, height, wantW, fillW, align)
     end
     bar:ClearAllPoints()
     bar:SetPoint("TOPLEFT", parent, "TOPLEFT", x, -top)
-    bar:SetSize(width, height)
+    Factory.SetFrameSize(bar, width, height)
 end
 
 function Factory.Measure(cfg, flags)
@@ -811,7 +827,7 @@ function LayoutVisual(frame)
         lockHeight = true,
     })
     if not (UF.Compat and UF.Compat.InCombat and UF.Compat.InCombat()) then
-        frame:SetSize(w, tonumber(cfg.h) or h)
+        Factory.SetFrameSize(frame, w, tonumber(cfg.h) or h)
         frame.cfgH = tonumber(cfg.h) or h
         h = frame.cfgH
     else
@@ -819,20 +835,30 @@ function LayoutVisual(frame)
     end
     local portraitMode = PortraitMode(cfg, profile)
     local portraitOn = portraitMode ~= "hidden"
+    local side = (cfg.portraitSide == "right") and "RIGHT" or "LEFT"
     local left = pad
+    local right = pad
     local ph = math.max(18, h - 6)
     if portraitOn then
-        left = pad + ph + 3
-        if frame.Portrait then
-            frame.Portrait:ClearAllPoints()
-            frame.Portrait:SetSize(ph, ph)
-            frame.Portrait:SetPoint("LEFT", frame, "LEFT", pad, 0)
+        if side == "RIGHT" then
+            right = pad + ph + 3
+        else
+            left = pad + ph + 3
         end
-        if frame.Portrait3D then
-            frame.Portrait3D:ClearAllPoints()
-            frame.Portrait3D:SetSize(ph, ph)
-            frame.Portrait3D:SetPoint("LEFT", frame, "LEFT", pad, 0)
+        local function PlacePortrait(tex)
+            if not tex then
+                return
+            end
+            tex:ClearAllPoints()
+            tex:SetSize(ph, ph)
+            if side == "RIGHT" then
+                tex:SetPoint("RIGHT", frame, "RIGHT", -pad, 0)
+            else
+                tex:SetPoint("LEFT", frame, "LEFT", pad, 0)
+            end
         end
+        PlacePortrait(frame.Portrait)
+        PlacePortrait(frame.Portrait3D)
     end
     local compact = h < 40
     local textSize = ((w or 200) < 110 or compact) and 10 or 12
@@ -845,7 +871,7 @@ function LayoutVisual(frame)
     if overlayH > 32 then
         overlayH = 32
     end
-    local fillW = (frame:GetWidth() or w or 200) - left - 3
+    local fillW = (frame:GetWidth() or w or 200) - left - right
     if fillW < 20 then
         fillW = 20
     end
@@ -886,7 +912,7 @@ function LayoutVisual(frame)
             frame.NameBar:Show()
             frame.NameBar:ClearAllPoints()
             frame.NameBar:SetPoint("TOPLEFT", frame.Health, "TOPLEFT", nx, 0)
-            frame.NameBar:SetSize(nw, overlayH)
+            Factory.SetFrameSize(frame.NameBar, nw, overlayH)
             if frame.NameBar.SetFrameLevel and frame.Health.GetFrameLevel then
                 frame.NameBar:SetFrameLevel(frame.Health:GetFrameLevel() + 2)
             end
@@ -1041,7 +1067,7 @@ function Factory.Create(opts)
     opts = opts or {}
     local parent = opts.parent or UIParent
     local frame = CreateFrame("Button", opts.name, parent, Templates())
-    frame:SetSize(opts.w or 190, opts.h or 48)
+    Factory.SetFrameSize(frame, opts.w or 190, opts.h or 48)
     frame.cfgH = opts.h or 48
     frame.unit = opts.unit
     frame.id = opts.id

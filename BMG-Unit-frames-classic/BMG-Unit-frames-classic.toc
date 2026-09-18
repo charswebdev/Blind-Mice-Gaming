@@ -2,7 +2,7 @@
 ## Title: BMG Unit Frames - Classic (MoP)
 ## Notes: High-contrast, movable unit frames for Mists of Pandaria Classic. Classic or modern class colors. Exportable layout codes. Accessible for blind players.
 ## Author: Blind Mice Gaming
-## Version: 1.1.0
+## Version: 1.1.1
 ## Category: Blind Mice Gaming
 ## Category-enUS: Blind Mice Gaming
 ## IconTexture: Interface\AddOns\BMG-Unit-frames-classic\Media\Icon.png

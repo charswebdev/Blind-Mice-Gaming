@@ -6,7 +6,7 @@ Live Battle.net product on this machine is `wow_classic_beta` in `_classic_beta_
 
 Mainline UI family next to Midnight (Edit Mode, Housing). Blizzard’s UI Discord: Forever is game type **Camelot** (name may change before launch); Midnight is **Standard**. Shares Midnight addon APIs, including secret values and AuraContainer. TOC also lists `121500` / `121000` for a later 12.x Forever client.
 
-Treat Forever as its own flavor: own addon folder, own SavedVariables, own updater row. Do not install Forever packages into `_retail_`.
+Treat Forever as its own flavor: own addon folder, own SavedVariables, own updater row. Do not install Forever packages into `_retail_`. In-game LPL is `lpl-forever/` (`LPLForeverDB`). AllQuest Forever is `AllQuest-forever/` + `AllQuest_Data_Forever/` (`AllQuestForeverDB`). Desktop LPLM / LPTM Forever are later.
 
 ## Resources that helped
 

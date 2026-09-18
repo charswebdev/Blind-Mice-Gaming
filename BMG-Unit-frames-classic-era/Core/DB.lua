@@ -86,6 +86,8 @@ function DB.DefaultUnitExtras(id)
         showLevel = true,
         showPower = true,
         showAltPower = true,
+        portrait = (UF.Flavor and UF.Flavor.defaultPortrait) or "2d",
+        portraitSide = (id == "target" or id == "tot" or id == "focus" or id == "arena") and "right" or "left",
         auras = {
             buffs = AuraBlock(showBuffs, icon, count, "BOTTOMLEFT"),
             debuffs = AuraBlock(showDebuffs, icon, count, "TOPRIGHT"),
@@ -541,19 +543,59 @@ function DB.Init()
                 end
                 profile.layoutVersion = 13
             end
+            if (profile.layoutVersion or 1) < 14 then
+                local defPortrait = profile.portrait or (UF.Flavor and UF.Flavor.defaultPortrait) or "2d"
+                local rightIds = { target = true, tot = true, focus = true, arena = true }
+                for id, cfg in pairs(profile.frames or {}) do
+                    if type(cfg) == "table" then
+                        if cfg.portrait == nil then
+                            cfg.portrait = defPortrait
+                        end
+                        if cfg.portraitSide ~= "left" and cfg.portraitSide ~= "right" then
+                            cfg.portraitSide = rightIds[id] and "right" or "left"
+                        end
+                    end
+                end
+                profile.layoutVersion = 14
+            end
         end
     end
+    DB.BindCharacter()
     return DB.Get()
+end
+
+function DB.BindCharacter()
+    local root = DB.Root()
+    if type(root.profiles) ~= "table" then
+        root.profiles = {}
+    end
+    if type(root.profileKeys) ~= "table" then
+        root.profileKeys = {}
+    end
+    if type(root.profiles.Default) ~= "table" then
+        root.profiles.Default = DB.DefaultProfile()
+    end
+    local key = UF.Compat and UF.Compat.CharacterKey and UF.Compat.CharacterKey() or "Unknown - Realm"
+    if type(root.activeProfile) == "string" and root.profiles[root.activeProfile] then
+        root.profileKeys[key] = root.activeProfile
+        return root.activeProfile
+    end
+    local name = root.profileKeys[key]
+    if type(name) == "string" and root.profiles[name] then
+        root.activeProfile = name
+        return name
+    end
+    root.activeProfile = "Default"
+    root.profileKeys[key] = "Default"
+    return "Default"
 end
 
 function DB.CurrentName()
     local root = DB.Root()
-    local key = UF.Compat and UF.Compat.CharacterKey and UF.Compat.CharacterKey() or "Unknown - Realm"
-    local name = root.profileKeys and root.profileKeys[key]
-    if type(name) == "string" and root.profiles and root.profiles[name] then
-        return name
+    if type(root.activeProfile) == "string" and root.profiles and root.profiles[root.activeProfile] then
+        return root.activeProfile
     end
-    return "Default"
+    return DB.BindCharacter()
 end
 
 function DB.Get()
@@ -630,6 +672,7 @@ function DB.Switch(name)
     end
     local key = UF.Compat and UF.Compat.CharacterKey and UF.Compat.CharacterKey() or "Unknown - Realm"
     root.profileKeys[key] = name
+    root.activeProfile = name
     if UF.ApplyProfile then
         UF.ApplyProfile(root.profiles[name])
     end
@@ -651,6 +694,7 @@ function DB.SaveAs(name)
     root.profiles[name] = CopyTable(DB.Get())
     local key = UF.Compat and UF.Compat.CharacterKey and UF.Compat.CharacterKey() or "Unknown - Realm"
     root.profileKeys[key] = name
+    root.activeProfile = name
     return true, "Saved profile " .. name .. "."
 end
 
@@ -750,6 +794,7 @@ function DB.ApplyExportTable(data, name)
     root.profiles[name] = profile
     local key = UF.Compat and UF.Compat.CharacterKey and UF.Compat.CharacterKey() or "Unknown - Realm"
     root.profileKeys[key] = name
+    root.activeProfile = name
     if UF.ApplyProfile then
         UF.ApplyProfile(profile)
     end

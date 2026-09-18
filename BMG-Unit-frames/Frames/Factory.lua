@@ -819,20 +819,30 @@ function LayoutVisual(frame)
     end
     local portraitMode = PortraitMode(cfg, profile)
     local portraitOn = portraitMode ~= "hidden"
+    local side = (cfg.portraitSide == "right") and "RIGHT" or "LEFT"
     local left = pad
+    local right = pad
     local ph = math.max(18, h - 6)
     if portraitOn then
-        left = pad + ph + 3
-        if frame.Portrait then
-            frame.Portrait:ClearAllPoints()
-            frame.Portrait:SetSize(ph, ph)
-            frame.Portrait:SetPoint("LEFT", frame, "LEFT", pad, 0)
+        if side == "RIGHT" then
+            right = pad + ph + 3
+        else
+            left = pad + ph + 3
         end
-        if frame.Portrait3D then
-            frame.Portrait3D:ClearAllPoints()
-            frame.Portrait3D:SetSize(ph, ph)
-            frame.Portrait3D:SetPoint("LEFT", frame, "LEFT", pad, 0)
+        local function PlacePortrait(tex)
+            if not tex then
+                return
+            end
+            tex:ClearAllPoints()
+            tex:SetSize(ph, ph)
+            if side == "RIGHT" then
+                tex:SetPoint("RIGHT", frame, "RIGHT", -pad, 0)
+            else
+                tex:SetPoint("LEFT", frame, "LEFT", pad, 0)
+            end
         end
+        PlacePortrait(frame.Portrait)
+        PlacePortrait(frame.Portrait3D)
     end
     local compact = h < 40
     local textSize = ((w or 200) < 110 or compact) and 10 or 12
@@ -845,7 +855,7 @@ function LayoutVisual(frame)
     if overlayH > 32 then
         overlayH = 32
     end
-    local fillW = (frame:GetWidth() or w or 200) - left - 3
+    local fillW = (frame:GetWidth() or w or 200) - left - right
     if fillW < 20 then
         fillW = 20
     end

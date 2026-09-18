@@ -135,7 +135,13 @@ local function Start()
     end
     local iface = UF.Compat.interface or "?"
     local title = (UF.Flavor and UF.Flavor.title) or "BMG Unit Frames"
-    print("|cff00ff00[" .. title .. "]|r v1.1.0 loaded. Interface: " .. tostring(iface))
+    local version = "1.1.1"
+    if C_AddOns and C_AddOns.GetAddOnMetadata then
+        version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version") or version
+    elseif GetAddOnMetadata then
+        version = GetAddOnMetadata(ADDON_NAME, "Version") or version
+    end
+    print("|cff00ff00[" .. title .. "]|r v" .. tostring(version) .. " loaded. Interface: " .. tostring(iface))
     print("|cff00ff00[" .. title .. "]|r |cff00ff00/bmguf|r settings · Key Bindings: Open settings")
 end
 
@@ -149,6 +155,9 @@ boot:SetScript("OnEvent", function(_, event, name)
     if event == "ADDON_LOADED" and name == ADDON_NAME then
         UF.DB.Init()
     elseif event == "PLAYER_LOGIN" then
+        if UF.DB.BindCharacter then
+            UF.DB.BindCharacter()
+        end
         if UF.Compat.InCombat() then
             UF.Frames.pendingCreate = true
             return

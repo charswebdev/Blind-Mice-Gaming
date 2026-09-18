@@ -2,7 +2,7 @@
 ## Title: BMG Unit Frames - WoW Forever
 ## Notes: High-contrast, movable unit frames for WoW Forever. Midnight-style secrets. Classic or modern class colors. Exportable layout codes. Accessible for blind players.
 ## Author: Blind Mice Gaming
-## Version: 1.1.1
+## Version: 1.1.3
 ## Category: Blind Mice Gaming
 ## Category-enUS: Blind Mice Gaming
 ## IconTexture: Interface\AddOns\BMG-Unit-frames-forever\Media\Icon.png
