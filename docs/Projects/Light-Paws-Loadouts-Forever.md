@@ -2,8 +2,8 @@
 
 | Field | Value |
 |-------|--------|
-| Status | **Shipped** (1.0.0 package; playtest on ForeverBeta) |
-| Version | **1.0.0** |
+| Status | **Shipped** (1.0.1 package; playtest on ForeverBeta) |
+| Version | **1.0.1** |
 | Type | In-game composite loadout vault |
 | Folder | `lpl-forever/` |
 | Clients | `_classic_beta_` (live ForeverBeta) · fallbacks `_forever_` / `_wow_forever_` / `_camelot_` · Interface `16001`, `121500`, `121000` |
@@ -49,10 +49,12 @@ Do not install this into `_retail_`. Do not install Retail `lpl/` into `_classic
 
 - Treating Forever as Classic Era / Anniversary FrameXML — it is Mainline.
 - One zip shared with Retail — Interface `121500` would also match a naive “Retail = 100000+” check.
+- LibTalentTree assuming `GetNumClasses()` is a max class ID and that every tree has a spec currency. Forever has class-ID holes and a single class currency, which crashed cache warmup.
 
 ## Open work
 
-- In-game playtest on ForeverBeta: `/lpl`, talent apply, bars, housing paste.
+- **1.0.1** ships Forever talent-cache holes (missing class IDs and spec currency) so `/lpl` can warm the tree.
+- In-game playtest on ForeverBeta: talent apply, bars, housing paste.
 - Watch for a Battle.net folder rename to `_forever_` / `_wow_forever_` / `_camelot_`.
 - Desktop LPLM / LPTM Forever not started.
 - Uncommitted dirty files in Retail `lpl/` were **not** copied into this tree.

@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** (five flavor packages) |
-| Version | **1.1.2** Forever; **1.1.1** Retail / Era / Anniversary / Classic |
+| Version | **1.1.3** Forever; **1.1.1** Retail / Era / Anniversary / Classic |
 | Type | In-game unit frames (high-contrast, movable, accessible) |
 | Optional deps | AccessibilityHelper (TTS if present) |
 
@@ -65,6 +65,7 @@ Focus and arena are capability-gated: off on Classic Era, on for Anniversary, Mo
 | **1.1.0** | WoW Forever package (own folder and SavedVariables) |
 | **1.1.1** | Forever TOC `16001` for the live `_classic_beta_` ForeverBeta client. Retail / Era / Anniversary / Classic: durable `activeProfile`, per-unit portrait, left/right portrait. |
 | **1.1.2** | Forever gets the same save + per-unit + portrait-side fixes. |
+| **1.1.3** | Forever unit frames set width and height on separate axes so Width/Height steppers match the drawn frame. |
 
 ## Sources and data
 
