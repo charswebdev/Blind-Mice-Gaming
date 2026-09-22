@@ -195,6 +195,38 @@ local function ReadLoadoutHeader(importStream)
     return true, serializationVersion, specID, treeHash
 end
 
+-- Blizzard strings are positional against the live node list. The 16-byte
+-- tree hash changes when nodes are added, removed, or reordered. A mismatch
+-- would spend the old bits on the new tree.
+local function TreeHashesMatch(importedHash, treeID)
+    if type(importedHash) ~= "table" or not C_Traits.GetTreeHash or not treeID then
+        return true
+    end
+    local liveHash = C_Traits.GetTreeHash(treeID)
+    if type(liveHash) ~= "table" then
+        return true
+    end
+    local importedHasBytes = false
+    local liveHasBytes = false
+    for i = 1, 16 do
+        if (importedHash[i] or 0) ~= 0 then
+            importedHasBytes = true
+        end
+        if (liveHash[i] or 0) ~= 0 then
+            liveHasBytes = true
+        end
+    end
+    if not importedHasBytes or not liveHasBytes then
+        return true
+    end
+    for i = 1, 16 do
+        if (importedHash[i] or 0) ~= (liveHash[i] or 0) then
+            return false
+        end
+    end
+    return true
+end
+
 local function CopyTreeNodes(treeID)
     local nodes = C_Traits.GetTreeNodes(treeID)
     if not nodes then
@@ -680,7 +712,7 @@ local function ParseBlizzardExportString(exportString)
         return nil, "Failed to decode Blizzard export string."
     end
 
-    local headerValid, serializationVersion, specID = ReadLoadoutHeader(importStream)
+    local headerValid, serializationVersion, specID, treeHash = ReadLoadoutHeader(importStream)
     if not headerValid then
         return nil, "Invalid Blizzard export string."
     end
@@ -705,6 +737,9 @@ local function ParseBlizzardExportString(exportString)
     local treeID = GetTreeIDForSpec(specID, classID) or C_ClassTalents.GetTraitTreeForSpec(specID)
     if not treeID then
         return nil, "Could not resolve talent tree for this specialization."
+    end
+    if not TreeHashesMatch(treeHash, treeID) then
+        return nil, "This talent string is for an older talent tree. Export a new string from the current patch."
     end
 
     local loadoutContent = ReadLoadoutContent(importStream, treeID)

@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.1.6** |
+| Version | **1.1.7** |
 | Type | In-game composite loadout vault |
 | Folder | `lpl/` |
 | Clients | Retail Midnight (`120100`, `120007`, `120001`) |
@@ -39,6 +39,7 @@ This is the pattern every Classic flavor is supposed to **clone for UX** while r
 - **1.1.5 Limits lists** — hero talents are per spec (`specID:heroID`). Every Limits tab shows `Limits Set: …` or `Limit Set: None`. Talent builds use `Level: N`. A hero-talent limit groups under the class with **Class Spec** then an indented bold hero name.
 - Hero-talent Limits do not block apply when the player has no hero tree yet (e.g. a level 10 Hunter). Class still has to match; combat is checked by activate, not by Limits.
 - **1.1.6:** apply a hero-limited set before hero talents unlock (any class) if the class matches and the player is out of combat.
+- **1.1.7:** Blizzard talent import stops when the string’s tree hash does not match the live tree, so an older string cannot spend points on the wrong nodes after a talent-tree patch.
 
 ## Development plan
 
@@ -68,9 +69,11 @@ Desktop siblings: **LPTM** (talent planner) and **LPLM** (loadout catalog + comm
 - Mixing Era talent rules into this folder — **separate package** is locked.
 - `RequiredFrameHeight` above `local function CollectTabs` — Lua treated `CollectTabs` as a missing global (`Sidebar.lua:18`). Helper now sits after `CollectTabs`.
 - Hero talent Limits keyed only by subtree id. Pack Leader is the same id on Beast Mastery and Survival, so one checkbox locked both specs.
+- Importing a Blizzard talent string without checking `C_Traits.GetTreeHash`. After a tree edit, those bits line up with the new node order and the wrong talents get points. Import now stops when the hash does not match the live tree.
 
 ## Open work
 
 - Uncommitted Module dirty files may exist locally (`ActionBars`, `Loadouts`, `Keybinds`, …). Do not mix into unrelated commits.
-- Further Midnight patch talent layout changes track Blizzard, not a BMG DB2 extract.
+- Further Midnight patch talent layout changes track Blizzard, not a BMG DB2 extract. The 2026-09-22 class tuning is damage and effect numbers on existing nodes (no new, moved, or removed talents). LPL reads the live tree, so that pass needs no talent-data update.
+- Blizzard import strings are positional. A tree-hash mismatch now fails the import instead of spending the old bits on the current node list.
 - Convert Housing icon to `.tga`/`.blp` only if PNG looks soft. No bundled public-code catalog unless assigned. Not a composite loadout segment.

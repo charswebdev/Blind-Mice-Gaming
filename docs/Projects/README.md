@@ -31,7 +31,7 @@ Commit, push, and GitHub releases happen **only when asked**.
 | [Exploration](Exploration.md) | Shipped | 2.0.2 |
 | [FPSDiag](FPSDiag.md) | Shipped | 0.3.1 |
 | [WowGPS](WowGPS.md) | Shipped | 1.0.0 |
-| [Light Paws Loadouts (Retail)](Light-Paws-Loadouts-Retail.md) | Shipped | 1.1.6 |
+| [Light Paws Loadouts (Retail)](Light-Paws-Loadouts-Retail.md) | Shipped | 1.1.7 |
 | [Light Paws Loadouts - Classic Era](Light-Paws-Loadouts-Classic-Era.md) | Shipped | 1.0.0 |
 | [Light Paws Loadouts - WoW Forever](Light-Paws-Loadouts-Forever.md) | Shipped | 1.0.1 |
 | [Light Paws - Anniversary](Light-Paws-Loadouts-Anniversary.md) | Planned | — |

@@ -17,6 +17,7 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 ## Features
 
 - Catalog-driven list of addons (folder lists, toc interfaces, SavedVariables names) and apps (flavor, status shipped/planned, exe prefix).
+- **2026-09-21:** Light Paws Loadouts (Retail) **1.1.7**. Talent import rejects a Blizzard string whose tree hash does not match the live tree.
 - **2026-09-17:** catalog lists **five** BMG Unit Frames packages. Forever is **1.1.3**; Retail / Era / Anniversary / Classic are **1.1.1**. Forever installs into `_classic_beta_` (live ForeverBeta), then `_forever_` / `_wow_forever_` / `_camelot_`. Players refresh the catalog from `main`. The shipped 1.2.0 exe needs a local `app.py` that includes that Forever folder list.
 - **2026-09-17:** catalog also lists **Light Paws Loadouts - WoW Forever** (`lpl-forever`, `1.0.1`, `LPLForeverDB`, `client: "forever"`). Same Forever product folders as Unit Frames. Do not install Retail `lpl/` into `_classic_beta_`.
 - **2026-09-17:** catalog also lists **AllQuest - WoW Forever** (`AllQuest-forever` + `AllQuest_Data_Forever`, `1.0.0`, `AllQuestForeverDB` / `AllQuestForeverCharDB`, `client: "forever"`). Tracker-first; journal pack is a stub. Do not install Retail `AllQuest/` or Midnight/Era packs into `_classic_beta_`.
