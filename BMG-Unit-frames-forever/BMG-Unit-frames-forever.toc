@@ -1,13 +1,14 @@
-## Interface: 16001, 121500, 121000
+## Interface: 16002, 16001, 16000, 121500, 121000
 ## Title: BMG Unit Frames - WoW Forever
-## Notes: High-contrast, movable unit frames for WoW Forever. Midnight-style secrets. Classic or modern class colors. Exportable layout codes. Accessible for blind players.
+## Notes: High-contrast, movable unit frames for WoW Forever. Classic or modern class colors. Exportable layout codes. Accessible for blind players.
 ## Author: Blind Mice Gaming
-## Version: 1.1.3
+## Version: 1.2.1
 ## Category: Blind Mice Gaming
 ## Category-enUS: Blind Mice Gaming
 ## IconTexture: Interface\AddOns\BMG-Unit-frames-forever\Media\Icon.png
 ## OptionalDeps: AccessibilityHelper
 ## SavedVariables: BMGUnitFramesForeverDB
+## LoadSavedVariablesFirst: 1
 ## AddonCompartmentFunc: BMGUnitFrames_OnAddonCompartmentClick
 ## DefaultState: enabled
 
@@ -26,6 +27,7 @@ Frames\Auras.lua
 Frames\Indicators.lua
 Frames\Extras.lua
 Frames\Layout.lua
+UI\ShareDialog.lua
 UI\Config.lua
 Core\Bindings.lua
 Core\Addon.lua

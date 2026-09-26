@@ -14,6 +14,9 @@ function Compat.GetInterfaceVersion()
 end
 
 function Compat.IsRetail()
+    if UF.Flavor and UF.Flavor.id == "forever" then
+        return true
+    end
     if WOW_PROJECT_ID and WOW_PROJECT_MAINLINE and WOW_PROJECT_ID == WOW_PROJECT_MAINLINE then
         return true
     end
@@ -21,6 +24,9 @@ function Compat.IsRetail()
 end
 
 function Compat.IsMidnight()
+    if UF.Flavor and UF.Flavor.id == "forever" then
+        return true
+    end
     return Compat.GetInterfaceVersion() >= 120000
 end
 
@@ -53,6 +59,19 @@ function Compat.CanUseNumber(v)
     end
     local ok, typ = pcall(type, v)
     return ok == true and typ == "number" and Compat.CanUseValue(v)
+end
+
+--- Regular true/false, or nil when a secret cannot be read. Never `if` the raw value.
+function Compat.UsableBool(v)
+    if Compat.IsSecretValue(v) then
+        if not Compat.CanUseValue(v) then
+            return nil
+        end
+    end
+    if v then
+        return true
+    end
+    return false
 end
 
 function Compat.IsUsablePositive(v)
@@ -360,16 +379,9 @@ function Compat.CharacterKey()
     return tostring(name) .. " - " .. tostring(realm)
 end
 
-function Compat.CopyToClipboard(text)
-    if type(text) ~= "string" or text == "" then
-        return false
-    end
-    if type(CopyToClipboard) == "function" then
-        local ok = pcall(CopyToClipboard, text)
-        if ok then
-            return true
-        end
-    end
+function Compat.CopyToClipboard()
+    -- Forever treats CopyToClipboard as protected. pcall still raises
+    -- ADDON_ACTION_FORBIDDEN. The export box stays selected for Ctrl+C.
     return false
 end
 
@@ -550,28 +562,37 @@ function Compat.IsPhased(unit)
     if not unit or (UnitIsUnit and UnitIsUnit(unit, "player")) then
         return false
     end
-    if UnitIsConnected and not UnitIsConnected(unit) then
-        return false
+    if UnitIsConnected then
+        local connected = Compat.UsableBool(UnitIsConnected(unit))
+        if connected == false then
+            return false
+        end
     end
     if UnitPhaseReason then
         local ok, reason = pcall(UnitPhaseReason, unit)
-        if ok and reason then
-            return true
-        end
         if ok then
-            return false
+            local phased = Compat.UsableBool(reason)
+            if phased ~= nil then
+                return phased
+            end
         end
     end
     if UnitInPhase then
         local ok, same = pcall(UnitInPhase, unit)
         if ok then
-            return same ~= true
+            local usable = Compat.UsableBool(same)
+            if usable ~= nil then
+                return not usable
+            end
         end
     end
     if UnitIsSamePhase then
         local ok, same = pcall(UnitIsSamePhase, unit)
         if ok then
-            return same ~= true
+            local usable = Compat.UsableBool(same)
+            if usable ~= nil then
+                return not usable
+            end
         end
     end
     return false
@@ -642,13 +663,13 @@ function Compat.IsQuestUnit(unit)
     end
     if UnitIsQuestBoss then
         local ok, v = pcall(UnitIsQuestBoss, unit)
-        if ok and v then
+        if ok and Compat.UsableBool(v) == true then
             return true
         end
     end
     if C_QuestLog and C_QuestLog.UnitIsQuestBoss then
         local ok, v = pcall(C_QuestLog.UnitIsQuestBoss, unit)
-        if ok and v then
+        if ok and Compat.UsableBool(v) == true then
             return true
         end
     end
@@ -663,14 +684,24 @@ function Compat.InRange(unit)
     end
     if UnitInRange then
         local ok, inRange, checked = pcall(UnitInRange, unit)
-        if ok and checked then
-            return inRange and true or false
+        if ok then
+            -- Forever / Midnight: UnitInRange returns secret booleans. Never `if checked`.
+            local didCheck = Compat.UsableBool(checked)
+            if didCheck == true then
+                local near = Compat.UsableBool(inRange)
+                if near ~= nil then
+                    return near
+                end
+            end
         end
     end
     if CheckInteractDistance then
         local ok, near = pcall(CheckInteractDistance, unit, 4)
         if ok then
-            return near and true or false
+            local usable = Compat.UsableBool(near)
+            if usable ~= nil then
+                return usable
+            end
         end
     end
     return true

@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** (five flavor packages) |
-| Version | **1.1.3** Forever; **1.1.1** Retail / Era / Anniversary / Classic |
+| Version | **1.2.1** Forever; **1.1.1** Retail / Era / Anniversary / Classic |
 | Type | In-game unit frames (high-contrast, movable, accessible) |
 | Optional deps | AccessibilityHelper (TTS if present) |
 
@@ -15,7 +15,7 @@ Separate package per WoW flavor — own folder, own SavedVariables, own updater 
 | Classic Era + Hardcore | `_classic_era_` | `BMG-Unit-frames-classic-era/` | `BMGUnitFramesClassicEraDB` | `11509`, `11508` |
 | Anniversary (TBC) | `_anniversary_` | `BMG-Unit-frames-anniversary/` | `BMGUnitFramesAnniversaryDB` | `20506`, `20505` |
 | Classic (MoP) | `_classic_` | `BMG-Unit-frames-classic/` | `BMGUnitFramesClassicDB` | `50504`, `50503` |
-| WoW Forever | `_classic_beta_` (live ForeverBeta) | `BMG-Unit-frames-forever/` | `BMGUnitFramesForeverDB` | `16001`, `121500`, `121000` |
+| WoW Forever | `_classic_beta_` (live ForeverBeta) | `BMG-Unit-frames-forever/` | `BMGUnitFramesForeverDB` | `16002`, `16001`, `16000`, `121500`, `121000` |
 
 Interface numbers match the current live patch plus the previous one so a weekly bump does not unload the addon.
 
@@ -25,7 +25,9 @@ Slash `/bmguf` · `/uf` · Key Bindings → **BMG Unit Frames** (open settings, 
 
 High-contrast player, pet, target, focus, target-of-target, party, raid, and arena frames. Players move and resize them, pick classic Blizzard or modern class colors, and export a layout code. Built for blind and visually impaired players.
 
-Focus and arena are capability-gated: off on Classic Era, on for Anniversary, MoP, Retail, and Forever. First load snaps to Blizzard / Edit Mode positions. Midnight and Forever hide raw health numbers; those packages then show percent only.
+Focus and arena are capability-gated: off on Classic Era, on for Anniversary, MoP, Retail, and Forever. First load snaps to Blizzard / Edit Mode positions. Midnight and Forever hide raw health numbers when those values are secret; those packages then show percent only.
+
+Forever is its own folder. Author **Blind Mice Gaming**. AddOns category **Blind Mice Gaming**. Key Bindings category **BMGUF**. SavedVariables `BMGUnitFramesForeverDB` with `LoadSavedVariablesFirst`. Do not install this package into `_retail_`.
 
 ## Features
 
@@ -37,7 +39,7 @@ Focus and arena are capability-gated: off on Classic Era, on for Anniversary, Mo
 - Portrait: 3D / 2D / class icon / hidden, plus **Left or Right** per unit (target / tot / focus / arena default to the right).
 - Name bar includes unit level. Each bar (name, health, power, second power) has its own width and alignment. Name, level, health number, health percent, power number, and power percent each have a position.
 - Per-unit auras and indicators (including tank/healer/DPS, main tank or assist, rare, rare elite, elite, phased, out of range, quest). Each indicator has on/off, position, size, and a preview of the icon used on the frame.
-- Movable, resizable cast bar. Layout export/import codes.
+- Movable, resizable cast bar. **Export** and **Import** open a popup: name, layout code, Copy / Accept.
 - AddOns category **Blind Mice Gaming**.
 
 ## Development plan
@@ -66,6 +68,23 @@ Focus and arena are capability-gated: off on Classic Era, on for Anniversary, Mo
 | **1.1.1** | Forever TOC `16001` for the live `_classic_beta_` ForeverBeta client. Retail / Era / Anniversary / Classic: durable `activeProfile`, per-unit portrait, left/right portrait. |
 | **1.1.2** | Forever gets the same save + per-unit + portrait-side fixes. |
 | **1.1.3** | Forever unit frames set width and height on separate axes so Width/Height steppers match the drawn frame. |
+| **1.1.4** | Forever: never boolean-test secret `UnitInRange` / phase / quest-boss results (party OOR Lua error). Same Compat on all flavors (**1.1.2**). |
+| **1.1.5** | Stop first-login Blizzard snap on every Forever `/reload` (`IsRetail` + missing `retailSnap`). Keep `activeProfile` when the character name is not ready. Other flavors **1.1.3**. |
+| **1.1.6** | Forever: never compare secret `UnitPowerMax` on the alternate power path (target click Lua error). Same Power.lua on all flavors (**1.1.4**). |
+| **1.1.7** | Keep `activeProfile` across `/reload` and logout. A stale `profileKeys` row that still said Default no longer wins. Do not create the SavedVariables global before load. Other flavors **1.1.5**. |
+| **1.1.8** | Settings footer **Import** button plus a visible layout-code box. Enter still imports. Other flavors **1.1.6**. |
+| **1.1.9** | Load `lastProfile` only (never `profileKeys`). Save dragged positions without secret `GetPoint` numbers. Import / Export popups. Other flavors **1.1.7**. |
+| **1.2.0** | Import Accept sits on its own footer so the paste box cannot steal the click. Other flavors **1.1.8**. |
+| **1.2.1** | Import paste box no longer truncates the code (`SetMaxBytes(0)`). Failed Accept shows the error on the popup. Other flavors **1.1.9**. |
+| **1.2.2** | Export never calls protected `CopyToClipboard` (Blizzard block dialog). Imported and customized layouts stamp `layoutVersion` 14 / `layoutReady` so Init migrations do not rewrite them after `/reload`. |
+| **1.2.3** | Forever persist: session edits stay in a working table; logout writes a secret-free snapshot into `BMGUnitFramesForeverDB`. Do not create that global before the SavedVariables file injects. |
+| **1.2.4** | Forever writes SavedVariables as a plain `payload` string. Tables that contain one secret were being dropped whole, so named profiles never reached the file. |
+| **1.2.5** | TOC `16002` / `16000` for Forever 1.60.1.69913. Flush assigns a **new** SavedVariables table (Forever will not write an `issecrettable`). Never boolean-test secret range/quest flags. |
+| **1.2.6** | Forever never re-hydrates over the session table (edits to Default were treated as “no custom data” and wiped before logout). Settings, drag, lock, import, and save flush the payload string the same way LPL Forever does. |
+| **1.2.7** | Reverted Forever persist experiments. Same in-place `BMGUnitFramesForeverDB` as Retail / Leatrix / Baganator. `## LoadSavedVariablesFirst: 1`. One-time unwrap of the old `payload` wrapper. |
+| **Removed 2026-09-18** | WoW Forever package deleted locally (`BMG-Unit-frames-forever/`, catalog row, Forever AddOns copy), then recreated. Retail / Era / Anniversary / Classic on `main` stay at **1.1.1**. |
+| **1.2.0 (2026-09-26)** | Forever package recreated from Retail 1.1.9. Own folder and `BMGUnitFramesForeverDB`. Author and AddOns category Blind Mice Gaming. Key Bindings category **BMGUF**. `LoadSavedVariablesFirst`. Interface `16002` / `16001` / `16000`. |
+| **1.2.1 (2026-09-26)** | Shipped Forever **1.2.1**. Export selects the layout code and does not call protected `CopyToClipboard`. |
 
 ## Sources and data
 
@@ -90,9 +109,20 @@ Focus and arena are capability-gated: off on Classic Era, on for Anniversary, Mo
 - Switching the unit list while a width/height box still had focus — the commit wrote Player's number onto Target.
 - One multi-interface zip for every client — user asked for separate folders, same as Light Paws.
 - Nesting addons under `AddOns/` in the repo.
+- `if checked` on `UnitInRange` for party units. Forever returns a secret boolean; the OOR indicator threw 16 times a second.
+- Treating Forever as a first-time Retail install (`IsRetail()` and `retailSnap ~= true`). Every login snapped frames back to Blizzard positions, so the layout looked deleted.
+- Binding `profileKeys["player - Realm"] = "Default"` at ADDON_LOADED, then keeping that Default after the real character name appeared.
+- `if max and max > 0` on `UnitPowerMax`. Forever returns a secret number for target alternate power; clicking a mob threw in `Power.Secondary`.
+- Letting `profileKeys[CharacterKey()]` override `activeProfile`. When the name was still `player - Realm`, Save bound a placeholder key; the real name still pointed at Default, so login loaded Default and the named layout looked gone.
+- Storing `GetPoint` coordinates that Forever marks secret. Those values never write to SavedVariables, so dragged frames snapped back after `/reload`.
+- Calling `CopyToClipboard` on Export, including inside `pcall`. Forever still raises `ADDON_ACTION_FORBIDDEN` for `UNKNOWN()`. Export only selects the code for Ctrl+C.
+- Importing a layout and leaving `layoutVersion` at 1. Init then re-ran height/bar migrations every load, so the imported profile looked unsaved.
+- Mutating `_G.BMGUnitFramesForeverDB` in place. One leftover secret `GetPoint` number makes Forever omit the named profile, so logout only writes Default.
+- Replacing the session table whenever `_G` identity changed, but only keeping it if a non-Default profile name existed. Moving or restyling **Default** looked unsaved after `/reload`.
+- JSON `payload` + a brand-new `_G` table on Flush. Forever SavedVariables are unchanged from Retail; Leatrix/Baganator/BugSack all mutate the injected table. The wrapper fought the client.
 
 ## Open work
 
 - Playtest fill layout after `/reload` (Retail + Era first). Existing saved frames keep their height; health now fills that window.
-- Live Forever folder is `_classic_beta_` (`wow_classic_beta` / ForeverBeta). Watch for a rename to `_forever_`, `_wow_forever_`, or `_camelot_`.
 - Season of Discovery package later (names still open).
+- Playtest the recreated Forever package on `_classic_beta_` (`/bmguf`, move a frame, `/reload`).

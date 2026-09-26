@@ -13,6 +13,9 @@ local UF = BMGUF
 UF.DB = UF.DB or {}
 local DB = UF.DB
 
+-- Captured when this file loads so a later addon cannot steal Flavor.saved.
+local SAVED = (UF.Flavor and UF.Flavor.saved) or "BMGUnitFramesDB"
+
 local function CopyTable(src)
     if type(src) ~= "table" then
         return src
@@ -240,19 +243,174 @@ function DB.Exportable(profile)
 end
 
 function DB.SavedName()
-    return (UF.Flavor and UF.Flavor.saved) or "BMGUnitFramesDB"
+    return SAVED
 end
 
+local initialized = false
+local memoryRoot = nil
+
+local function IsSecret(v)
+    return UF.Compat and UF.Compat.IsSecretValue and UF.Compat.IsSecretValue(v) == true
+end
+
+local function CanUseNum(v)
+    return UF.Compat and UF.Compat.CanUseNumber and UF.Compat.CanUseNumber(v) == true
+end
+
+local function CharacterKeyReady(key)
+    if IsSecret(key) then
+        return false
+    end
+    if type(key) ~= "string" or key == "" then
+        return false
+    end
+    if key == "Unknown - Realm" or key == "player - Realm" then
+        return false
+    end
+    if string.sub(key, 1, 9) == "player - " or string.sub(key, 1, 10) == "Unknown - " then
+        return false
+    end
+    return true
+end
+
+local function PersistableKey(k)
+    if IsSecret(k) then
+        return false
+    end
+    return type(k) == "string" or type(k) == "number"
+end
+
+local function PersistableValue(v)
+    if v == nil or IsSecret(v) then
+        return false
+    end
+    local t = type(v)
+    return t == "string" or t == "number" or t == "boolean" or t == "table"
+end
+
+function DB.StorePoint(dst, point, x, y, scale)
+    if type(dst) ~= "table" then
+        return
+    end
+    if type(point) == "string" and not IsSecret(point) then
+        dst.point = point
+    end
+    if CanUseNum(x) then
+        dst.x = x
+    end
+    if CanUseNum(y) then
+        dst.y = y
+    end
+    if scale ~= nil and CanUseNum(scale) then
+        dst.scale = scale
+    end
+end
+
+-- Forever / Midnight: GetPoint can return secret numbers. Never store those.
+function DB.ReadMoverPoint(mover)
+    if not mover or not mover.GetPoint then
+        return nil
+    end
+    local point, _, _, x, y = mover:GetPoint(1)
+    if type(point) ~= "string" or IsSecret(point) then
+        point = "BOTTOMLEFT"
+    end
+    if CanUseNum(x) and CanUseNum(y) then
+        return point, x, y
+    end
+    if mover.GetLeft and mover.GetBottom then
+        local left, bottom = mover:GetLeft(), mover:GetBottom()
+        if CanUseNum(left) and CanUseNum(bottom) then
+            local scale = 1
+            if mover.GetEffectiveScale and UIParent and UIParent.GetEffectiveScale then
+                local us = UIParent:GetEffectiveScale()
+                local fs = mover:GetEffectiveScale()
+                if CanUseNum(us) and us > 0 and CanUseNum(fs) then
+                    scale = fs / us
+                end
+            end
+            return "BOTTOMLEFT", left * scale, bottom * scale
+        end
+    end
+    return nil
+end
+
+function DB.Sanitize(root)
+    root = root or (initialized and _G[SAVED]) or nil
+    if type(root) ~= "table" then
+        return root
+    end
+    local function walk(t)
+        if type(t) ~= "table" then
+            return
+        end
+        local drop = {}
+        for k, v in pairs(t) do
+            if not PersistableKey(k) or not PersistableValue(v) then
+                drop[#drop + 1] = k
+            elseif type(v) == "table" then
+                walk(v)
+            end
+        end
+        for i = 1, #drop do
+            t[drop[i]] = nil
+        end
+    end
+    walk(root)
+    if type(root.profileKeys) == "table" then
+        local drop = {}
+        for k in pairs(root.profileKeys) do
+            if not CharacterKeyReady(k) then
+                drop[#drop + 1] = k
+            end
+        end
+        for i = 1, #drop do
+            root.profileKeys[drop[i]] = nil
+        end
+    end
+    return root
+end
+
+function DB.Ready()
+    return initialized == true
+end
+
+function DB.Flush()
+    if not initialized then
+        return
+    end
+    local root = DB.Root()
+    DB.Sanitize(root)
+    if type(root.activeProfile) ~= "string" or not root.profiles or not root.profiles[root.activeProfile] then
+        root.activeProfile = DB.CurrentName()
+    end
+    root.lastProfile = root.activeProfile
+end
+
+-- Never create the SavedVariables global before ADDON_LOADED. Doing that
+-- can block WoW from loading the file, so every reload looks like a first run.
 function DB.Root()
     local name = DB.SavedName()
-    if type(_G[name]) ~= "table" then
-        _G[name] = {}
+    if initialized then
+        if type(_G[name]) ~= "table" then
+            _G[name] = {}
+        end
+        return _G[name]
     end
-    return _G[name]
+    if type(_G[name]) == "table" then
+        return _G[name]
+    end
+    if type(memoryRoot) ~= "table" then
+        memoryRoot = {}
+    end
+    return memoryRoot
 end
 
 function DB.Init()
+    initialized = true
+    memoryRoot = nil
     local root = DB.Root()
+    DB.Sanitize(root)
     if type(root.version) ~= "number" then
         root.version = 1
     end
@@ -267,9 +425,10 @@ function DB.Init()
     else
         Merge(root.profiles.Default, DB.DefaultProfile())
     end
-    local key = UF.Compat and UF.Compat.CharacterKey and UF.Compat.CharacterKey() or "Unknown - Realm"
-    if type(root.profileKeys[key]) ~= "string" or not root.profiles[root.profileKeys[key]] then
-        root.profileKeys[key] = "Default"
+    if type(root.lastProfile) == "string" and root.profiles[root.lastProfile] then
+        root.activeProfile = root.lastProfile
+    elseif type(root.activeProfile) == "string" and root.profiles[root.activeProfile] then
+        root.lastProfile = root.activeProfile
     end
     for name, profile in pairs(root.profiles) do
         if type(profile) == "table" then
@@ -558,10 +717,18 @@ function DB.Init()
                 end
                 profile.layoutVersion = 14
             end
+            profile.layoutReady = true
+            profile.retailSnap = true
         end
     end
     DB.BindCharacter()
     return DB.Get()
+end
+
+local function BindKey(root, key, name)
+    if CharacterKeyReady(key) and type(name) == "string" and root.profiles and root.profiles[name] then
+        root.profileKeys[key] = name
+    end
 end
 
 function DB.BindCharacter()
@@ -576,17 +743,20 @@ function DB.BindCharacter()
         root.profiles.Default = DB.DefaultProfile()
     end
     local key = UF.Compat and UF.Compat.CharacterKey and UF.Compat.CharacterKey() or "Unknown - Realm"
-    if type(root.activeProfile) == "string" and root.profiles[root.activeProfile] then
-        root.profileKeys[key] = root.activeProfile
+    -- lastProfile / activeProfile only. profileKeys is a hint, never the load source.
+    if type(root.lastProfile) == "string" and root.profiles[root.lastProfile] then
+        root.activeProfile = root.lastProfile
+        BindKey(root, key, root.activeProfile)
         return root.activeProfile
     end
-    local name = root.profileKeys[key]
-    if type(name) == "string" and root.profiles[name] then
-        root.activeProfile = name
-        return name
+    if type(root.activeProfile) == "string" and root.profiles[root.activeProfile] then
+        root.lastProfile = root.activeProfile
+        BindKey(root, key, root.activeProfile)
+        return root.activeProfile
     end
     root.activeProfile = "Default"
-    root.profileKeys[key] = "Default"
+    root.lastProfile = "Default"
+    BindKey(root, key, "Default")
     return "Default"
 end
 
@@ -646,20 +816,25 @@ function DB.ApplySnap(points)
 end
 
 function DB.CaptureAndMaybeSnap(force)
-    local points = UF.Compat and UF.Compat.CaptureBlizzard and UF.Compat.CaptureBlizzard() or {}
     local profile = DB.Get()
-    local retailFirst = UF.Compat and UF.Compat.IsRetail and UF.Compat.IsRetail() and profile.retailSnap ~= true
-    if force or (profile.layoutVersion or 1) < 2 or retailFirst then
-        DB.ApplySnap(points)
-        if (profile.layoutVersion or 1) < 2 then
-            profile.layoutVersion = 2
-        end
-        if retailFirst then
+    -- Forever is Mainline (IsRetail), but it is not a first-time Retail install.
+    -- Never overwrite a saved layout on /reload or login. Snap only on a true
+    -- first run, or when the player clicks Snap.
+    if not force then
+        if profile.layoutReady == true or (profile.layoutVersion or 1) >= 2 then
+            profile.layoutReady = true
             profile.retailSnap = true
+            return false
         end
-        return true
     end
-    return false
+    local points = UF.Compat and UF.Compat.CaptureBlizzard and UF.Compat.CaptureBlizzard() or {}
+    DB.ApplySnap(points)
+    if (profile.layoutVersion or 1) < 2 then
+        profile.layoutVersion = 2
+    end
+    profile.layoutReady = true
+    profile.retailSnap = true
+    return true
 end
 
 function DB.Switch(name)
@@ -671,8 +846,9 @@ function DB.Switch(name)
         return false, "No profile named " .. name .. "."
     end
     local key = UF.Compat and UF.Compat.CharacterKey and UF.Compat.CharacterKey() or "Unknown - Realm"
-    root.profileKeys[key] = name
     root.activeProfile = name
+    root.lastProfile = name
+    BindKey(root, key, name)
     if UF.ApplyProfile then
         UF.ApplyProfile(root.profiles[name])
     end
@@ -693,8 +869,9 @@ function DB.SaveAs(name)
     local root = DB.Root()
     root.profiles[name] = CopyTable(DB.Get())
     local key = UF.Compat and UF.Compat.CharacterKey and UF.Compat.CharacterKey() or "Unknown - Realm"
-    root.profileKeys[key] = name
     root.activeProfile = name
+    root.lastProfile = name
+    BindKey(root, key, name)
     return true, "Saved profile " .. name .. "."
 end
 
@@ -793,8 +970,9 @@ function DB.ApplyExportTable(data, name)
     local root = DB.Root()
     root.profiles[name] = profile
     local key = UF.Compat and UF.Compat.CharacterKey and UF.Compat.CharacterKey() or "Unknown - Realm"
-    root.profileKeys[key] = name
     root.activeProfile = name
+    root.lastProfile = name
+    BindKey(root, key, name)
     if UF.ApplyProfile then
         UF.ApplyProfile(profile)
     end

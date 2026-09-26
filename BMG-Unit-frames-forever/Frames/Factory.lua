@@ -1037,17 +1037,65 @@ local function Paint(frame)
     end
 end
 
+local function Cursor()
+    if not GetCursorPosition then
+        return nil, nil
+    end
+    local x, y = GetCursorPosition()
+    if UF.Compat and UF.Compat.CanUseNumber then
+        if not UF.Compat.CanUseNumber(x) or not UF.Compat.CanUseNumber(y) then
+            return nil, nil
+        end
+    elseif type(x) ~= "number" or type(y) ~= "number" then
+        return nil, nil
+    end
+    local scale = 1
+    if UIParent and UIParent.GetEffectiveScale then
+        scale = UIParent:GetEffectiveScale() or 1
+    end
+    if type(scale) ~= "number" or scale == 0 then
+        scale = 1
+    end
+    return x / scale, y / scale
+end
+
 local function SavePos(frame)
     local cfg = UF.DB.Get().frames[frame.saveId]
     if type(cfg) ~= "table" then
         return
     end
     local mover = frame.mover or frame
-    local point, _, _, x, y = mover:GetPoint(1)
-    cfg.point = point or "CENTER"
-    cfg.x = x or 0
-    cfg.y = y or 0
-    cfg.scale = mover:GetScale() or 1
+    local point, x, y
+    if UF.DB and UF.DB.ReadMoverPoint then
+        point, x, y = UF.DB.ReadMoverPoint(mover)
+    else
+        point, _, _, x, y = mover:GetPoint(1)
+    end
+    if not point and frame._dragSavedX then
+        local cx, cy = Cursor()
+        if cx and frame._dragCursorX then
+            point = frame._dragSavedPoint or cfg.point or "BOTTOMLEFT"
+            x = (frame._dragSavedX or 0) + (cx - frame._dragCursorX)
+            y = (frame._dragSavedY or 0) + (cy - frame._dragCursorY)
+        end
+    end
+    if UF.DB and UF.DB.StorePoint then
+        UF.DB.StorePoint(cfg, point, x, y, mover:GetScale())
+    else
+        if type(point) == "string" then
+            cfg.point = point
+        end
+        if type(x) == "number" then
+            cfg.x = x
+        end
+        if type(y) == "number" then
+            cfg.y = y
+        end
+        local scale = mover:GetScale()
+        if type(scale) == "number" then
+            cfg.scale = scale
+        end
+    end
 end
 
 function Factory.SetLocked(frame, locked)
@@ -1182,12 +1230,21 @@ function Factory.Create(opts)
             return
         end
         local mover = self.mover or self
+        local cfg = UF.DB.Get().frames[self.saveId]
+        local cx, cy = Cursor()
+        self._dragCursorX = cx
+        self._dragCursorY = cy
+        self._dragSavedX = cfg and cfg.x
+        self._dragSavedY = cfg and cfg.y
+        self._dragSavedPoint = cfg and cfg.point
         mover:StartMoving()
     end)
     frame:SetScript("OnDragStop", function(self)
         local mover = self.mover or self
         mover:StopMovingOrSizing()
         SavePos(self)
+        self._dragCursorX, self._dragCursorY = nil, nil
+        self._dragSavedX, self._dragSavedY, self._dragSavedPoint = nil, nil, nil
     end)
     frame:EnableMouseWheel(true)
     frame:SetScript("OnMouseWheel", function(self, delta)

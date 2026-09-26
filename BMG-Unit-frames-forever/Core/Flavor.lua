@@ -1,6 +1,6 @@
 --[[
-  BMG Unit Frames - WoW Forever package identity
-  Mainline UI family (Camelot / Forever), separate folder and SavedVariables.
+  BMG Unit Frames — WoW Forever package identity
+  Own folder and SavedVariables. Do not install into _retail_.
   Lua 5.1 only.
 ]]
 

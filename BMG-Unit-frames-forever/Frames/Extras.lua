@@ -166,9 +166,19 @@ local function SaveCastPos(frame)
     extra.cast = extra.cast or {}
     extra.cast.attach = "FREE"
     local point, _, _, x, y = frame.Cast:GetPoint(1)
-    extra.cast.point = point or "CENTER"
-    extra.cast.x = x or 0
-    extra.cast.y = y or 0
+    if UF.DB and UF.DB.StorePoint then
+        UF.DB.StorePoint(extra.cast, point, x, y)
+    else
+        if type(point) == "string" then
+            extra.cast.point = point
+        end
+        if type(x) == "number" then
+            extra.cast.x = x
+        end
+        if type(y) == "number" then
+            extra.cast.y = y
+        end
+    end
     extra.cast.w = math.floor((frame.Cast:GetWidth() or 200) + 0.5)
     extra.cast.h = math.floor((frame.Cast:GetHeight() or 12) + 0.5)
 end

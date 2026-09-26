@@ -26,7 +26,7 @@ Commit, push, and GitHub releases happen **only when asked**.
 | [Accessibility Helper](Accessibility-Helper.md) | Shipped | 3.6.5 |
 | [AllQuest](AllQuest.md) | Shipped | 1.1.3 |
 | [AllQuest - WoW Forever](AllQuest-Forever.md) | Shipped | 1.0.0 |
-| [BMG Unit Frames](BMG-Unit-Frames.md) | Shipped (Retail + Era + Anniversary + MoP + Forever) | 1.1.3 Forever; 1.1.1 others |
+| [BMG Unit Frames](BMG-Unit-Frames.md) | Shipped (Retail + Era + Anniversary + MoP + Forever) | 1.2.1 Forever; 1.1.1 others |
 | [Cooldown Assist](Cooldown-Assist.md) | Shipped | 1.1.0 |
 | [Exploration](Exploration.md) | Shipped | 2.0.2 |
 | [FPSDiag](FPSDiag.md) | Shipped | 0.3.1 |

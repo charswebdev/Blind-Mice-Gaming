@@ -782,27 +782,36 @@ local function SaveWindowPos()
     local p = Profile()
     p.window = p.window or {}
     local point, _, _, x, y = frame:GetPoint(1)
-    p.window.point = point or "CENTER"
-    p.window.x = x or 0
-    p.window.y = y or 0
+    if UF.DB and UF.DB.StorePoint then
+        UF.DB.StorePoint(p.window, point, x, y)
+    else
+        if type(point) == "string" then
+            p.window.point = point
+        end
+        if type(x) == "number" then
+            p.window.x = x
+        end
+        if type(y) == "number" then
+            p.window.y = y
+        end
+    end
 end
 
 local function FillExport()
     CloseMenus()
-    local code = UF.Share.Export()
-    frame.code:SetText(code)
-    frame.code:SetFocus()
-    frame.code:HighlightText()
-    local copied = UF.Compat.CopyToClipboard(code)
-    Speak(copied and "Export code copied to the clipboard." or "Export code ready. Press control C to copy.")
+    if UF.ShareDialog and UF.ShareDialog.ShowExport then
+        UF.ShareDialog.ShowExport()
+        return
+    end
 end
 
 local function DoImport()
     CloseMenus()
-    local ok, msg = UF.Share.Import(frame.code:GetText(), frame.profileBox:GetText())
-    Speak(msg)
-    print((ok and "|cff00ff00" or "|cffff6600") .. "[BMG Unit Frames]|r " .. msg)
-    Refresh()
+    if UF.ShareDialog and UF.ShareDialog.ShowImport then
+        local name = frame and frame.profileBox and frame.profileBox:GetText() or nil
+        UF.ShareDialog.ShowImport(nil, name)
+        return
+    end
 end
 
 local function SelectUnit(id)
@@ -908,7 +917,7 @@ local function Build()
 
     local title = UF.Widgets.Label(frame, 18, UF.Theme.accent[1], UF.Theme.accent[2], UF.Theme.accent[3])
     title:SetPoint("LEFT", logo, "RIGHT", 10, 0)
-    title:SetText("BMG Unit Frames")
+    title:SetText((UF.Flavor and UF.Flavor.title) or "BMG Unit Frames")
 
     local sub = UF.Widgets.Label(frame, 12, 0.62, 0.62, 0.64)
     sub:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -3)
@@ -925,7 +934,7 @@ local function Build()
     local foot = CreateFrame("Frame", nil, frame, tmpl)
     foot:SetPoint("BOTTOMLEFT", 16, 12)
     foot:SetPoint("BOTTOMRIGHT", -16, 12)
-    foot:SetHeight(104)
+    foot:SetHeight(88)
     UF.Widgets.Paint(foot, 0.05, 0.05, 0.06, 1, 0.28, 0.28, 0.30)
 
     local nav = CreateFrame("Frame", nil, frame, tmpl)
@@ -1669,20 +1678,12 @@ local function Build()
     local exportBtn = UF.Widgets.Button(foot, "Export", 72, 26)
     exportBtn:SetPoint("LEFT", loadBtn, "RIGHT", 6, 0)
     exportBtn:SetScript("OnClick", FillExport)
-    frame.code = CreateFrame("EditBox", FRAME_NAME .. "Code", foot)
-    frame.code:SetPoint("BOTTOMLEFT", 12, 22)
-    frame.code:SetPoint("BOTTOMRIGHT", -12, 22)
-    frame.code:SetHeight(20)
-    frame.code:SetAutoFocus(false)
-    frame.code:SetFontObject(ChatFontNormal)
-    frame.code:SetTextColor(0.95, 0.90, 0.70, 1)
-    frame.code:SetScript("OnEnterPressed", DoImport)
-    frame.code:SetScript("OnEscapePressed", function(self)
-        self:ClearFocus()
-    end)
+    local importBtn = UF.Widgets.Button(foot, "Import", 72, 26)
+    importBtn:SetPoint("LEFT", exportBtn, "RIGHT", 6, 0)
+    importBtn:SetScript("OnClick", DoImport)
     local help = UF.Widgets.Label(foot, 11, 0.55, 0.55, 0.58)
-    help:SetPoint("BOTTOMLEFT", 12, 6)
-    help:SetText("/bmguf    Key Bindings: BMG Unit Frames    Esc closes")
+    help:SetPoint("BOTTOMLEFT", 12, 8)
+    help:SetText("/bmguf    Export and Import open a popup.    Esc closes")
 
     frame:SetScript("OnShow", Refresh)
     Refresh()
@@ -1710,8 +1711,21 @@ function Config.Open()
 end
 
 function Config.ShowExport()
+    if UF.ShareDialog and UF.ShareDialog.ShowExport then
+        UF.ShareDialog.ShowExport()
+        return
+    end
     Config.Open()
     FillExport()
+end
+
+function Config.ShowImport(code, name)
+    if UF.ShareDialog and UF.ShareDialog.ShowImport then
+        UF.ShareDialog.ShowImport(code, name)
+        return
+    end
+    Config.Open()
+    DoImport()
 end
 
 function Config.Refresh()

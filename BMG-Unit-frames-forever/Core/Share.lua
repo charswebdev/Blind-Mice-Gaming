@@ -240,10 +240,14 @@ function Share.Decode(code)
         return nil, "That code is incomplete."
     end
     local payload = DecodeBase64(b64)
-    if Checksum(payload) ~= sum then
-        return nil, "That code is damaged. Copy it again."
-    end
     local data, _, err = Decode(payload, 1)
+    local sumOk = string.upper(Checksum(payload)) == string.upper(sum)
+    if type(data) == "table" and data.frames then
+        return data
+    end
+    if not sumOk then
+        return nil, "That code was cut off (" .. tostring(#code) .. " characters). Click Export, then Copy, and paste the whole code."
+    end
     if err or type(data) ~= "table" then
         return nil, err or "That code could not be read."
     end

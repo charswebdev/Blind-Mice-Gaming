@@ -31,7 +31,7 @@ local function PrintHelp()
     print("|cff00ff00/bmguf read|r speak the current target")
     print("|cff00ff00/bmguf read player|r speak a named unit")
     print("|cff00ff00/bmguf snap|r place frames on your current Blizzard positions")
-    print("|cff00ff00Key Bindings|r → BMG Unit Frames → Open settings")
+    print("|cff00ff00Key Bindings|r → BMGUF → Open settings")
 end
 
 local function HandleSlash(msg)
@@ -69,10 +69,18 @@ local function HandleSlash(msg)
         return
     end
     if cmd == "export" then
+        if UF.ShareDialog and UF.ShareDialog.ShowExport then
+            UF.ShareDialog.ShowExport()
+            return
+        end
         UF.Config.ShowExport()
         return
     end
     if cmd == "import" then
+        if UF.ShareDialog and UF.ShareDialog.ShowImport then
+            UF.ShareDialog.ShowImport(rest ~= "" and rest or nil)
+            return
+        end
         local ok, text = UF.Share.Import(rest)
         UF.Speech.Say(text)
         print((ok and "|cff00ff00" or "|cffff6600") .. "[BMG Unit Frames]|r " .. text)
@@ -135,25 +143,31 @@ local function Start()
     end
     local iface = UF.Compat.interface or "?"
     local title = (UF.Flavor and UF.Flavor.title) or "BMG Unit Frames"
-    local version = "1.1.1"
+    local version = "1.2.1"
     if C_AddOns and C_AddOns.GetAddOnMetadata then
         version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version") or version
     elseif GetAddOnMetadata then
         version = GetAddOnMetadata(ADDON_NAME, "Version") or version
     end
-    print("|cff00ff00[" .. title .. "]|r v" .. tostring(version) .. " loaded. Interface: " .. tostring(iface))
-    print("|cff00ff00[" .. title .. "]|r |cff00ff00/bmguf|r settings · Key Bindings: Open settings")
+    local profileName = UF.DB.CurrentName and UF.DB.CurrentName() or "Default"
+    print("|cff00ff00[" .. title .. "]|r v" .. tostring(version) .. " loaded. Interface: " .. tostring(iface) .. ". Profile: " .. tostring(profileName))
+    print("|cff00ff00[" .. title .. "]|r |cff00ff00/bmguf|r settings · Key Bindings: BMGUF")
 end
 
 local boot = CreateFrame("Frame")
 boot:RegisterEvent("ADDON_LOADED")
 boot:RegisterEvent("PLAYER_LOGIN")
+boot:RegisterEvent("PLAYER_LOGOUT")
 boot:RegisterEvent("PLAYER_ENTERING_WORLD")
 boot:RegisterEvent("PLAYER_REGEN_ENABLED")
 boot:RegisterEvent("PLAYER_TARGET_CHANGED")
 boot:SetScript("OnEvent", function(_, event, name)
     if event == "ADDON_LOADED" and name == ADDON_NAME then
         UF.DB.Init()
+    elseif event == "PLAYER_LOGOUT" then
+        if UF.DB and UF.DB.Flush then
+            UF.DB.Flush()
+        end
     elseif event == "PLAYER_LOGIN" then
         if UF.DB.BindCharacter then
             UF.DB.BindCharacter()
@@ -179,6 +193,9 @@ boot:SetScript("OnEvent", function(_, event, name)
             UF.HideBlizzard.Apply()
         end
     elseif event == "PLAYER_TARGET_CHANGED" then
+        if not (UF.DB and UF.DB.Ready and UF.DB.Ready()) then
+            return
+        end
         local profile = UF.DB and UF.DB.Get and UF.DB.Get()
         if profile and profile.speech and profile.speech.targetChange then
             if UF.Frames and UF.Frames.Read then

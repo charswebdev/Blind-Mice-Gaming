@@ -38,18 +38,10 @@ local function PlaceMover(mover, id)
     mover:SetScale(cfg.scale or 1)
 end
 
-local function SizeFrame(frame, w, h)
-    if UF.Factory and UF.Factory.SetFrameSize then
-        UF.Factory.SetFrameSize(frame, w, h)
-    elseif frame then
-        frame:SetSize(w, h)
-    end
-end
-
 local function Header(name, id, w, h)
     local tmpl = UF.Compat.BackdropTemplate()
     local f = CreateFrame("Frame", name, UIParent, tmpl)
-    SizeFrame(f, w, h)
+    f:SetSize(w, h)
     f:SetMovable(true)
     f:SetClampedToScreen(true)
     f:EnableMouse(false)
@@ -177,7 +169,7 @@ function Frames.Create()
             w = pw,
             h = ph,
         })
-        SizeFrame(child, pw, ph)
+        child:SetSize(pw, ph)
     end
     Frames.RelayoutParty()
 
@@ -270,7 +262,7 @@ local function PlaceGrown(child, header, index, w, h, gap, growth)
     if not child then
         return
     end
-    SizeFrame(child, w, h)
+    child:SetSize(w, h)
     child.cfgH = h
     child:ClearAllPoints()
     if growth == "UP" then
@@ -302,7 +294,7 @@ function Frames.RelayoutParty()
     local showYou = UF.DB.Get().showPlayerInParty ~= false
     local count = showYou and 5 or 4
     local gap = 6
-    SizeFrame(header, HeaderSize(count, w, h, gap, growth))
+    header:SetSize(HeaderSize(count, w, h, gap, growth))
     local idx = 0
     local you = Frames.byId.partyplayer
     if you then
@@ -331,14 +323,14 @@ function Frames.RelayoutRaid()
     local gapX, gapY = 4, 2
     local groups, rows = 8, 5
     if growth == "LEFT" or growth == "RIGHT" then
-        SizeFrame(header, (rows * (w + gapX)) - gapX, (groups * (h + gapY)) - gapY)
+        header:SetSize((rows * (w + gapX)) - gapX, (groups * (h + gapY)) - gapY)
     else
-        SizeFrame(header, (groups * (w + gapX)) - gapX, (rows * (h + gapY)) - gapY)
+        header:SetSize((groups * (w + gapX)) - gapX, (rows * (h + gapY)) - gapY)
     end
     for i = 1, 40 do
         local child = Frames.byId["raid" .. i]
         if child then
-            SizeFrame(child, w, h)
+            child:SetSize(w, h)
             child.cfgH = h
             child:ClearAllPoints()
             local group = math.floor((i - 1) / 5)
@@ -365,7 +357,7 @@ function Frames.RelayoutArena()
     local w, h = UnitSize("arena")
     local growth = GrowthOf("arena")
     local gap = 4
-    SizeFrame(header, HeaderSize(5, w, h, gap, growth))
+    header:SetSize(HeaderSize(5, w, h, gap, growth))
     for i = 1, 5 do
         PlaceGrown(Frames.byId["arena" .. i], header, i - 1, w, h, gap, growth)
     end
@@ -466,7 +458,7 @@ function Frames.Apply(profile)
         local frame = Frames.list[i]
         local w, h = SizeOf(frame.saveId or frame.id)
         if w and h and not UF.Compat.InCombat() then
-            SizeFrame(frame, w, h)
+            frame:SetSize(w, h)
             frame.cfgH = h
         end
         UF.Factory.SetLocked(frame, locked)

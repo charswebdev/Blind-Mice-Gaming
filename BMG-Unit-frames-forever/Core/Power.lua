@@ -206,6 +206,46 @@ local function SafeNum(v)
     return 0
 end
 
+local function IsSecret(v)
+    return UF.Compat and UF.Compat.IsSecretValue and UF.Compat.IsSecretValue(v) == true
+end
+
+local function CanUseNum(v)
+    return UF.Compat and UF.Compat.CanUseNumber and UF.Compat.CanUseNumber(v) == true
+end
+
+-- Forever / Midnight: never `if max` or `max > 0` on UnitPowerMax. Secrets crash.
+local function HasPositiveMax(max)
+    if UF.Compat and UF.Compat.IsUsablePositive then
+        return UF.Compat.IsUsablePositive(max) == true
+    end
+    return type(max) == "number" and max > 0
+end
+
+local function HasPowerMax(max)
+    if max == nil then
+        return false
+    end
+    if CanUseNum(max) then
+        return max > 0
+    end
+    return true
+end
+
+local function IsDiscreteMax(max)
+    return CanUseNum(max) and max > 0 and max <= 10
+end
+
+local function PowerIdsDiffer(a, b)
+    if a == nil or b == nil then
+        return true
+    end
+    if IsSecret(a) or IsSecret(b) then
+        return true
+    end
+    return a ~= b
+end
+
 local HasMax
 
 local function SafePower(unit, ptype)
@@ -261,22 +301,35 @@ local function Combo(unit)
     local cur, max = 0, 0
     if id then
         cur, max = SafePower(unit, id)
-        cur = cur or 0
-        max = max or 0
+        if cur == nil then
+            cur = 0
+        end
+        if max == nil then
+            max = 0
+        end
     end
     local mine = unit == "player" or unit == "target" or unit == "focus" or unit == "targettarget"
     if mine and GetComboPoints then
         local dest = (unit == "focus" and "focus") or "target"
         local ok, n = pcall(GetComboPoints, "player", dest)
-        if ok and type(n) == "number" and n > cur then
-            cur = n
+        if ok and type(n) == "number" then
+            if CanUseNum(cur) then
+                if n > cur then
+                    cur = n
+                end
+            elseif not IsSecret(cur) then
+                cur = n
+            end
         end
     end
-    if max < 1 then
-        if mine or cur > 0 then
-            max = MAX_COMBO_POINTS or 5
-        else
-            return nil
+    if not IsSecret(max) then
+        local usableMax = CanUseNum(max) and max or 0
+        if usableMax < 1 then
+            if mine or HasPositiveMax(cur) then
+                max = MAX_COMBO_POINTS or 5
+            else
+                return nil
+            end
         end
     end
     return id or 4, cur, max, "Combo"
@@ -346,7 +399,7 @@ function Power.Primary(unit)
         r = r,
         g = g,
         b = b,
-        discrete = UF.Compat and UF.Compat.CanUseNumber and UF.Compat.CanUseNumber(max) and max > 0 and max <= 10,
+        discrete = IsDiscreteMax(max),
         pct = pct,
         secret = UF.Compat and UF.Compat.IsSecretValue and (UF.Compat.IsSecretValue(cur) or UF.Compat.IsSecretValue(max) or UF.Compat.IsSecretValue(pct)),
     }
@@ -365,7 +418,7 @@ function Power.Secondary(unit)
             local token = CLASS_ALT[class][i]
             if token == "RUNES" then
                 local ok, cur, max, id = RuneCount(unit)
-                if ok and id ~= primary then
+                if ok and PowerIdsDiffer(id, primary) then
                     local r, g, b = Power.Color("RUNES")
                     return {
                         id = id,
@@ -381,17 +434,21 @@ function Power.Secondary(unit)
                 end
             elseif token == "COMBO_POINTS" then
                 local id, cur, max, name = Combo(unit)
-                if (not max or max < 1) and class == "ROGUE" then
+                if class == "ROGUE" and not HasPositiveMax(max) and not IsSecret(max) then
                     max = MAX_COMBO_POINTS or 5
                     id = id or 4
                     name = name or "Combo"
                 end
-                if id and max and max > 0 and token ~= primaryToken then
+                if id and HasPowerMax(max) and (IsSecret(primaryToken) or token ~= primaryToken) then
                     local r, g, b = Power.Color("COMBO_POINTS")
+                    local shownCur = cur
+                    if shownCur == nil then
+                        shownCur = 0
+                    end
                     return {
                         id = id,
                         token = "COMBO_POINTS",
-                        cur = cur or 0,
+                        cur = shownCur,
                         max = max,
                         name = name,
                         r = r,
@@ -402,13 +459,15 @@ function Power.Secondary(unit)
                 end
             else
                 local ok, cur, max, id = HasMax(unit, token)
-                if (not ok or not max or max < 1) and PIP_MAX[token] and (unit == "player" or unit == "target" or unit == "focus") then
+                if (not ok or not HasPositiveMax(max)) and not IsSecret(max) and PIP_MAX[token] and (unit == "player" or unit == "target" or unit == "focus") then
                     id = id or IdOf(token)
                     max = PIP_MAX[token]
-                    cur = cur or 0
+                    if cur == nil then
+                        cur = 0
+                    end
                     ok = id ~= nil
                 end
-                if ok and id ~= primary then
+                if ok and PowerIdsDiffer(id, primary) then
                     local r, g, b = Power.Color(token)
                     return {
                         id = id,
@@ -419,7 +478,7 @@ function Power.Secondary(unit)
                         r = r,
                         g = g,
                         b = b,
-                        discrete = max <= 10,
+                        discrete = IsDiscreteMax(max),
                     }
                 end
             end
@@ -429,7 +488,7 @@ function Power.Secondary(unit)
     local altId = IdOf("ALTERNATE")
     if altId then
         local cur, max = SafePower(unit, altId)
-        if max and max > 0 and altId ~= primary then
+        if HasPowerMax(max) and PowerIdsDiffer(altId, primary) then
             local r, g, b = Power.Color("ALTERNATE")
             return {
                 id = altId,
@@ -440,7 +499,7 @@ function Power.Secondary(unit)
                 r = r,
                 g = g,
                 b = b,
-                discrete = max <= 10,
+                discrete = IsDiscreteMax(max),
             }
         end
     end
