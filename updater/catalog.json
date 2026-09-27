@@ -102,6 +102,16 @@
       "saved": ["AccessibilityHelperDB"]
     },
     {
+      "id": "AccessibilityHelper-forever",
+      "name": "Accessibility Helper - WoW Forever",
+      "folders": ["AccessibilityHelper-forever"],
+      "version": "1.0.2",
+      "updated": "2026-09-27",
+      "interfaces": [16002, 16001, 16000, 121500, 121000],
+      "saved": ["AccessibilityHelperForeverDB"],
+      "client": "forever"
+    },
+    {
       "id": "AllQuest",
       "name": "AllQuest",
       "folders": [

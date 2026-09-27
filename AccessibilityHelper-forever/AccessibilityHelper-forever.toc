@@ -1,0 +1,39 @@
+## Interface: 16002, 16001, 16000, 121500, 121000
+## Title: Accessibility Helper - WoW Forever
+## Version: 1.0.2
+## Notes: TTS accessibility helper for WoW Forever. Tooltip reader is on by default. Other readers stay off until you turn them on in /ah.
+## Author: Blind Mice Gaming
+## Category-enUS: Blind Mice Gaming
+## IconTexture: Interface\AddOns\AccessibilityHelper-forever\Media\Icon.png
+## OptionalDeps: TomTom, ZygorGuidesViewer, MountSpy, QuestCompletist, RareScanner, SilverDragon, HandyNotes, Zugzug, ZugZug, Titan, TitanClassic, LibSharedMedia-3.0, SharedMedia
+## SavedVariables: AccessibilityHelperForeverDB
+## LoadSavedVariablesFirst: 1
+
+Core\Compat.lua
+Core\DB.lua
+Core\ChatText.lua
+Core\Speech.lua
+Core\Sounds.lua
+Core\Alerts.lua
+Core\Help.lua
+Features\ChatChannels.lua
+Features\AddonChat.lua
+UI\Settings.lua
+UI\MinimapButton.lua
+Features\Tooltips.lua
+Features\UnderMouse.lua
+Features\Cursor.lua
+Features\Waypoints.lua
+Features\Distance.lua
+Features\Facing.lua
+Features\Location.lua
+Features\UIErrors.lua
+Features\PlayerState.lua
+Features\BNFriends.lua
+Features\Progress.lua
+Features\Combat.lua
+Features\Casts.lua
+Features\Loot.lua
+Features\Quests.lua
+Core\Bindings.lua
+Core\Init.lua
