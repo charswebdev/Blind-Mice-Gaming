@@ -1,8 +1,8 @@
 ## Interface: 16002, 16001, 16000, 121500, 121000
 ## Title: Light Paws Loadouts - WoW Forever
-## Notes: Save Classic talent builds for WoW Forever. |cffffcc00/lpl|r to open.
+## Notes: Save talents, action bars, key bindings, and equipment for WoW Forever. |cffffcc00/lpl|r to open.
 ## Author: Blind Mice Gaming
-## Version: 1.2.7
+## Version: 1.4.3
 ## Category: Blind Mice Gaming
 ## Category-enUS: Blind Mice Gaming
 ## IconTexture: Interface\AddOns\lpl-forever\icons\lpl_32.blp
@@ -12,6 +12,12 @@
 
 lpl.lua
 Core\DB.lua
+Core\Plain.lua
+Modules\Vault\SetStore.lua
+Modules\ActionBars\ActionBarAPI.lua
+Modules\Keybinds\KeybindAPI.lua
+Modules\Equipment\EquipmentAPI.lua
+Modules\Vault\SectionUI.lua
 Modules\Talents\TalentAPI.lua
 Modules\Talents\TalentStore.lua
 Modules\Talents\TalentFrame.lua

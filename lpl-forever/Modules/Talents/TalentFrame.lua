@@ -396,6 +396,9 @@ local function ShowPage(page)
     frame.editorPage:SetShown(page == "editor")
     frame.importPage:SetShown(page == "import")
     frame.laterPage:SetShown(page == "later")
+    if LPL.Sections then
+        LPL.Sections:SetShown(page == "section")
+    end
 end
 
 local CLASS_LABEL = {
@@ -1274,6 +1277,14 @@ local function ShowEditor(build, isNew)
 end
 
 function UI:OpenSection(id, label)
+    if id == "actionbars" or id == "keybinds" or id == "equipment" then
+        SetTabActive(id)
+        ShowPage("section")
+        if LPL.Sections then
+            LPL.Sections:Open(id)
+        end
+        return
+    end
     if id == "talents" then
         ShowList()
         return
@@ -1361,7 +1372,7 @@ function UI:LoadFromCharacter()
     draft.totalPoints = live.totalPoints
     draft.classFile = live.classFile
     draft.classID = live.classID
-    Speak("Loaded talents from your character.")
+    Speak("Updated this build from your character.")
     PlaceNodes()
 end
 
@@ -1682,7 +1693,7 @@ local function CreateContent(parent)
     saveButton:SetScript("OnClick", function()
         UI:SaveDraft()
     end)
-    local loadButton = BarButton(treeBar, "Load from character", 160)
+    local loadButton = BarButton(treeBar, "Update from current character", 230)
     loadButton:SetPoint("LEFT", saveButton, "RIGHT", 8, 0)
     loadButton:SetScript("OnClick", function()
         UI:LoadFromCharacter()
@@ -1739,6 +1750,10 @@ local function CreateContent(parent)
     laterLabel:SetPoint("CENTER")
     laterLabel:SetTextColor(TEXT[1], TEXT[2], TEXT[3])
     frame.laterLabel = laterLabel
+
+    if LPL.Sections then
+        LPL.Sections:Attach(host)
+    end
 end
 
 local function Ensure()
@@ -1866,5 +1881,8 @@ end
 function UI:OnWorld()
     if frame and frame:IsShown() and mode == "list" then
         RefreshList()
+    end
+    if LPL.Sections then
+        LPL.Sections:OnWorld()
     end
 end
