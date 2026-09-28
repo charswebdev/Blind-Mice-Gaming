@@ -2,8 +2,8 @@
 
 | Field | Value |
 |-------|--------|
-| Status | **Shipped** (phase 3 bars, keybinds, gear) |
-| Version | **1.4.3** |
+| Status | **Shipped** (phase 4 Edit Mode and loadouts) |
+| Version | **1.4.8** |
 | Type | In-game composite loadout vault |
 | Folder | `lpl-forever/` |
 | Clients | `_classic_beta_` (ForeverBeta) |
@@ -15,7 +15,9 @@
 
 Phase 2 uses the same window layout as the other Light Paws Loadouts packages: title bar, centered paw, lock, close, icon rail, saved-build list, and a tree editor with a bottom bar. Nothing opens on login. `/lpl` opens the window.
 
-Phase 3, started in 1.2.8, turns on Action Bars, Keybinding Profiles, and Equipment. A new set opens empty. The empty Action Bars list shows only the center **New Action Bar Set** button. The editor uses the same rows as the other Light Paws packages: gold-bordered slots, a lock on each bar, and the pet bar. Drag a spell, item, or macro from the spellbook, the macro window, or your bars onto a slot. Drag one slot onto another to move it. Drag a slot onto your action bar to place that spell, item, or macro there. The saved slot stays in the set. **Update from current character** copies the spells, items, and macros currently on your bars. **Update from current character** copies the bars, keys, or gear on this character. Save stores that snapshot, and Apply puts it back. Right-click a slot to clear it. Shift+left-click ignores that one slot. The row lock ignores the whole bar. Either way, each ignored slot shows the red ignore icon. Apply for bars places spells, items, and macros and clears slots the snapshot left empty. The pet bar is shown and saved, and Apply does not change the live pet bar. Apply for keys writes the snapshot onto both the account and character binding sets. The key list shows every command in collapsible categories, with two gold-bordered key boxes. An empty box says Not Bound. Click a box and press a key to bind it. Apply for gear equips items that are in your bags and leaves shirt and tabard alone. Shift+left-click a gear slot to ignore it. The slot shows the red ignore icon, and Apply leaves that worn item alone. Shift+left-click again to stop ignoring it. An empty set can be saved and applied. Applying an empty action bar set clears those bars, an empty key profile clears your bindings, and an empty gear set unequips those slots. The updater lists 1.4.3.
+Phase 3, started in 1.2.8, turns on Action Bars, Keybinding Profiles, and Equipment. A new set opens empty. The empty Action Bars list shows only the center **New Action Bar Set** button. The editor uses the same rows as the other Light Paws packages: gold-bordered slots, a lock on each bar, and the pet bar. Drag a spell, item, or macro from the spellbook, the macro window, or your bars onto a slot. Drag one slot onto another to move it. Drag a slot onto your action bar to place that spell, item, or macro there. The saved slot stays in the set. **Update from current character** copies the spells, items, and macros currently on your bars. **Update from current character** copies the bars, keys, or gear on this character. Save stores that snapshot, and Apply puts it back. Right-click a slot to clear it. Shift+left-click ignores that one slot. The row lock ignores the whole bar. Either way, each ignored slot shows the red ignore icon. Apply for bars places spells, items, and macros and clears slots the snapshot left empty. The pet bar is shown and saved, and Apply does not change the live pet bar. Apply for keys writes the snapshot onto both the account and character binding sets. The key list shows every command in collapsible categories, with two gold-bordered key boxes. An empty box says Not Bound. Click a box and press a key to bind it. Apply for gear equips items that are in your bags and leaves shirt and tabard alone. Shift+left-click a gear slot to ignore it. The slot shows the red ignore icon, and Apply leaves that worn item alone. Shift+left-click again to stop ignoring it. An empty set can be saved and applied. Applying an empty action bar set clears those bars, an empty key profile clears your bindings, and an empty gear set unequips those slots. The rail does not include Cooldown Manager, Conditions, or Housing Blueprints. The updater lists 1.4.8.
+
+Phase 4, started in 1.4.5, turns on Edit Mode layouts and composite loadouts. A new layout has a paste box. Paste a Blizzard Edit Mode string there, or click **Update from current character** to read the custom layout active in Edit Mode. Apply puts that layout back on the screen. The saved layout string stays after `/reload`. A new loadout shows a dropdown for talents, action bars, keybindings, equipment, and Edit Mode. Open a dropdown to attach a saved set. **+** adds another link for that piece. **X** removes it. Apply uses the first link in each piece, the same way as the other Light Paws packages. **Update from current character** selects the sets that already match this character.
 
 Icons are this package’s own files in `lpl-forever/icons/` (98 files, copied from Retail `lpl/icons/` on 2026-09-26). The AddOns list icon is `Interface\AddOns\lpl-forever\icons\lpl_32.blp`. The window uses `lpl_64.blp` from that same folder. Do not point Forever at Retail `lpl\icons`. Do not install Retail `lpl/` into `_classic_beta_`.
 
@@ -25,7 +27,7 @@ Icons are this package’s own files in `lpl-forever/icons/` (98 files, copied f
 
 ## Development plan
 
-Phase 1 is the skeleton and the save test. Phase 2, shipped in 1.2.7, is Classic-style class talents (three trees, no hero talents). Phase 3, shipped in 1.4.3, is action bars, key bindings, and equipment as snapshots you can save and apply. Phases 4–5 (Edit Mode, remaining tabs) stay unstarted. Legacy trees are a separate account system, not the class talent tab. Desktop LPLM / LPTM Forever stay unassigned.
+Phase 1 is the skeleton and the save test. Phase 2, shipped in 1.2.7, is Classic-style class talents (three trees, no hero talents). Phase 3, shipped in 1.4.3, is action bars, key bindings, and equipment as snapshots you can save and apply. Phase 4, shipped in 1.4.8, is Edit Mode layouts and composite loadouts (talents, action bars, keybindings, equipment, and an Edit Mode layout). Phase 5, unstarted, is PvP talents, Macro Manager, Addon Sets, and Addons Manager. Cooldown Manager, Conditions, and Housing Blueprints are not part of this addon. Legacy trees are a separate account system, not the class talent tab. Desktop LPLM / LPTM Forever stay unassigned.
 
 ## Sources and data
 
@@ -45,4 +47,4 @@ The previous Forever package never reliably showed Edit Mode layouts after `/rel
 
 ## Open work
 
-- Phases 4–5 stay unstarted until asked. Phase 3 shipped in 1.4.3: action bars, keybinding profiles, and equipment. No hero talents. No private talent database. Desktop LPLM / LPTM Forever stay later.
+- Phase 4 shipped in 1.4.8: Edit Mode layouts and composite loadouts. Phase 5 (PvP talents, Macro Manager, Addon Sets, Addons Manager) stays unstarted until asked. Cooldown Manager, Conditions, and Housing Blueprints are not part of this addon. Phase 3 shipped in 1.4.3: action bars, keybinding profiles, and equipment. Build 1.4.4 removes those three rail icons. No hero talents. No private talent database. Desktop LPLM / LPTM Forever stay later.

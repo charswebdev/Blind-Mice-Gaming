@@ -98,6 +98,13 @@ function Store:Update(key, id, record, name, fallback)
     existing.scope = record.scope
     existing.petSlots = record.petSlots
     existing.ignored = record.ignored
+    if record.layoutString ~= nil or record.characterSpecific ~= nil then
+        existing.layoutString = LPL:PlainString(record.layoutString) or ""
+        existing.characterSpecific = record.characterSpecific ~= false
+    end
+    if type(record.links) == "table" then
+        existing.links = record.links
+    end
     return existing
 end
 

@@ -28,13 +28,10 @@ local TABS = {
     { id = "actionbars", label = "Action Bars", stem = "actionbars_64", bottom = false },
     { id = "keybinds", label = "Keybinding Profiles", stem = "keybinds_64", bottom = false },
     { id = "equipment", label = "Equipment", stem = "equipment_64", bottom = false },
-    { id = "cooldownmanager", label = "Cooldown Manager", stem = "cooldown_64", bottom = false },
     { id = "editmode", label = "Edit Mode", stem = "editmode_64", bottom = false },
-    { id = "conditions", label = "Conditions", stem = "conditions_64", bottom = false },
     { id = "macros", label = "Macro Manager", stem = "macros_64", bottom = false },
     { id = "addonsets", label = "Addon Sets", stem = "addonsets_64", bottom = false },
     { id = "addonsmanager", label = "Addons Manager", stem = "addons_64", bottom = false },
-    { id = "housing", label = "Housing Blueprints", stem = "housing_64", bottom = false },
     { id = "builds", label = "Import / Export", stem = "import_64", bottom = true },
     { id = "settings", label = "Settings", stem = "settings_64", bottom = true },
 }
@@ -1277,7 +1274,7 @@ local function ShowEditor(build, isNew)
 end
 
 function UI:OpenSection(id, label)
-    if id == "actionbars" or id == "keybinds" or id == "equipment" then
+    if id == "actionbars" or id == "keybinds" or id == "equipment" or id == "editmode" or id == "loadouts" then
         SetTabActive(id)
         ShowPage("section")
         if LPL.Sections then

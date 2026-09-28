@@ -50,6 +50,28 @@ local SECTIONS = {
             return LPL.EquipmentAPI
         end,
     },
+    editmode = {
+        title = "Saved Edit Mode Layouts",
+        hint = "Green dot = the layout on your screen. Double-click a layout to edit it.",
+        detail = "Paste a Blizzard Edit Mode string in the box, or click Update from current character. Apply puts that layout on your screen. The saved layout stays after /reload.",
+        newLabel = "New Layout",
+        emptyLabel = "New Edit Mode Layout",
+        noun = "Edit Mode layout",
+        api = function()
+            return LPL.EditModeAPI
+        end,
+    },
+    loadouts = {
+        title = "Saved Loadouts",
+        hint = "Green dot = the first link in each piece matches this character. Double-click a loadout to edit it.",
+        detail = "Pick a saved set from each dropdown. + adds another link. X removes that link. Apply uses the first link in each piece. Update from current character selects the sets that already match.",
+        newLabel = "New Loadout",
+        emptyLabel = "New Loadout",
+        noun = "loadout",
+        api = function()
+            return LPL.LoadoutAPI
+        end,
+    },
 }
 
 local sectionId
@@ -255,6 +277,13 @@ local function HidePools()
     end
     if gearDoll then
         gearDoll:Hide()
+    end
+    local page = UI.page
+    if page and page.editModePanel then
+        page.editModePanel:Hide()
+    end
+    if page and page.loadoutPanel then
+        page.loadoutPanel:Hide()
     end
 end
 
@@ -1071,6 +1100,419 @@ local function RefreshGearDoll(page, api)
     page.editorChild:SetHeight(gearDoll:GetHeight())
 end
 
+local function LayoutText(text)
+    if type(text) ~= "string" or (issecretvalue and issecretvalue(text)) then
+        return ""
+    end
+    return text:match("^%s*(.-)%s*$") or ""
+end
+
+local function SyncEditModeDraft()
+    local page = UI.page
+    if sectionId ~= "editmode" or not draft or not page or not page.editModeBox then
+        return
+    end
+    draft.layoutString = LayoutText(page.editModeBox:GetText())
+end
+
+local function PaintScopeButton(button, selected)
+    Paint(button, selected and SELECTED or BUTTON_BG, selected and SLOT_BORDER or BORDER)
+end
+
+local function RefreshEditMode(page, api)
+    local panel = page.editModePanel
+    if not panel then
+        panel = CreateFrame("Frame", nil, page.editorChild)
+        panel:SetPoint("TOPLEFT", 8, -8)
+        panel.status = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        panel.status:SetPoint("TOPLEFT", 0, 0)
+        panel.status:SetPoint("RIGHT", panel, "RIGHT", 0, 0)
+        panel.status:SetJustifyH("LEFT")
+        panel.status:SetHeight(18)
+        panel.account = CreateFrame("Button", nil, panel, "BackdropTemplate")
+        panel.account:SetSize(110, 24)
+        panel.account:SetPoint("TOPLEFT", panel.status, "BOTTOMLEFT", 0, -8)
+        panel.account.text = panel.account:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        panel.account.text:SetPoint("CENTER")
+        panel.account.text:SetText("Account")
+        panel.account.text:SetTextColor(1, 1, 1)
+        panel.character = CreateFrame("Button", nil, panel, "BackdropTemplate")
+        panel.character:SetSize(110, 24)
+        panel.character:SetPoint("LEFT", panel.account, "RIGHT", 8, 0)
+        panel.character.text = panel.character:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        panel.character.text:SetPoint("CENTER")
+        panel.character.text:SetText("Character")
+        panel.character.text:SetTextColor(1, 1, 1)
+        panel.hint = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+        panel.hint:SetPoint("TOPLEFT", panel.account, "BOTTOMLEFT", 0, -8)
+        panel.hint:SetPoint("RIGHT", panel, "RIGHT", 0, 0)
+        panel.hint:SetJustifyH("LEFT")
+        panel.hint:SetText("Paste a Blizzard Edit Mode string here.")
+        panel.hint:SetTextColor(0.7, 0.7, 0.7)
+        local box = CreateFrame("EditBox", nil, panel, "BackdropTemplate")
+        box:SetMultiLine(true)
+        box:SetAutoFocus(false)
+        box:SetMaxLetters(0)
+        box:SetFontObject("GameFontHighlight")
+        box:SetTextColor(TEXT[1], TEXT[2], TEXT[3])
+        box:SetTextInsets(8, 8, 8, 8)
+        box:EnableMouse(true)
+        box:EnableKeyboard(true)
+        box:SetPoint("TOPLEFT", panel.hint, "BOTTOMLEFT", 0, -8)
+        box:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, 0)
+        Paint(box, { 0.08, 0.08, 0.10, 1 }, SLOT_BORDER)
+        box:SetScript("OnEscapePressed", function(self)
+            self:ClearFocus()
+        end)
+        box:SetScript("OnTextChanged", function(self)
+            if panel.suppress or not draft then
+                return
+            end
+            draft.layoutString = LayoutText(self:GetText())
+            if draft.layoutString ~= "" then
+                panel.status:SetText("Layout ready (" .. tostring(#draft.layoutString) .. " characters).")
+                panel.status:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
+            else
+                panel.status:SetText("Empty layout. Paste a string, or update from your character.")
+                panel.status:SetTextColor(TEXT[1], TEXT[2], TEXT[3])
+            end
+        end)
+        box:SetScript("OnMouseDown", function(self)
+            self:SetFocus()
+        end)
+        panel:SetScript("OnMouseDown", function()
+            box:SetFocus()
+        end)
+        panel.account:SetScript("OnClick", function()
+            if not draft then
+                return
+            end
+            draft.characterSpecific = false
+            PaintScopeButton(panel.account, true)
+            PaintScopeButton(panel.character, false)
+        end)
+        panel.character:SetScript("OnClick", function()
+            if not draft then
+                return
+            end
+            draft.characterSpecific = true
+            PaintScopeButton(panel.account, false)
+            PaintScopeButton(panel.character, true)
+        end)
+        panel.box = box
+        page.editModeBox = box
+        page.editModePanel = panel
+    end
+    local width = math.max(520, (page.editorScroll:GetWidth() or 640) - 24)
+    local height = math.max(320, (page.editorScroll:GetHeight() or 400) - 8)
+    panel:SetSize(width, height)
+    panel.box:SetWidth(math.max(200, width - 4))
+    panel.box:SetHeight(math.max(200, height - 90))
+    local layout = LayoutText(draft and draft.layoutString or "")
+    panel.suppress = true
+    if panel.box:GetText() ~= layout then
+        panel.box:SetText(layout)
+    end
+    panel.suppress = false
+    local character = not draft or draft.characterSpecific ~= false
+    PaintScopeButton(panel.account, not character)
+    PaintScopeButton(panel.character, character)
+    if layout ~= "" then
+        local scope = character and "Character" or "Account"
+        panel.status:SetText(scope .. " layout ready (" .. tostring(#layout) .. " characters).")
+        panel.status:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
+    else
+        panel.status:SetText("Empty layout. Paste a string, or update from your character.")
+        panel.status:SetTextColor(TEXT[1], TEXT[2], TEXT[3])
+        panel.box:SetFocus()
+    end
+    panel:Show()
+    page.editorChild:SetWidth(width + 16)
+    page.editorChild:SetHeight(height + 16)
+end
+
+local ADD_ICON = "Interface\\AddOns\\lpl-forever\\icons\\link_add_32.tga"
+local REMOVE_ICON = "Interface\\AddOns\\lpl-forever\\icons\\link_remove_32.tga"
+
+local function HideLoadoutMenu(page)
+    if page and page.loadoutMenu then
+        page.loadoutMenu:Hide()
+    end
+end
+
+local function EnsureLoadoutMenu(page)
+    if page.loadoutMenu then
+        return page.loadoutMenu
+    end
+    local catcher = CreateFrame("Button", nil, UIParent)
+    catcher:SetAllPoints(UIParent)
+    catcher:SetFrameStrata("FULLSCREEN_DIALOG")
+    catcher:EnableMouse(true)
+    catcher:SetFrameLevel(1)
+    catcher:Hide()
+    local menu = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    menu:SetFrameStrata("FULLSCREEN_DIALOG")
+    menu:SetFrameLevel(20)
+    menu:SetClampedToScreen(true)
+    menu:EnableMouse(true)
+    menu:Hide()
+    menu.buttons = {}
+    Paint(menu, { 0.08, 0.08, 0.10, 1 }, SLOT_BORDER)
+    menu:SetScript("OnShow", function()
+        catcher:Show()
+    end)
+    menu:SetScript("OnHide", function()
+        catcher:Hide()
+    end)
+    catcher:SetScript("OnClick", function()
+        menu:Hide()
+    end)
+    page.loadoutMenu = menu
+    return menu
+end
+
+local function OpenLoadoutMenu(page, anchor, items, selectedID, onPick)
+    local menu = EnsureLoadoutMenu(page)
+    local width = math.max(220, anchor:GetWidth())
+    local y = 6
+    for i = 1, #items do
+        local item = items[i]
+        local button = menu.buttons[i]
+        if not button then
+            button = CreateFrame("Button", nil, menu, "BackdropTemplate")
+            button.label = button:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            button.label:SetPoint("LEFT", 8, 0)
+            button.label:SetPoint("RIGHT", -8, 0)
+            button.label:SetJustifyH("LEFT")
+            menu.buttons[i] = button
+        end
+        local height = item.header and 18 or 22
+        button:SetSize(width - 12, height)
+        button:ClearAllPoints()
+        button:SetPoint("TOPLEFT", 6, -y)
+        button.label:SetText(item.name or "")
+        if item.header then
+            Paint(button, { 0.08, 0.08, 0.10, 1 }, { 0.08, 0.08, 0.10, 1 })
+            button.label:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
+            button:SetScript("OnClick", function() end)
+        else
+            local picked = item.id == selectedID
+            Paint(button, picked and SELECTED or { 0.08, 0.08, 0.10, 1 }, { 0.08, 0.08, 0.10, 1 })
+            if item.id then
+                button.label:SetTextColor(TEXT[1], TEXT[2], TEXT[3])
+            else
+                button.label:SetTextColor(0.55, 0.55, 0.55)
+            end
+            local itemID = item.id
+            button:SetScript("OnClick", function()
+                menu:Hide()
+                onPick(itemID)
+            end)
+        end
+        button:Show()
+        y = y + height + 2
+    end
+    for i = #items + 1, #menu.buttons do
+        menu.buttons[i]:Hide()
+    end
+    menu:SetSize(width, y + 4)
+    menu:ClearAllPoints()
+    menu:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -2)
+    menu:Show()
+end
+
+local function LoadoutSlotMap(page, api)
+    if page.loadoutSlotDraft == draft and page.loadoutSlots then
+        return page.loadoutSlots
+    end
+    local slots = {}
+    local segments = api:Segments()
+    for i = 1, #segments do
+        local key = segments[i].key
+        local ids = api:LinkIDs(draft, key)
+        local list = {}
+        if #ids == 0 then
+            list[1] = false
+        else
+            for n = 1, #ids do
+                list[n] = ids[n]
+            end
+        end
+        slots[key] = list
+    end
+    page.loadoutSlotDraft = draft
+    page.loadoutSlots = slots
+    return slots
+end
+
+local function WriteLoadoutSlots(page, api)
+    local slots = page.loadoutSlots or {}
+    draft.links = draft.links or {}
+    local segments = api:Segments()
+    for i = 1, #segments do
+        local key = segments[i].key
+        local compact = {}
+        local list = slots[key] or {}
+        for n = 1, #list do
+            local id = LPL:PlainNumber(list[n])
+            if id then
+                compact[#compact + 1] = id
+            end
+        end
+        draft.links[key] = compact
+    end
+end
+
+local function IconButton(parent, texture, tooltip)
+    local button = CreateFrame("Button", nil, parent)
+    button:SetSize(22, 22)
+    local icon = button:CreateTexture(nil, "ARTWORK")
+    icon:SetAllPoints(button)
+    icon:SetTexture(texture)
+    button:SetScript("OnEnter", function(self)
+        self:SetAlpha(1)
+        if GameTooltip and tooltip then
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(tooltip, 1, 1, 1)
+            GameTooltip:Show()
+        end
+    end)
+    button:SetScript("OnLeave", function(self)
+        self:SetAlpha(0.9)
+        if GameTooltip then
+            GameTooltip:Hide()
+        end
+    end)
+    button:SetAlpha(0.9)
+    return button
+end
+
+local function RefreshLoadouts(page, api)
+    local panel = page.loadoutPanel
+    if not panel then
+        panel = CreateFrame("Frame", nil, page.editorChild)
+        panel:SetPoint("TOPLEFT", 8, -8)
+        panel.blocks = {}
+        page.loadoutPanel = panel
+    end
+    if panel.rows then
+        for i = 1, #panel.rows do
+            panel.rows[i]:Hide()
+        end
+    end
+    HideLoadoutMenu(page)
+    local slots = LoadoutSlotMap(page, api)
+    local segments = api:Segments()
+    local width = math.max(640, (page.editorScroll:GetWidth() or 860) - 16)
+    local gap = 18
+    local colWidth = math.floor((width - gap) / 2)
+    local leftY, rightY = 0, 0
+    for i = 1, #segments do
+        local segment = segments[i]
+        local key = segment.key
+        local block = panel.blocks[i]
+        if not block then
+            block = CreateFrame("Frame", nil, panel)
+            block.label = block:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            block.label:SetPoint("TOPLEFT", 0, 0)
+            block.label:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
+            block.rows = {}
+            panel.blocks[i] = block
+        end
+        local list = slots[key] or { false }
+        local isLeft = ((i - 1) % 2) == 0
+        local y = isLeft and leftY or rightY
+        block:SetWidth(colWidth)
+        block:ClearAllPoints()
+        block:SetPoint("TOPLEFT", isLeft and 0 or (colWidth + gap), -y)
+        block.label:SetText(segment.label)
+        for n = 1, #list do
+            local row = block.rows[n]
+            if not row then
+                row = CreateFrame("Frame", nil, block)
+                row:SetHeight(50)
+                row.drop = CreateFrame("Button", nil, row, "BackdropTemplate")
+                row.drop:SetHeight(28)
+                row.drop:SetPoint("TOPLEFT", 0, 0)
+                row.drop:SetPoint("RIGHT", row, "RIGHT", -52, 0)
+                row.drop.label = row.drop:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+                row.drop.label:SetPoint("LEFT", 8, 0)
+                row.drop.label:SetPoint("RIGHT", -22, 0)
+                row.drop.label:SetJustifyH("LEFT")
+                row.drop.arrow = row.drop:CreateTexture(nil, "ARTWORK")
+                row.drop.arrow:SetSize(14, 14)
+                row.drop.arrow:SetPoint("RIGHT", -6, 0)
+                row.drop.arrow:SetTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Up")
+                row.drop.arrow:SetVertexColor(1, 0.92, 0.4)
+                row.remove = IconButton(row, REMOVE_ICON, "Unlink this set")
+                row.remove:SetPoint("LEFT", row.drop, "RIGHT", 4, 0)
+                row.add = IconButton(row, ADD_ICON, "Add another linked set")
+                row.add:SetPoint("LEFT", row.remove, "RIGHT", 4, 0)
+                row.summary = row:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+                row.summary:SetPoint("TOPLEFT", row.drop, "BOTTOMLEFT", 2, -2)
+                row.summary:SetPoint("RIGHT", row.drop, "RIGHT", 0, 0)
+                row.summary:SetJustifyH("LEFT")
+                row.summary:SetTextColor(0.7, 0.7, 0.7)
+                block.rows[n] = row
+            end
+            local slotIndex = n
+            local selected = LPL:PlainNumber(list[n])
+            row:SetWidth(colWidth)
+            row:ClearAllPoints()
+            row:SetPoint("TOPLEFT", 0, -(20 + (n - 1) * 52))
+            Paint(row.drop, { 0, 0, 0, 1 }, SLOT_BORDER)
+            row.drop.label:SetText(api:LinkName(key, selected))
+            if selected then
+                row.drop.label:SetTextColor(TEXT[1], TEXT[2], TEXT[3])
+            else
+                row.drop.label:SetTextColor(0.55, 0.55, 0.55)
+            end
+            row.summary:SetText(api:LinkSummary(key, selected))
+            row.drop:SetScript("OnClick", function(self)
+                OpenLoadoutMenu(page, self, api:MenuItems(key), selected, function(id)
+                    list[slotIndex] = id or false
+                    WriteLoadoutSlots(page, api)
+                    RefreshEditor()
+                end)
+            end)
+            row.remove:SetScript("OnClick", function()
+                if #list <= 1 then
+                    list[1] = false
+                else
+                    table.remove(list, slotIndex)
+                end
+                WriteLoadoutSlots(page, api)
+                RefreshEditor()
+            end)
+            row.add:SetScript("OnClick", function()
+                list[#list + 1] = false
+                WriteLoadoutSlots(page, api)
+                RefreshEditor()
+            end)
+            row:Show()
+        end
+        for n = #list + 1, #block.rows do
+            block.rows[n]:Hide()
+        end
+        local height = 20 + (#list * 52) + 8
+        block:SetHeight(height)
+        block:Show()
+        if isLeft then
+            leftY = leftY + height + 8
+        else
+            rightY = rightY + height + 8
+        end
+    end
+    for i = #segments + 1, #panel.blocks do
+        panel.blocks[i]:Hide()
+    end
+    local height = math.max(leftY, rightY, 40)
+    panel:SetSize(width, height)
+    panel:Show()
+    page.editorChild:SetWidth(width + 8)
+    page.editorChild:SetHeight(height + 8)
+end
+
 function RefreshEditor()
     local page = UI.page
     local api = API()
@@ -1080,6 +1522,14 @@ function RefreshEditor()
     HidePools()
     local width = math.max(520, (page.editorScroll:GetWidth() or 640) - 8)
     local y = 8
+    if sectionId == "editmode" then
+        RefreshEditMode(page, api)
+        return
+    end
+    if sectionId == "loadouts" then
+        RefreshLoadouts(page, api)
+        return
+    end
     if sectionId == "actionbars" then
         RefreshActionBars(page, api)
         return
@@ -1301,6 +1751,32 @@ local function CopySet(saved)
             end
         end
     end
+    copy.layoutString = LPL:PlainString(saved.layoutString) or ""
+    copy.characterSpecific = saved.characterSpecific ~= false
+    copy.links = {}
+    if type(saved.links) == "table" then
+        for key, value in pairs(saved.links) do
+            if type(key) == "string" then
+                local list = {}
+                if type(value) == "table" then
+                    for i = 1, #value do
+                        local id = LPL:PlainNumber(value[i])
+                        if id then
+                            list[#list + 1] = id
+                        end
+                    end
+                else
+                    local id = LPL:PlainNumber(value)
+                    if id then
+                        list[1] = id
+                    end
+                end
+                if #list > 0 then
+                    copy.links[key] = list
+                end
+            end
+        end
+    end
     return copy
 end
 
@@ -1439,6 +1915,9 @@ function UI:ShowList()
         return
     end
     mode = "list"
+    if page.loadoutMenu then
+        page.loadoutMenu:Hide()
+    end
     ReleaseHold()
     StopKeyListen()
     keyCollapsed = nil
@@ -1467,6 +1946,10 @@ function UI:NewSet()
         return
     end
     selectedId = nil
+    if api.Empty then
+        ShowEditor(api:Empty(), true)
+        return
+    end
     ShowEditor({
         name = api:SuggestName(),
         slots = {},
@@ -1484,6 +1967,7 @@ function UI:SaveDraft()
         return
     end
     ReleaseHold()
+    SyncEditModeDraft()
     local name = ReadName(UI.page.nameBox, draft.name or api:SuggestName())
     local saved
     if draft.id then
@@ -1502,6 +1986,7 @@ function UI:ApplyCurrent()
     if not api or not spec then
         return
     end
+    SyncEditModeDraft()
     local set = draft or api:Get(selectedId)
     if not set then
         Notice("Select a saved " .. spec.noun .. " first.", true)
@@ -1529,14 +2014,32 @@ function UI:LoadFromCharacter()
         return
     end
     local live = api:Capture()
+    if type(live) ~= "table" then
+        Notice("Could not read this character.", true)
+        return
+    end
+    if live.error and not live.links then
+        Notice(live.error, true)
+        return
+    end
     held = nil
     HideHeld()
-    draft.slots = live.slots
-    draft.petSlots = live.petSlots or {}
-    draft.ignored = {}
-    draft.bindings = live.bindings
-    draft.scope = live.scope
-    draft.skipped = live.skipped
+    if live.links then
+        draft.links = live.links
+        if UI.page then
+            UI.page.loadoutSlotDraft = nil
+        end
+    elseif sectionId == "editmode" then
+        draft.layoutString = live.layoutString or ""
+        draft.characterSpecific = live.characterSpecific ~= false
+    else
+        draft.slots = live.slots
+        draft.petSlots = live.petSlots or {}
+        draft.ignored = {}
+        draft.bindings = live.bindings
+        draft.scope = live.scope
+        draft.skipped = live.skipped
+    end
     Notice("Updated this snapshot from your character.")
     local spec = Spec()
     if spec and UI.page then
