@@ -10,6 +10,9 @@ local ROW_GAP = 2
 local CHROME_GAP = 8
 local META_WIDTH = 148
 local META_RIGHT_PAD = 10
+local BAR_BUTTON_SIZE = 40
+local BAR_BUTTON_GAP = 8
+local BAR_BUTTON_EDGE = 6
 
 local function FormatDateOnly(timestamp)
     timestamp = tonumber(timestamp)
@@ -376,12 +379,69 @@ function LPL.SetListView:Create(parent, config)
         modifiedLabel:SetTextColor(LPL.Theme:GetColor("textSecondary"))
         modifiedLabel:Hide()
 
+        -- Parent to the scroll child, not the row. The row is a Button and would
+        -- keep the mouse, so a drag that starts on a child never reaches OnDragStart.
+        local barButton = CreateFrame("Button", nil, parent)
+        barButton:SetSize(BAR_BUTTON_SIZE, BAR_BUTTON_SIZE)
+        barButton:SetPoint("RIGHT", row, "RIGHT", -BAR_BUTTON_EDGE, 0)
+        barButton:RegisterForClicks("LeftButtonUp")
+        barButton:RegisterForDrag("LeftButton")
+        barButton:EnableMouse(true)
+        barButton:SetHitRectInsets(0, 0, 0, 0)
+        barButton:Hide()
+        row:HookScript("OnHide", function()
+            barButton:Hide()
+        end)
+        local barIcon = barButton:CreateTexture(nil, "ARTWORK")
+        barIcon:SetAllPoints(barButton)
+        if not LPL:SetIconTexture(barIcon, "activate_64") then
+            barIcon:SetTexture("Interface\\AddOns\\lpl\\icons\\activate_64")
+        end
+        barButton:SetScript("OnEnter", function(self)
+            if not self.tooltipTitle then
+                return
+            end
+            LPL:ShowAccessibleGameTooltip(self, self.tooltipTitle, self.tooltipBody)
+        end)
+        barButton:SetScript("OnLeave", function()
+            if LPL.ClearGameTooltipData then
+                LPL:ClearGameTooltipData(GameTooltip)
+            end
+            if GameTooltip then
+                GameTooltip:Hide()
+            end
+        end)
+        barButton:SetScript("OnClick", function() end)
+        barButton:SetScript("OnMouseDown", function(self, mouseButton)
+            if mouseButton ~= "LeftButton" or not LPL.BarActivate then
+                return
+            end
+            if not self.listKey or self.itemID == nil then
+                return
+            end
+            self.dragMacro = LPL.BarActivate:EnsureMacro(self.listKey, self.itemID, self.buildName)
+        end)
+        barButton:SetScript("OnDragStart", function(self)
+            if not LPL.BarActivate or self.itemID == nil then
+                return
+            end
+            local index = self.dragMacro
+            if not index and self.listKey then
+                index = LPL.BarActivate:EnsureMacro(self.listKey, self.itemID, self.buildName)
+            end
+            if not index then
+                return
+            end
+            LPL.BarActivate:PlaceOnCursor(index)
+        end)
+
         row.expandIcon = expandIcon
         row.activeBadge = activeBadge
         row.title = title
         row.subtitle = subtitle
         row.createdLabel = createdLabel
         row.modifiedLabel = modifiedLabel
+        row.barButton = barButton
         row.itemID = nil
         row.isActive = false
         row.rowKind = "item"
@@ -464,6 +524,7 @@ function LPL.SetListView:Create(parent, config)
             self.title:SetJustifyH("LEFT")
             self.createdLabel:Hide()
             self.modifiedLabel:Hide()
+            self.barButton:Hide()
 
             if entry.type == "class" and entry.classID and LPL.ListGrouping then
                 self.title:SetText(LPL.ListGrouping:WrapClassText(entry.classID, entry.label or "Other"))
@@ -528,8 +589,15 @@ function LPL.SetListView:Create(parent, config)
 
             self.expandIcon:Hide()
             self.title:ClearAllPoints()
+            local showBar = LPL.BarActivate and LPL.BarActivate:Supports(config.listKey)
+            local dateRight = -META_RIGHT_PAD
+            if showBar then
+                dateRight = -(BAR_BUTTON_EDGE + BAR_BUTTON_SIZE + BAR_BUTTON_GAP)
+            end
+            local textRight = dateRight - META_WIDTH
+
             self.title:SetPoint("TOPLEFT", self, "TOPLEFT", indent, -6)
-            self.title:SetPoint("RIGHT", self, "RIGHT", -(META_WIDTH + META_RIGHT_PAD), 0)
+            self.title:SetPoint("RIGHT", self, "RIGHT", textRight, 0)
             self.title:SetJustifyH("LEFT")
             self.title:SetFontObject(LPL.Theme.fonts.bodyBold)
             self.title:SetTextColor(LPL.Theme:GetColor("textBright"))
@@ -540,7 +608,7 @@ function LPL.SetListView:Create(parent, config)
             self.subtitle:SetHeight(28)
             self.subtitle:ClearAllPoints()
             self.subtitle:SetPoint("TOPLEFT", self.title, "BOTTOMLEFT", 0, -2)
-            self.subtitle:SetPoint("RIGHT", self, "RIGHT", -(META_WIDTH + META_RIGHT_PAD), 0)
+            self.subtitle:SetPoint("RIGHT", self, "RIGHT", textRight, 0)
 
             self.itemID = config.getID and config.getID(item)
             local active = false
@@ -568,8 +636,27 @@ function LPL.SetListView:Create(parent, config)
             self.modifiedLabel:SetText(modifiedText or "")
             self.createdLabel:SetTextColor(LPL.Theme:GetColor("textSecondary"))
             self.modifiedLabel:SetTextColor(LPL.Theme:GetColor("textSecondary"))
+            self.createdLabel:ClearAllPoints()
+            self.createdLabel:SetPoint("TOPRIGHT", self, "TOPRIGHT", dateRight, -6)
             self.createdLabel:Show()
             self.modifiedLabel:Show()
+
+            local buildName = (config.getName and config.getName(item)) or item.name or "Unnamed"
+            if showBar then
+                local level = (self:GetFrameLevel() or 1) + 20
+                if level > 65535 then
+                    level = 65535
+                end
+                self.barButton:SetFrameLevel(level)
+                self.barButton.listKey = config.listKey
+                self.barButton.itemID = self.itemID
+                self.barButton.buildName = buildName
+                self.barButton.tooltipTitle = "Drag onto an action bar"
+                self.barButton.tooltipBody = "Activates " .. LPL.BarActivate:Label(config.listKey) .. ": " .. tostring(buildName)
+                self.barButton:Show()
+            else
+                self.barButton:Hide()
+            end
 
             self.activeBadge:ClearAllPoints()
             self.activeBadge:SetPoint("LEFT", self, "LEFT", math.max(4, indent - 12), 0)

@@ -29,7 +29,19 @@ _G.LPL_ToggleMainFrame = LPL_ToggleMainFrame
 
 local function RegisterSlashCommand()
     SLASH_LPL1 = "/lpl"
-    SlashCmdList["LPL"] = LPL_ToggleMainFrame
+    SlashCmdList["LPL"] = function(msg)
+        msg = type(msg) == "string" and msg:match("^%s*(.-)%s*$") or ""
+        if msg == "" then
+            LPL_ToggleMainFrame()
+            return
+        end
+        local listKey, id = msg:match("^act%s+(%S+)%s+(%S+)$")
+        if listKey and id and LPL.BarActivate then
+            LPL.BarActivate:Apply(listKey, id)
+            return
+        end
+        print("|cffffcc00LPL:|r Use |cffffcc00/lpl|r to open Light Paws Loadouts.")
+    end
 end
 
 function LPL.Initialize()

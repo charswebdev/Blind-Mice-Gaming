@@ -3,12 +3,12 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.1.7** |
+| Version | **1.2.4** |
 | Type | In-game composite loadout vault |
 | Folder | `lpl/` |
 | Clients | Retail Midnight (`120100`, `120007`, `120001`) |
 | SavedVariables | `LPLDB` |
-| Slash | `/lpl` |
+| Slash | `/lpl` opens the window. `/lpl act` applies one saved build and does not open the window. |
 | Optional | LibTalentTree-1.0 (bundled) |
 
 ## Description
@@ -40,6 +40,13 @@ This is the pattern every Classic flavor is supposed to **clone for UX** while r
 - Hero-talent Limits do not block apply when the player has no hero tree yet (e.g. a level 10 Hunter). Class still has to match; combat is checked by activate, not by Limits.
 - **1.1.6:** apply a hero-limited set before hero talents unlock (any class) if the class matches and the player is out of combat.
 - **1.1.7:** Blizzard talent import stops when the string’s tree hash does not match the live tree, so an older string cannot spend points on the wrong nodes after a talent-tree patch.
+- **1.1.8:** Each saved build row, except Macros, Addons Manager, and Housing, has a drag icon on the right. Drag it onto an action bar. Pressing that button runs `/lpl act` and applies the build. `/lpl` with nothing after it still opens the window. The bar macro uses the build name (16 characters). Deleting the build removes the macro. The icon is `icons/activate_64` (loadout card on an action bar).
+- **1.1.9:** The drag icon is not a child of the list row. The row was eating the click, so the drag never put a macro on the cursor.
+- **1.2.0:** Drag pickup calls `PickupMacro` once, by macro name. A second call was putting the macro back down, and the failure check was clearing the cursor.
+- **1.2.1:** The action bar keeps the card icon (`icons/activate_64`). The macro was falling back to the question mark, and the bar redraw was painting that instead.
+- **1.2.2:** Drag uses the normal macro icon again so pickup works. The card picture is painted onto the action bar button after the drop. Putting the addon file into CreateMacro stopped the drag.
+- **1.2.3:** The card icon is stored on the macro when the client accepts that file. If it does not, drag still works and the bar button draws the card over the question mark. Icon file: `icons/activate_64.blp`, also `Interface\Icons\lpl_activate.blp`.
+- **1.2.4:** Shipped. Drag a saved build onto an action bar. Pressing that button applies the build and does not open the window. Housing, Macros, and Addons Manager have no drag button.
 
 ## Development plan
 
@@ -73,6 +80,7 @@ Desktop siblings: **LPTM** (talent planner) and **LPLM** (loadout catalog + comm
 
 ## Open work
 
+- **1.2.4** is on the updater. Housing, Macros, and Addons Manager have no drag button. A bar press applies the build with the window closed. Addon sets still ask before they replace the addon list. A condition applies the first linked build that fits this character. If the client rejects the card file, the cursor can show the question mark and the bar button still draws the card.
 - Uncommitted Module dirty files may exist locally (`ActionBars`, `Loadouts`, `Keybinds`, …). Do not mix into unrelated commits.
 - Further Midnight patch talent layout changes track Blizzard, not a BMG DB2 extract. The 2026-09-22 class tuning is damage and effect numbers on existing nodes (no new, moved, or removed talents). LPL reads the live tree, so that pass needs no talent-data update.
 - Blizzard import strings are positional. A tree-hash mismatch now fails the import instead of spending the old bits on the current node list.
