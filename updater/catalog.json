@@ -278,6 +278,16 @@
       "updated": "2026-08-21",
       "interfaces": [120100, 120007, 120005, 120001, 50504, 50503, 40402, 30405, 20506, 20505, 11509, 11508],
       "saved": ["WowGPSDB"]
+    },
+    {
+      "id": "wowgps-forever",
+      "name": "WowGPS - WoW Forever",
+      "folders": ["wowgps-forever"],
+      "version": "1.1.2",
+      "updated": "2026-10-02",
+      "interfaces": [16002, 16001, 16000, 121500, 121000],
+      "saved": ["WowGPSForeverDB"],
+      "client": "forever"
     }
   ]
 }

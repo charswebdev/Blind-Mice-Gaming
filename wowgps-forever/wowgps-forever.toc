@@ -1,0 +1,33 @@
+## Interface: 16002, 16001, 16000, 121500, 121000
+## Title: WowGPS - WoW Forever
+## Notes: In-game GPS window for WoW Forever. |cffffcc00/gps|r to open.
+## Author: Blind Mice Gaming
+## Version: 1.1.2
+## Category: Blind Mice Gaming
+## Category-enUS: Blind Mice Gaming
+## IconTexture: Interface\AddOns\wowgps-forever\Media\WowGPS.png
+## SavedVariables: WowGPSForeverDB
+## LoadSavedVariablesFirst: 1
+## DefaultState: enabled
+
+Core\Plain.lua
+Core\Constants.lua
+Core\DB.lua
+Core\Here.lua
+Data\Zones.lua
+Data\Entrances.lua
+Core\World.lua
+Core\Places.lua
+Core\Import.lua
+Core\Travel.lua
+Core\Guide.lua
+UI\Theme.lua
+UI\Arrow.lua
+UI\SearchTab.lua
+UI\RouteTab.lua
+UI\SavedTab.lua
+UI\AddTab.lua
+UI\ImportDialog.lua
+UI\ExportDialog.lua
+UI\MainFrame.lua
+Core\Init.lua

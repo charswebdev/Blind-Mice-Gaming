@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WoW loads Bindings.xml from this folder. Do not list it in the .toc. -->
+<Bindings>
+    <Binding name="TOGGLE_WOWGPS" category="WOWGPS">
+        if WowGPSForever_ToggleMainFrame then
+            WowGPSForever_ToggleMainFrame()
+        end
+    </Binding>
+</Bindings>
