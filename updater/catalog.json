@@ -5,6 +5,18 @@
   "setupUrl": "https://github.com/charswebdev/Blind-Mice-Gaming/releases/download/v1.2.0/BMG-Updater-Setup-1.2.0.exe",
   "apps": [
     {
+      "id": "wow-finder",
+      "name": "WOW Finder",
+      "kind": "desktop",
+      "flavor": "All flavors",
+      "version": "1.0.0",
+      "status": "shipped",
+      "setupUrl": "https://github.com/charswebdev/Blind-Mice-Gaming/releases/download/wowfinder-1.0.0/WOWFinder-Setup-1.0.0.exe",
+      "updated": "2026-10-08",
+      "installName": "WOW Finder",
+      "exePrefix": "WOWFinder-"
+    },
+    {
       "id": "lptm-retail",
       "name": "Light Paws Talent Manager - Retail",
       "kind": "desktop",
