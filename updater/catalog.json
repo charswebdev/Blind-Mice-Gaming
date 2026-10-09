@@ -9,10 +9,10 @@
       "name": "WOW Finder",
       "kind": "desktop",
       "flavor": "All flavors",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "status": "shipped",
-      "setupUrl": "https://github.com/charswebdev/Blind-Mice-Gaming/releases/download/wowfinder-1.0.0/WOWFinder-Setup-1.0.0.exe",
-      "updated": "2026-10-08",
+      "setupUrl": "https://github.com/charswebdev/Blind-Mice-Gaming/releases/download/wowfinder-1.0.1/WOWFinder-Setup-1.0.1.exe",
+      "updated": "2026-10-09",
       "installName": "WOW Finder",
       "exePrefix": "WOWFinder-"
     },
