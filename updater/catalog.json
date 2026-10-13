@@ -96,9 +96,9 @@
       "id": "AccessibilityHelper",
       "name": "Accessibility Helper",
       "folders": ["AccessibilityHelper"],
-      "version": "3.6.5",
-      "updated": "2026-08-30",
-      "interfaces": [120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508],
+      "version": "3.6.6",
+      "updated": "2026-10-13",
+      "interfaces": [120105, 120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508],
       "saved": ["AccessibilityHelperDB"]
     },
     {

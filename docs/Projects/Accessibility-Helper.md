@@ -3,11 +3,11 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **3.6.5** (toc, Init banner, settings footer fallback, `updater/catalog.json`) |
+| Version | **3.6.6** (toc, Init banner, settings footer fallback, `updater/catalog.json`) |
 | Type | In-game addon (VI / TTS) |
 | Folder | `AccessibilityHelper/` |
 | Author tools | `Tools/AccessibilityHelper/` (release checklists; not in the addon zip) |
-| Clients | Retail Midnight (`120100`), MoP Classic, Cata, Wrath, TBC, Classic Era (`11509` / `11508`) |
+| Clients | Retail (`120105`, `120100`), MoP Classic, Cata, Wrath, TBC, Classic Era (`11509` / `11508`) |
 | SavedVariables | `AccessibilityHelperDB` (account) |
 | Install | BMG Updater folder `AccessibilityHelper` |
 | Slash | `/ah` settings · `/ahcmds` · `/ahclear` · `/ahstop` · `/ahs` TTS test · `/ahtip` tooltip · `/ahread` under mouse |
@@ -77,6 +77,7 @@ Work was phased in the Lua headers and later combat/cast slices:
 | 3.6.3 | ToT secrets | GUID/`UnitSeen` instead of boolean-testing `UnitIsUnit` on `targettarget` |
 | 3.6.4 | UnitSeen GUID | `UsableString` before any `guid ~= ""` (macro `TargetUnit` secret GUID) |
 | 3.6.5 | UnitSeen AddOns | SameUnit / follow GUID also go through `UsableString`; live AddOns copy no longer compares secret `guid ~= ""` |
+| 3.6.6 | Retail 12.1.5 | Interface `120105` added. Older Interface numbers stay so 12.1.0 still loads. |
 
 Settings were rewritten to the two-pane pattern so VI users get one topic at a time instead of a dense options dump.
 

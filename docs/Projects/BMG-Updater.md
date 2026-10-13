@@ -17,6 +17,7 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 ## Features
 
 - Catalog-driven list of addons (folder lists, toc interfaces, SavedVariables names) and apps (flavor, status shipped/planned, exe prefix).
+- **2026-10-13:** Accessibility Helper **3.6.6**. Retail Interface **120105** (patch 12.1.5). Older Interface numbers stay so 12.1.0 still loads.
 - **2026-10-02:** catalog lists **WowGPS - WoW Forever** (`wowgps-forever`, **1.1.2**, `WowGPSForeverDB`, `client: "forever"`). Search, an arrow, saved places, flight and dungeon pins, boat and zeppelin steps, and import/export. Do not install Retail `wowgps/` into `_classic_beta_`.
 - **2026-10-01:** Light Paws Loadouts (Retail) **1.2.4**. Drag a saved build onto an action bar. Pressing that button applies the build and does not open the window. Housing, Macros, and Addons Manager have no drag button.
 - **2026-09-21:** Light Paws Loadouts (Retail) **1.1.7**. Talent import rejects a Blizzard string whose tree hash does not match the live tree.
