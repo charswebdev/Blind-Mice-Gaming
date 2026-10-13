@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** (five flavor packages) |
-| Version | **1.2.1** Forever; **1.1.1** Retail / Era / Anniversary / Classic |
+| Version | **1.2.1** Forever; **1.1.2** Retail; **1.1.1** Era / Anniversary / Classic |
 | Type | In-game unit frames (high-contrast, movable, accessible) |
 | Optional deps | AccessibilityHelper (TTS if present) |
 
@@ -11,13 +11,13 @@ Separate package per WoW flavor — own folder, own SavedVariables, own updater 
 
 | Flavor | Client | Folder | SavedVariables | Interface |
 |--------|--------|--------|----------------|-----------|
-| Retail (Midnight) | `_retail_` | `BMG-Unit-frames/` | `BMGUnitFramesDB` | `120100`, `120007`, `120005`, `120001` |
+| Retail (Midnight) | `_retail_` | `BMG-Unit-frames/` | `BMGUnitFramesDB` | `120105`, `120100`, `120007`, `120005`, `120001` |
 | Classic Era + Hardcore | `_classic_era_` | `BMG-Unit-frames-classic-era/` | `BMGUnitFramesClassicEraDB` | `11509`, `11508` |
 | Anniversary (TBC) | `_anniversary_` | `BMG-Unit-frames-anniversary/` | `BMGUnitFramesAnniversaryDB` | `20506`, `20505` |
 | Classic (MoP) | `_classic_` | `BMG-Unit-frames-classic/` | `BMGUnitFramesClassicDB` | `50504`, `50503` |
 | WoW Forever | `_classic_beta_` (live ForeverBeta) | `BMG-Unit-frames-forever/` | `BMGUnitFramesForeverDB` | `16002`, `16001`, `16000`, `121500`, `121000` |
 
-Interface numbers match the current live patch plus the previous one so a weekly bump does not unload the addon.
+Interface numbers match the current live patch plus the previous one so a weekly bump does not unload the addon. Retail **1.1.2** adds Interface `120105` for patch 12.1.5.
 
 Slash `/bmguf` · `/uf` · Key Bindings → **BMG Unit Frames** (open settings, lock/unlock, read target).
 

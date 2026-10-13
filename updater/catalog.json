@@ -151,9 +151,9 @@
       "id": "BMG-Unit-frames",
       "name": "BMG Unit Frames",
       "folders": ["BMG-Unit-frames"],
-      "version": "1.1.1",
-      "updated": "2026-09-17",
-      "interfaces": [120100, 120007, 120005, 120001],
+      "version": "1.1.2",
+      "updated": "2026-10-13",
+      "interfaces": [120105, 120100, 120007, 120005, 120001],
       "saved": ["BMGUnitFramesDB"],
       "client": "retail"
     },
