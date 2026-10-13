@@ -210,9 +210,9 @@
       "id": "Exploration",
       "name": "Exploration",
       "folders": ["Exploration"],
-      "version": "2.0.2",
-      "updated": "2026-08-21",
-      "interfaces": [120100],
+      "version": "2.0.3",
+      "updated": "2026-10-13",
+      "interfaces": [120105, 120100],
       "saved": ["ExplorationDB"]
     },
     {

@@ -1,9 +1,9 @@
-## Interface: 120100
+## Interface: 120105, 120100
 ## Title: Exploration
 ## Notes: Outdoor zone exploration guide by Blind Mice Gaming.
 ## Author: Blind Mice Gaming
 ## Category-enUS: Blind Mice Gaming
-## Version: 2.0.2
+## Version: 2.0.3
 ## IconTexture: Interface\AddOns\Exploration\Textures\compass.tga
 ## SavedVariables: ExplorationDB
 ## OptionalDeps: TomTom

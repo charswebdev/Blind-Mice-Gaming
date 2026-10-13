@@ -29,7 +29,7 @@ Commit, push, and GitHub releases happen **only when asked**.
 | [AllQuest - WoW Forever](AllQuest-Forever.md) | Shipped | 1.0.0 |
 | [BMG Unit Frames](BMG-Unit-Frames.md) | Shipped (Retail + Era + Anniversary + MoP + Forever) | 1.2.1 Forever; 1.1.1 others |
 | [Cooldown Assist](Cooldown-Assist.md) | Shipped | 1.1.1 |
-| [Exploration](Exploration.md) | Shipped | 2.0.2 |
+| [Exploration](Exploration.md) | Shipped | 2.0.3 |
 | [FPSDiag](FPSDiag.md) | Shipped | 0.3.1 |
 | [WowGPS](WowGPS.md) | Shipped | 1.0.0 |
 | [WowGPS - WoW Forever](WowGPS-Forever.md) | Shipped | 1.1.2 |
