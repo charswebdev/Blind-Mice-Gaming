@@ -1,6 +1,6 @@
 local addonName, LPL = ...
 
-LPL.VERSION = "1.2.4"
+LPL.VERSION = "1.2.5"
 LPL.ADDON_NAME = addonName
 
 LPL.Icons = {

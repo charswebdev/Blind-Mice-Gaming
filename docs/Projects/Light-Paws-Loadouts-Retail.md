@@ -3,10 +3,10 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.2.4** |
+| Version | **1.2.5** |
 | Type | In-game composite loadout vault |
 | Folder | `lpl/` |
-| Clients | Retail Midnight (`120100`, `120007`, `120001`) |
+| Clients | Retail (`120105`, `120100`, `120007`, `120001`) |
 | SavedVariables | `LPLDB` |
 | Slash | `/lpl` opens the window. `/lpl act` applies one saved build and does not open the window. |
 | Optional | LibTalentTree-1.0 (bundled) |
@@ -47,6 +47,7 @@ This is the pattern every Classic flavor is supposed to **clone for UX** while r
 - **1.2.2:** Drag uses the normal macro icon again so pickup works. The card picture is painted onto the action bar button after the drop. Putting the addon file into CreateMacro stopped the drag.
 - **1.2.3:** The card icon is stored on the macro when the client accepts that file. If it does not, drag still works and the bar button draws the card over the question mark. Icon file: `icons/activate_64.blp`, also `Interface\Icons\lpl_activate.blp`.
 - **1.2.4:** Shipped. Drag a saved build onto an action bar. Pressing that button applies the build and does not open the window. Housing, Macros, and Addons Manager have no drag button.
+- **1.2.5:** Retail Interface `120105` for patch 12.1.5. `120100` stays so 12.1.0 still loads.
 
 ## Development plan
 
@@ -80,7 +81,7 @@ Desktop siblings: **LPTM** (talent planner) and **LPLM** (loadout catalog + comm
 
 ## Open work
 
-- **1.2.4** is on the updater. Housing, Macros, and Addons Manager have no drag button. A bar press applies the build with the window closed. Addon sets still ask before they replace the addon list. A condition applies the first linked build that fits this character. If the client rejects the card file, the cursor can show the question mark and the bar button still draws the card.
+- **1.2.5** is on the updater. Retail Interface is `120105` for patch 12.1.5. Housing, Macros, and Addons Manager have no drag button. A bar press applies the build with the window closed. Addon sets still ask before they replace the addon list. A condition applies the first linked build that fits this character. If the client rejects the card file, the cursor can show the question mark and the bar button still draws the card.
 - Uncommitted Module dirty files may exist locally (`ActionBars`, `Loadouts`, `Keybinds`, …). Do not mix into unrelated commits.
 - Further Midnight patch talent layout changes track Blizzard, not a BMG DB2 extract. The 2026-09-22 class tuning is damage and effect numbers on existing nodes (no new, moved, or removed talents). LPL reads the live tree, so that pass needs no talent-data update.
 - Blizzard import strings are positional. A tree-hash mismatch now fails the import instead of spending the old bits on the current node list.
