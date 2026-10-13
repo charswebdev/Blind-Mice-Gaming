@@ -1,5 +1,9 @@
 # Cooldown Assist changelog
 
+## 1.1.1 — 2026-10-13
+
+Retail Interface `120105` for patch 12.1.5. Older Interface numbers stay so 12.1.0 still loads.
+
 ## 1.1.0 — 2026-08-07
 
 Cross-flavor compatibility and bugfix.

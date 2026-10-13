@@ -9,7 +9,7 @@ local CA = CooldownAssist
 CA.Help = CA.Help or {}
 local Help = CA.Help
 
-CA.VERSION = CA.VERSION or "1.1.0"
+CA.VERSION = CA.VERSION or "1.1.1"
 
 local LINES = {
     "|cff00ff00Cooldown Assist commands|r",
@@ -37,7 +37,7 @@ function Help.PrintCommands()
 end
 
 function Help.PrintAbout()
-    local ver = CA.VERSION or "1.1.0"
+    local ver = CA.VERSION or "1.1.1"
     local iface = "?"
     if CA.Compat and CA.Compat.GetInterfaceVersion then
         iface = tostring(CA.Compat.GetInterfaceVersion())

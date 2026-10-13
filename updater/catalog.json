@@ -201,9 +201,9 @@
       "id": "CooldownAssist",
       "name": "Cooldown Assist",
       "folders": ["CooldownAssist"],
-      "version": "1.1.0",
-      "updated": "2026-08-18",
-      "interfaces": [120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508],
+      "version": "1.1.1",
+      "updated": "2026-10-13",
+      "interfaces": [120105, 120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508],
       "saved": ["CooldownAssistDB"]
     },
     {

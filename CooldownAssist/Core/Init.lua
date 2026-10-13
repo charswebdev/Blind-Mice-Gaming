@@ -7,7 +7,7 @@
 CooldownAssist = CooldownAssist or {}
 local CA = CooldownAssist
 
-CA.VERSION = "1.1.0"
+CA.VERSION = "1.1.1"
 
 if CA.DB and CA.DB.Merge then
     CA.DB.Merge()
@@ -228,6 +228,6 @@ do
     elseif GetBuildInfo then
         iface = tostring(select(4, GetBuildInfo()) or "?")
     end
-    print("|cff00ff00[Cooldown Assist]|r v1.1.0 loaded. TTS: " .. tostring(mode) .. " · Interface: " .. iface)
+    print("|cff00ff00[Cooldown Assist]|r v1.1.1 loaded. TTS: " .. tostring(mode) .. " · Interface: " .. iface)
     print("|cff00ff00[Cooldown Assist]|r |cff00ff00/ca|r settings · |cff00ff00/ca c|r · |cff00ff00/ca about|r · |cff00ff00/cas|r test")
 end
