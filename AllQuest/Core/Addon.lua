@@ -10,7 +10,7 @@ AllQuest = AllQuest or {}
 local AQ = AllQuest
 
 AQ.addonName = addonName
-AQ.version = "1.1.3"
+AQ.version = "1.1.4"
 AQ.title = "AllQuest"
 AQ.Logo = "Interface\\AddOns\\AllQuest\\Media\\AllQuestLogo"
 
