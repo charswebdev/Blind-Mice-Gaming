@@ -30,7 +30,7 @@ Commit, push, and GitHub releases happen **only when asked**.
 | [BMG Unit Frames](BMG-Unit-Frames.md) | Shipped (Retail + Era + Anniversary + MoP + Forever) | 1.2.1 Forever; 1.1.1 others |
 | [Cooldown Assist](Cooldown-Assist.md) | Shipped | 1.1.1 |
 | [Exploration](Exploration.md) | Shipped | 2.0.3 |
-| [FPSDiag](FPSDiag.md) | Shipped | 0.3.1 |
+| [FPSDiag](FPSDiag.md) | Shipped | 0.3.2 |
 | [WowGPS](WowGPS.md) | Shipped | 1.0.0 |
 | [WowGPS - WoW Forever](WowGPS-Forever.md) | Shipped | 1.1.2 |
 | [Light Paws Loadouts (Retail)](Light-Paws-Loadouts-Retail.md) | Shipped | 1.2.4 |

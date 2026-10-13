@@ -17,6 +17,7 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 ## Features
 
 - Catalog-driven list of addons (folder lists, toc interfaces, SavedVariables names) and apps (flavor, status shipped/planned, exe prefix).
+- **2026-10-13:** FPSDiag **0.3.2**. Retail Interface **120105** (patch 12.1.5). Older Interface numbers stay.
 - **2026-10-13:** Exploration **2.0.3**. Retail Interface **120105** (patch 12.1.5). `120100` stays so 12.1.0 still loads.
 - **2026-10-13:** Cooldown Assist **1.1.1**. Retail Interface **120105** (patch 12.1.5). Older Interface numbers stay so 12.1.0 still loads.
 - **2026-10-13:** AllQuest **1.1.4**. Retail Interface **120105** (patch 12.1.5). Data packs stay 1.0.0. Older Interface numbers stay so 12.1.0 still loads.

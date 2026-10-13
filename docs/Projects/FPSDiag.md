@@ -3,10 +3,10 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **0.3.1** |
+| Version | **0.3.2** |
 | Type | In-game FPS / addon-cost diagnostic |
 | Folder | `FPSDiag/` |
-| Clients | Retail 11.0.7+ profiler API through Midnight `120100` |
+| Clients | Retail 11.0.7+ profiler API through patch 12.1.5 (`120105`, `120100`) |
 | SavedVariables | `FPSDiagDB` |
 | Slash | `/fps` panel · `overlay` · `record` · `mem` · `vram` · `av` · `help` |
 
@@ -27,6 +27,7 @@ Uses Blizzard `C_AddOnProfiler` only. It does **not** enable the old `scriptProf
 - Clear memory / compact VRAM / restart A/V (graphics hitch expected).
 - 0.3.0: lighter sampler and named heaviest overlay.
 - **0.3.1:** dashboard lists Hardest and Next peaks from the last 60 seconds so a tank can be named after it happens.
+- **0.3.2:** Retail Interface `120105` for patch 12.1.5. Older Interface numbers stay.
 
 ## Development plan
 

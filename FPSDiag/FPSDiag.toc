@@ -1,8 +1,8 @@
-## Interface: 110007, 111000, 111500, 111700, 120000, 120001, 120005, 120100
+## Interface: 110007, 111000, 111500, 111700, 120000, 120001, 120005, 120100, 120105
 ## Title: FPSDiag
 ## Notes: Diagnose FPS. Clear addon memory, compact VRAM, and restart audio/video.
 ## Author: Blind Mice Gaming
-## Version: 0.3.1
+## Version: 0.3.2
 ## SavedVariables: FPSDiagDB
 ## IconTexture: Interface\AddOns\FPSDiag\Media\icon
 ## AddonCompartmentFunc: FPSDiag_OnAddonCompartmentClick
