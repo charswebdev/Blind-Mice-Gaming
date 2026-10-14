@@ -13,6 +13,17 @@ local NEMESIS_SPELL = {
     [472952] = true,
 }
 
+-- Labyrinth of Kindo'jan (12.1.5). Inside it, difficulty 208 and scenario
+-- type 8 look like a delve. Instance id is the stable check. Scenario name,
+-- flags, and stage count change between chambers.
+local LABYRINTH_INSTANCE = {
+    [3043] = "The Labyrinth of Kindo'jan",
+}
+
+-- ScenarioHeaderDelves lives currency. Spell link and icon, not English wording.
+local LIVES_SPELL = 458103
+local LIVES_ICON = 6013778
+
 local function Clock(sec)
     sec = math.floor(tonumber(sec) or 0)
     if sec < 0 then
@@ -132,6 +143,32 @@ local function InstanceBits()
         maxPlayers = maxPlayers,
         instanceID = instanceID,
     }
+end
+
+local function LabyrinthName(inst)
+    if type(inst) ~= "table" then
+        return nil
+    end
+    local id = tonumber(inst.instanceID)
+    if id and LABYRINTH_INSTANCE[id] then
+        if type(inst.name) == "string" and inst.name ~= "" then
+            local ok = pcall(string.lower, inst.name)
+            if ok then
+                return inst.name
+            end
+        end
+        return LABYRINTH_INSTANCE[id]
+    end
+    if type(inst.name) ~= "string" or inst.name == "" then
+        return nil
+    end
+    local ok, lower = pcall(string.lower, inst.name)
+    if ok and type(lower) == "string" then
+        if lower:find("labyrinth", 1, true) or lower:find("kindo", 1, true) then
+            return inst.name
+        end
+    end
+    return nil
 end
 
 local function AddRow(rows, spec)
@@ -729,6 +766,7 @@ end
 -- Difficulty 208 = Delves. Stays true when the header widget or IsInScenario flickers.
 local lastDelve
 local lastDelveSetID
+local lastLabyrinthTier
 
 local function PlayerInDelve()
     if GetInstanceInfo then
@@ -758,6 +796,7 @@ end
 local function ClearDelveCache()
     lastDelve = nil
     lastDelveSetID = nil
+    lastLabyrinthTier = nil
 end
 
 local function GetDelveWidget()
@@ -876,6 +915,37 @@ end
 
 local function FindProvingTimer()
     return FindTimersOfType(TimerTypeProving())
+end
+
+local function FindAnyElapsedTimer()
+    if not GetWorldElapsedTimers or not GetWorldElapsedTime then
+        return nil
+    end
+    local ok, a, b, c, d, e, f, g = pcall(GetWorldElapsedTimers)
+    if not ok then
+        return nil
+    end
+    local ids = { a, b, c, d, e, f, g }
+    local challenge = TimerTypeChallenge()
+    local proving = TimerTypeProving()
+    for i = 1, #ids do
+        local timerID = ids[i]
+        if type(timerID) == "number" then
+            local ok2, r1, r2, r3 = pcall(GetWorldElapsedTime, timerID)
+            if ok2 then
+                local elapsed, typ
+                if type(r3) == "number" then
+                    elapsed, typ = r2, r3
+                else
+                    elapsed, typ = r1, r2
+                end
+                if typ ~= challenge and typ ~= proving then
+                    return timerID, tonumber(elapsed) or 0
+                end
+            end
+        end
+    end
+    return nil
 end
 
 local function SafeNum(v)
@@ -1356,9 +1426,29 @@ local function DelveLives(delve)
     for i = 1, #delve.currencies do
         local cur = delve.currencies[i]
         if type(cur) == "table" then
-            local blob = string.lower(tostring(cur.leadingText or "") .. " " .. tostring(cur.tooltip or ""))
-            local amount = tonumber(string.match(tostring(cur.text or ""), "%d+"))
-            local isLives = blob:find("life", 1, true) or blob:find("lives", 1, true)
+            local amount, tip
+            local okRead, readAmount, readTip = pcall(function()
+                return tonumber(string.match(tostring(cur.text or ""), "%d+")), tostring(cur.tooltip or "")
+            end)
+            if okRead then
+                amount, tip = readAmount, readTip
+            end
+            tip = tip or ""
+            local isLives = false
+            local okLives, matched = pcall(function()
+                return tip:find("spell:" .. tostring(LIVES_SPELL), 1, true) or tonumber(cur.iconFileID) == LIVES_ICON
+            end)
+            if okLives and matched then
+                isLives = true
+            end
+            if not isLives then
+                local ok, blob = pcall(function()
+                    return string.lower(tostring(cur.leadingText or "") .. " " .. tip)
+                end)
+                if ok and type(blob) == "string" then
+                    isLives = blob:find("life", 1, true) or blob:find("lives", 1, true)
+                end
+            end
             if not isLives and i == 1 and amount and (type(cur.leadingText) ~= "string" or cur.leadingText == "") then
                 isLives = true
             end
@@ -1368,6 +1458,201 @@ local function DelveLives(delve)
         end
     end
     return nil
+end
+
+local function LivesDeaths(cur)
+    if type(cur) ~= "table" or type(cur.tooltip) ~= "string" or IsSecret(cur.tooltip) then
+        return nil
+    end
+    local ok, lower = pcall(string.lower, cur.tooltip)
+    if not ok or type(lower) ~= "string" or not lower:find("death", 1, true) then
+        return nil
+    end
+    return tonumber(string.match(cur.tooltip, "(%d+)%s*$"))
+end
+
+local function CompanionName()
+    if not C_DelvesUI or not C_DelvesUI.GetCompanionInfoForActivePlayer then
+        return nil
+    end
+    local id = tonumber(AQ:SafeCall(C_DelvesUI.GetCompanionInfoForActivePlayer))
+    if not id or id <= 0 or not C_DelvesUI.GetFlavorNodeNameForCompanion then
+        return nil
+    end
+    local name = AQ:SafeCall(C_DelvesUI.GetFlavorNodeNameForCompanion, id)
+    if type(name) ~= "string" or name == "" or IsSecret(name) then
+        return nil
+    end
+    return name
+end
+
+local function AddLabyrinthRows(rows, labyrinthName, currentStage, numStages, delve)
+    local tier
+    if type(delve) == "table" and type(delve.tierText) == "string" then
+        tier = tonumber(string.match(delve.tierText, "%d+"))
+    end
+    if not tier or tier <= 0 then
+        local apiTier = ActiveDelveTier()
+        if type(apiTier) == "number" and apiTier > 0 then
+            tier = apiTier
+        end
+    end
+    if tier and tier > 0 then
+        lastLabyrinthTier = tier
+    else
+        tier = lastLabyrinthTier
+    end
+    local lives, livesIcon, livesIndex
+    if type(delve) == "table" then
+        lives, livesIcon, livesIndex = DelveLives(delve)
+    end
+    local speech = "Labyrinth"
+    if tier then
+        speech = speech .. " Tier " .. tostring(tier)
+    end
+    speech = speech .. ". " .. labyrinthName
+    if lives then
+        speech = speech .. ". " .. tostring(lives) .. " lives"
+    end
+    AddInstanceHeader(rows, {
+        title = labyrinthName,
+        badge = tier and ("Tier " .. tostring(tier)) or nil,
+        lives = lives,
+        livesIcon = livesIcon,
+        instanceType = "delve",
+        speech = speech,
+    })
+    local chamber
+    if type(delve) == "table" and type(delve.headerText) == "string" then
+        chamber = AQ:Trim(delve.headerText)
+    end
+    if chamber and chamber ~= "" and chamber ~= labyrinthName and chamber ~= "Delves" then
+        AddRow(rows, {
+            kind = "objective",
+            title = "Chamber  " .. chamber,
+            goldBullet = true,
+            speech = "Chamber " .. chamber,
+        })
+    end
+    local stageN = tonumber(currentStage)
+    local stageMax = tonumber(numStages)
+    if stageN and stageMax and stageMax > 1 then
+        local label = string.format("Stage %s of %s", tostring(stageN), tostring(stageMax))
+        AddRow(rows, {
+            kind = "objective",
+            title = label,
+            numFulfilled = stageN,
+            numNeeded = stageMax,
+            goldBullet = true,
+            speech = label,
+        })
+    end
+    if livesIndex and type(delve) == "table" and type(delve.currencies) == "table" then
+        local deaths = LivesDeaths(delve.currencies[livesIndex])
+        if deaths then
+            AddRow(rows, {
+                kind = "objective",
+                title = "Deaths  " .. tostring(deaths),
+                speech = "Deaths " .. tostring(deaths),
+            })
+        end
+    end
+    local tierInfo
+    if C_DelvesUI and C_DelvesUI.GetActiveDelveTier then
+        tierInfo = AQ:SafeCall(C_DelvesUI.GetActiveDelveTier)
+    end
+    if type(tierInfo) == "table" and (tonumber(tierInfo.tier) or 0) > 0 then
+        local ilvl = tonumber(tierInfo.suggestedILvl)
+        if ilvl and ilvl > 0 then
+            AddRow(rows, {
+                kind = "objective",
+                title = "Suggested item level  " .. tostring(ilvl),
+                speech = "Suggested item level " .. tostring(ilvl),
+            })
+        end
+        if type(tierInfo.tierDescription) == "string" and tierInfo.tierDescription ~= "" and not IsSecret(tierInfo.tierDescription) then
+            AddRow(rows, {
+                kind = "objective",
+                title = tierInfo.tierDescription,
+                speech = tierInfo.tierDescription,
+            })
+        end
+    end
+    local companion = CompanionName()
+    if companion then
+        AddRow(rows, {
+            kind = "quest",
+            title = "Companion  " .. companion,
+            speech = "Companion " .. companion,
+        })
+    end
+    if type(delve) == "table" and type(delve.currencies) == "table" then
+        for i = 1, #delve.currencies do
+            local cur = delve.currencies[i]
+            if type(cur) == "table" and i ~= livesIndex then
+                local label = cur.leadingText or "Currency"
+                local amount = cur.text or ""
+                local title = AQ:Trim((label .. "  " .. amount))
+                if title ~= "" then
+                    AddRow(rows, {
+                        kind = "quest",
+                        title = title,
+                        icon = cur.iconFileID,
+                        detail = cur.tooltip,
+                        speech = title,
+                    })
+                end
+            end
+        end
+    end
+    if type(delve) == "table" and type(delve.rewardInfo) == "table" and IsShownState(delve.rewardInfo.shownState) then
+        local earned = delve.rewardInfo.shownState == 1
+            or (Enum and Enum.UIWidgetRewardShownState and delve.rewardInfo.shownState == Enum.UIWidgetRewardShownState.ShownEarned)
+        AddRow(rows, {
+            kind = "quest",
+            title = earned and "Bountiful reward earned" or "Bountiful reward",
+            status = earned and "DONE" or "ACTIVE",
+            detail = earned and delve.rewardInfo.earnedTooltip or delve.rewardInfo.unearnedTooltip,
+            speech = "Bountiful reward",
+        })
+    end
+    if type(delve) == "table" and type(delve.spells) == "table" then
+        for i = 1, #delve.spells do
+            local sp = delve.spells[i]
+            local spellID = type(sp) == "table" and tonumber(sp.spellID) or nil
+            local hasText = type(sp) == "table" and type(sp.text) == "string" and sp.text ~= ""
+            if type(sp) == "table" and IsShownState(sp.shownState) and (spellID or hasText) then
+                if spellID then
+                    sp.spellID = spellID
+                end
+                local _, sname, tip = ClassifyDelveSpell(sp)
+                local title = sname
+                if type(title) ~= "string" or title == "" then
+                    title = "Modifier"
+                end
+                AddRow(rows, {
+                    kind = "quest",
+                    title = title,
+                    icon = SpellIcon(spellID or sp.spellID),
+                    detail = (type(tip) == "string" and tip ~= "" and tip) or SpellDesc(spellID or sp.spellID),
+                    speech = title,
+                })
+            end
+        end
+    end
+    if type(delve) == "table" and delve.hasTimer then
+        local timerID, elapsed = FindAnyElapsedTimer()
+        if timerID then
+            AddRow(rows, {
+                kind = "timer",
+                title = "Time",
+                timerID = timerID,
+                elapsed = elapsed or 0,
+                speech = "Labyrinth timer",
+            })
+        end
+    end
+    AddCriteria(rows)
 end
 
 local lastDelveRows
@@ -1454,6 +1739,13 @@ local function BuildInstanceRows()
         AddCriteria(rows)
         return rows
     end
+
+    local labyrinthName = LabyrinthName(inst)
+    if labyrinthName then
+        AddLabyrinthRows(rows, labyrinthName, currentStage, numStages, delve)
+        return rows
+    end
+    lastLabyrinthTier = nil
 
     if delve then
         local tier = tonumber(delve.tierText and string.match(delve.tierText, "%d+"))

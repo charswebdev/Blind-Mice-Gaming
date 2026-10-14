@@ -141,8 +141,8 @@
         "AllQuest_Data_WoD",
         "AllQuest_Data_Wrath"
       ],
-      "version": "1.1.4",
-      "updated": "2026-10-13",
+      "version": "1.1.5",
+      "updated": "2026-10-14",
       "interfaces": [120105, 120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508],
       "saved": ["AllQuestDB", "AllQuestCharDB"]
     },

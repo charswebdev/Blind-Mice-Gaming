@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** (journal data plan phases 0–5 complete) |
-| Version | **1.1.4** (addon toc + updater catalog; Retail Interface `120105`; data packs stay `1.0.0`) |
+| Version | **1.1.5** (addon toc + updater catalog; Retail Interface `120105`; data packs stay `1.0.0`) |
 | Type | In-game quest tracker + questline journal + expansion data plugins |
 | Folders | `AllQuest/` (runtime) · `AllQuest_Data_*` (one pack per expansion) |
 | Author tools | `Tools/AllQuest/` — extractors, wago DB2 cache, ID census (gitignored) |
@@ -27,7 +27,9 @@ World-quest / repeatable journal buckets stay **visible** by default (setting ca
 - Sections: popups, quests, world quests, scenarios, campaigns, achievements, recipes, activities, events, collectibles, pets, rares.
 - Delve instance block: under Nemesis Influence, **Nemesis Packs** uses Blizzard scenario data first — `C_ScenarioInfo.GetCriteriaInfo` / bonus steps / widget-set bars — the same `quantity` / `totalQuantity` Blizzard’s tracker prints (`3/4`). Vignettes are only a fallback. No shrine / Dundun / banner line.
 - Auto-accept / auto-turn-in (Shift at NPC skips).
-- Super-track, items, sounds, colors, filters, profiles.
+- Quest complete sound is Blizzard’s own quest-complete sound (`SOUNDKIT.IG_QUEST_LIST_COMPLETE`). The on/off checkbox stays. The race-voice file list and mixer-channel picker are gone.
+- Labyrinth (Kindo'jan, instance 3043, or an instance name that contains Labyrinth or Kindo): the Instance header is the Labyrinth name with a **Tier N** badge and lives from the same delve header widget Blizzard draws. The chamber is that widget’s header text. Stage x of y is the live scenario stage, not a chamber total. Objectives are scenario criteria. A reward line, shown spells, other currencies, and a deaths line (only when the lives tooltip says death) appear when Blizzard sends them. Suggested item level, tier description, and companion name appear only when those APIs return real values. Nemesis pack extras are not attached.
+- Super-track, items, colors, filters, profiles.
 - Speech of focused rows (AH queue if loaded).
 
 ### Journal
@@ -114,10 +116,14 @@ Classic after phase 5: **822** chains, **5,519** unique IDs, Era QuestV2 **4,807
 - Shrine of Abundance / Dundun tracking: the extra line was wrong more often than it helped, and gossip cleared the Instance block. Removed; packs only.
 - Treating the in-delve Nemesis `stackDisplay` / tooltip slash as remaining. That number is the entrance picker leftover and pinned the line at `0/4`. Packs are vignette IDs + persisted kills only. Keying seen packs on the regenerating vignette GUID also double-counted; creature `objectGUID` only.
 - Inventing pack kills from vignettes while **skipping** Blizzard’s own scenario criteria (`nemesis pack` / `strongbox`). The default tracker already had `3/4`; AllQuest hid that and showed `0/4`. Pack line now reads `GetCriteriaInfo` / bonus steps first.
+- Quest complete used a catalog of race-voice FileDataIDs (`PlaySoundFile`). That list is removed. Completes use Blizzard’s quest-complete sound kit.
+- Calling a Labyrinth a Nemesis delve because the tier is 4 or higher. Kindo'jan uses difficulty 208, so the old rule would attach Nemesis packs on a Tier 11 run.
+- Using scenario name, flags, or stage count to detect a Labyrinth or to count chambers. Those change between chambers, and the stage count is not the chamber total. `C_DelvesUI.GetActiveDelveTier` returns zeros inside the run, so tier and lives come from the delve header widget (`tierText`, lives currency).
 
 ## Open work
 
 - WoW Forever is a sibling package — see [`AllQuest-Forever.md`](AllQuest-Forever.md). Do not add Interface `16001` to this toc (flavor would fall through to Era).
+- Playtest a Labyrinth of Kindo'jan run: header should say the Labyrinth, badge **Tier 11** (or the tier you entered), lives, the current chamber, and the scenario objectives. If Blizzard adds another Labyrinth, add its instance id next to 3043.
 - Delve Nemesis extras: live screenshot at Shadowguard Point showed Influence but no Strong Box / Bonus loot — extras only fired on a classified nemesis *spell*. Midnight can list Influence as a currency or a spell without a numeric id; attach now keys off any “nemesis” chrome row.
 - Confirm live tooltip/vignette IDs if a season adds new Nemesis pack vignettes. Append; do not replace 7531/7869. Pack count prefers Blizzard scenario criteria. Shrine / Dundun tracking was removed.
 - Hand starter overlays past Elwynn/Durotar (Westfall, Barrens, Loch Modan, …) — overlay work, not another extract phase.

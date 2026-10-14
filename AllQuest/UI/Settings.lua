@@ -1029,49 +1029,20 @@ local function BuildTabContent(parent, tabID)
                 Rebuild()
             end, 90, "Reset")
         end
-        Section("Sounds", "Quest complete voice and which mixer channel it uses.")
+        Section("Sounds", "Blizzard's quest complete sound.")
         RowCheck(
             "Play a sound when a quest is complete",
             "soundQuest",
             nil,
             nil,
             nil,
-            "Plays the selected complete voice when you finish a quest."
+            "Plays Blizzard's quest complete sound when you finish a quest."
         )
-        do
-            local soundItems = {}
-            local sounds = AQ.Sounds and AQ.Sounds.List and AQ.Sounds.List() or {}
-            for i = 1, #sounds do
-                soundItems[i] = { text = sounds[i].id, value = sounds[i].id }
+        RowAction("Preview complete sound", "Plays the same Blizzard sound the tracker uses when a quest is finished.", function()
+            if AQ.Sounds and AQ.Sounds.Play then
+                AQ.Sounds.Play()
             end
-            local play = ActionButton(inner, "Play", 56)
-            play:SetScript("OnClick", function()
-                if AQ.Sounds and AQ.Sounds.Play then
-                    AQ.Sounds.Play(DB().soundQuestComplete or "Default", DB().soundChannel or "Master")
-                end
-            end)
-            BindTip(play, "Play", "Preview the selected complete sound.")
-            HoverSpeak(play, "Play complete sound")
-            RowChoice("Complete sound", "Voice played when a quest is finished. Click Play to preview it.", soundItems, function()
-                return DB().soundQuestComplete or "Default"
-            end, function(value)
-                DB().soundQuestComplete = value
-                if AQ.Sounds and AQ.Sounds.Play then
-                    AQ.Sounds.Play(value, DB().soundChannel or "Master")
-                end
-            end, play)
-
-            local chanItems = {}
-            local chans = AQ.Sounds and AQ.Sounds.Channels and AQ.Sounds.Channels() or {}
-            for i = 1, #chans do
-                chanItems[i] = { text = chans[i].label, value = chans[i].id }
-            end
-            RowChoice("Sound channel", "Which WoW sound mixer this complete voice uses. Master is the default.", chanItems, function()
-                return DB().soundChannel or "Master"
-            end, function(value)
-                DB().soundChannel = value
-            end)
-        end
+        end, 70, "Play")
         Section("Items", "Usable quest item buttons on the tracker.")
         RowCheck(
             "Show quest item buttons",

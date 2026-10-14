@@ -17,6 +17,7 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 ## Features
 
 - Catalog-driven list of addons (folder lists, toc interfaces, SavedVariables names) and apps (flavor, status shipped/planned, exe prefix).
+- **2026-10-14:** AllQuest **1.1.5**. Quest complete uses Blizzard’s quest-complete sound. A Labyrinth shows its name, tier, lives, chamber, and scenario objectives. Nemesis pack extras are not attached on a Labyrinth.
 - **2026-10-13:** WowGPS **1.0.1**. Retail Interface **120105** (patch 12.1.5). Older Interface numbers stay so 12.1.0 still loads.
 - **2026-10-13:** BMG Unit Frames (Retail) **1.1.2**. Retail Interface **120105** (patch 12.1.5). Era, Anniversary, and MoP stay **1.1.1**.
 - **2026-10-13:** Light Paws Loadouts (Retail) **1.2.5**. Retail Interface **120105** (patch 12.1.5). Older Interface numbers stay so 12.1.0 still loads.
