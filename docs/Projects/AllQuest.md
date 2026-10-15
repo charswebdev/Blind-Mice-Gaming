@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** (journal data plan phases 0–5 complete) |
-| Version | **1.1.5** (addon toc + updater catalog; Retail Interface `120105`; data packs stay `1.0.0`) |
+| Version | **1.1.6** (addon toc + updater catalog; Retail Interface `120105`; data packs stay `1.0.0`) |
 | Type | In-game quest tracker + questline journal + expansion data plugins |
 | Folders | `AllQuest/` (runtime) · `AllQuest_Data_*` (one pack per expansion) |
 | Author tools | `Tools/AllQuest/` — extractors, wago DB2 cache, ID census (gitignored) |
@@ -28,7 +28,7 @@ World-quest / repeatable journal buckets stay **visible** by default (setting ca
 - Delve instance block: under Nemesis Influence, **Nemesis Packs** uses Blizzard scenario data first — `C_ScenarioInfo.GetCriteriaInfo` / bonus steps / widget-set bars — the same `quantity` / `totalQuantity` Blizzard’s tracker prints (`3/4`). Vignettes are only a fallback. No shrine / Dundun / banner line.
 - Auto-accept / auto-turn-in (Shift at NPC skips).
 - Quest complete sound is Blizzard’s own quest-complete sound (`SOUNDKIT.IG_QUEST_LIST_COMPLETE`). The on/off checkbox stays. The race-voice file list and mixer-channel picker are gone.
-- Labyrinth (Kindo'jan, instance 3043, or an instance name that contains Labyrinth or Kindo): the Instance header is the Labyrinth name with a **Tier N** badge and lives from the same delve header widget Blizzard draws. The chamber is that widget’s header text. Stage x of y is the live scenario stage, not a chamber total. Objectives are scenario criteria. A reward line, shown spells, other currencies, and a deaths line (only when the lives tooltip says death) appear when Blizzard sends them. Suggested item level, tier description, and companion name appear only when those APIs return real values. Nemesis pack extras are not attached.
+- Labyrinth (Kindo'jan, instance 3043, or an instance name that contains Labyrinth or Kindo): the Instance header is the Labyrinth name with a **Tier N** badge and lives from the same delve header widget Blizzard draws. The chamber is that widget’s header text. Under it, the current step’s objectives come from `C_Scenario.GetStepInfo` (the criteria count) and `C_ScenarioInfo.GetCriteriaInfo` (each objective and its count). Stage x of y stays as context and is not the chamber total. A reward line, shown spells, other currencies, and a deaths line (only when the lives tooltip says death) appear when Blizzard sends them. Suggested item level, tier description, and companion name appear only when those APIs return real values. Nemesis pack extras are not attached.
 - Super-track, items, colors, filters, profiles.
 - Speech of focused rows (AH queue if loaded).
 
@@ -119,6 +119,7 @@ Classic after phase 5: **822** chains, **5,519** unique IDs, Era QuestV2 **4,807
 - Quest complete used a catalog of race-voice FileDataIDs (`PlaySoundFile`). That list is removed. Completes use Blizzard’s quest-complete sound kit.
 - Calling a Labyrinth a Nemesis delve because the tier is 4 or higher. Kindo'jan uses difficulty 208, so the old rule would attach Nemesis packs on a Tier 11 run.
 - Using scenario name, flags, or stage count to detect a Labyrinth or to count chambers. Those change between chambers, and the stage count is not the chamber total. `C_DelvesUI.GetActiveDelveTier` returns zeros inside the run, so tier and lives come from the delve header widget (`tierText`, lives currency).
+- Reading Labyrinth objectives from `C_ScenarioInfo.GetScenarioStepInfo` alone. That table’s criteria count is 0 in a chamber, so the tracker showed **Stage x of y** and no objectives. The count Blizzard uses is the third return of `C_Scenario.GetStepInfo`.
 
 ## Open work
 

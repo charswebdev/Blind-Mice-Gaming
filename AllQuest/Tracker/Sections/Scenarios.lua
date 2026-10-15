@@ -976,30 +976,62 @@ local function FlagOn(v)
     return v == true or v == 1
 end
 
+local function PlainCount(value)
+    if IsSecret(value) then
+        return nil
+    end
+    local ok, n = pcall(tonumber, value)
+    if ok and type(n) == "number" then
+        return n
+    end
+    return nil
+end
+
+-- Blizzard's tracker reads numCriteria from C_Scenario.GetStepInfo.
+-- GetScenarioStepInfo can return a table whose count is 0 inside a Labyrinth
+-- chamber, which left only the "Stage x of y" line.
 local function ReadStepInfo()
-    if C_ScenarioInfo and C_ScenarioInfo.GetScenarioStepInfo then
-        local info = AQ:SafeCall(C_ScenarioInfo.GetScenarioStepInfo)
-        if type(info) == "table" then
-            return {
-                name = info.title or info.stepName or info.name,
-                description = info.description,
-                numCriteria = info.numCriteria or 0,
-                weightedProgress = FlagOn(info.weightedProgress),
-                widgetSetID = info.widgetSetID,
+    local step
+    if C_Scenario and C_Scenario.GetStepInfo then
+        local ok, name, desc, numCriteria, _, _, _, _, _, weightedProgress, _, widgetSetID = pcall(C_Scenario.GetStepInfo)
+        if ok then
+            step = {
+                name = name,
+                description = desc,
+                numCriteria = PlainCount(numCriteria) or 0,
+                weightedProgress = weightedProgress,
+                widgetSetID = widgetSetID,
             }
         end
     end
-    if not (C_Scenario and C_Scenario.GetStepInfo) then
+    if C_ScenarioInfo and C_ScenarioInfo.GetScenarioStepInfo then
+        local info = AQ:SafeCall(C_ScenarioInfo.GetScenarioStepInfo)
+        if type(info) == "table" then
+            step = step or {}
+            if SafeText(step.name) == "" then
+                step.name = info.title or info.stepName or info.name
+            end
+            if SafeText(step.description) == "" then
+                step.description = info.description
+            end
+            local n = PlainCount(info.numCriteria)
+            if n and n > (PlainCount(step.numCriteria) or 0) then
+                step.numCriteria = n
+            end
+            if step.weightedProgress == nil then
+                step.weightedProgress = info.weightedProgress
+            end
+            if not step.widgetSetID and info.widgetSetID then
+                step.widgetSetID = info.widgetSetID
+            end
+            step.stepID = info.stepID
+        end
+    end
+    if not step then
         return nil
     end
-    local name, desc, numCriteria, _, _, _, _, _, _, weightedProgress, _, widgetSetID = AQ:SafeCall(C_Scenario.GetStepInfo)
-    return {
-        name = name,
-        description = desc,
-        numCriteria = numCriteria or 0,
-        weightedProgress = FlagOn(weightedProgress),
-        widgetSetID = widgetSetID,
-    }
+    step.numCriteria = PlainCount(step.numCriteria) or 0
+    return step
 end
 
 local function ReadCriteria(i)
@@ -1298,15 +1330,40 @@ local function AddBonusCriteriaRows(rows)
     end
 end
 
+local function ProbeCriteriaCount()
+    local found = 0
+    for i = 1, 12 do
+        local c = ReadCriteria(i)
+        local text = SafeText(c and c.text)
+        local have = c and c.have
+        local need = c and c.need
+        if text ~= "" or type(have) == "number" or type(need) == "number" then
+            found = i
+        elseif found > 0 then
+            break
+        end
+    end
+    return found
+end
+
 local function AddCriteria(rows)
     local step = ReadStepInfo()
     if not step then
         AddBonusCriteriaRows(rows)
-        return
+        return 0
     end
-    local numCriteria = step.numCriteria or 0
-    -- Kaliel: step-level weightedProgress is a bar for the stage, using criteria 1.
-    if step.weightedProgress then
+    local numCriteria = PlainCount(step.numCriteria) or 0
+    if numCriteria < 1 then
+        numCriteria = ProbeCriteriaCount()
+    end
+    local before = #rows
+    -- A single weighted bar is the whole step (Mythic+ forces). Several
+    -- criteria are the chamber objectives and stay as their own lines.
+    local weighted = step.weightedProgress == true or step.weightedProgress == 1
+    if type(step.weightedProgress) == "number" and not IsSecret(step.weightedProgress) and step.weightedProgress > 0 and numCriteria <= 1 then
+        weighted = true
+    end
+    if weighted and numCriteria <= 1 then
         local c = (numCriteria > 0) and ReadCriteria(1) or {}
         local inMplus = C_ChallengeMode and AQ:SafeCall(C_ChallengeMode.IsChallengeModeActive)
         local label = ShortProgressLabel(c.text, nil)
@@ -1323,10 +1380,10 @@ local function AddCriteria(rows)
         })
         for i = 2, numCriteria do
             local extra = ReadCriteria(i)
-            if not extra.isWeightedProgress and type(extra.text) == "string" and extra.text ~= "" and not SkipExtraCriteria(extra.text) then
-                local title = extra.text
+            if not extra.isWeightedProgress and SafeText(extra.text) ~= "" and not SkipExtraCriteria(SafeText(extra.text)) then
+                local title = SafeText(extra.text)
                 if not extra.isFormatted and extra.have and extra.need and not title:find("%d+%s*/%s*%d+") then
-                    title = string.format("%d/%d %s", extra.have, extra.need, extra.text)
+                    title = string.format("%d/%d %s", extra.have, extra.need, title)
                 end
                 AddRow(rows, {
                     kind = "objective",
@@ -1337,12 +1394,12 @@ local function AddCriteria(rows)
                     quantityString = extra.quantityString,
                     objType = extra.objType,
                     goldBullet = true,
-                    speech = extra.text,
-                })
+                speech = title,
+            })
             end
         end
         AddBonusCriteriaRows(rows)
-        return
+        return #rows - before
     end
     local progress
     for i = 1, numCriteria do
@@ -1361,11 +1418,11 @@ local function AddCriteria(rows)
                 quantityString = c.quantityString,
                 objType = c.objType,
             }
-        elseif type(c.text) == "string" and c.text ~= "" and not SkipExtraCriteria(c.text) then
-            local title = c.text
+        elseif SafeText(c.text) ~= "" and not SkipExtraCriteria(SafeText(c.text)) then
+            local title = SafeText(c.text)
             if not c.isFormatted and c.have and c.need then
                 if not title:find("%d+%s*/%s*%d+") then
-                    title = string.format("%d/%d %s", c.have, c.need, c.text)
+                    title = string.format("%d/%d %s", c.have, c.need, title)
                 end
             elseif AQ.Theme.EnsureObjectiveCounts then
                 title = AQ.Theme.EnsureObjectiveCounts(title, {
@@ -1387,22 +1444,24 @@ local function AddCriteria(rows)
                 quantityString = c.quantityString,
                 objType = c.objType,
                 goldBullet = true,
-                speech = c.text .. extra .. (c.completed and " complete" or ""),
+                speech = title .. extra .. (c.completed and " complete" or ""),
             })
         end
     end
-    if type(step.name) == "string" and step.name ~= "" and #rows == 0 and not progress then
+    if SafeText(step.name) ~= "" and #rows == before and not progress then
+        local title = SafeText(step.name)
         AddRow(rows, {
             kind = "objective",
-            title = step.name,
+            title = title,
             goldBullet = true,
-            speech = step.name,
+            speech = title,
         })
     end
     if progress then
         AddProgressRow(rows, progress)
     end
     AddBonusCriteriaRows(rows)
+    return #rows - before
 end
 
 local function AddInstanceHeader(rows, spec)
@@ -1651,6 +1710,25 @@ local function AddLabyrinthRows(rows, labyrinthName, currentStage, numStages, de
                 speech = "Labyrinth timer",
             })
         end
+    end
+    local step = ReadStepInfo()
+    local stageTitle = SafeText(step and step.name)
+    local stageDesc = SafeText(step and step.description)
+    if stageTitle ~= "" and stageTitle ~= chamber and stageTitle ~= labyrinthName and stageTitle ~= "Delves" then
+        AddRow(rows, {
+            kind = "objective",
+            title = stageTitle,
+            goldBullet = true,
+            speech = stageTitle,
+        })
+    end
+    if stageDesc ~= "" and stageDesc ~= stageTitle and stageDesc ~= chamber and stageDesc ~= labyrinthName and stageDesc ~= "Delves" then
+        AddRow(rows, {
+            kind = "objective",
+            title = stageDesc,
+            goldBullet = true,
+            speech = stageDesc,
+        })
     end
     AddCriteria(rows)
 end
