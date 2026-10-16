@@ -23,7 +23,7 @@ Commit, push, and GitHub releases happen **only when asked**.
 
 | Document | Status | Version (catalog / toc) |
 |----------|--------|-------------------------|
-| [Accessibility Helper](Accessibility-Helper.md) | Shipped | 3.6.6 |
+| [Accessibility Helper](Accessibility-Helper.md) | Shipped | 3.6.7 |
 | [Accessibility Helper - WoW Forever](Accessibility-Helper-Forever.md) | Shipped | 1.0.2 |
 | [AllQuest](AllQuest.md) | Shipped | 1.1.6 |
 | [AllQuest - WoW Forever](AllQuest-Forever.md) | Shipped | 1.0.0 |

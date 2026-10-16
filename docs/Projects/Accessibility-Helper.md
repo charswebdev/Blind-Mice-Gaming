@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **3.6.6** (toc, Init banner, settings footer fallback, `updater/catalog.json`) |
+| Version | **3.6.7** (toc, Init banner, settings footer fallback, `updater/catalog.json`) |
 | Type | In-game addon (VI / TTS) |
 | Folder | `AccessibilityHelper/` |
 | Author tools | `Tools/AccessibilityHelper/` (release checklists; not in the addon zip) |
@@ -78,6 +78,7 @@ Work was phased in the Lua headers and later combat/cast slices:
 | 3.6.4 | UnitSeen GUID | `UsableString` before any `guid ~= ""` (macro `TargetUnit` secret GUID) |
 | 3.6.5 | UnitSeen AddOns | SameUnit / follow GUID also go through `UsableString`; live AddOns copy no longer compares secret `guid ~= ""` |
 | 3.6.6 | Retail 12.1.5 | Interface `120105` added. Older Interface numbers stay so 12.1.0 still loads. |
+| 3.6.7 | Merchant name | `OpenMerchantAction` uses `UsableString` before comparing `UnitName("npc")`. A secret merchant name is skipped. |
 
 Settings were rewritten to the two-pane pattern so VI users get one topic at a time instead of a dense options dump.
 
@@ -106,6 +107,7 @@ Settings were rewritten to the two-pane pattern so VI users get one topic at a t
 - `if UnitIsUnit(...)` and `if v then` after `canaccessvalue` on `targettarget` vs `player`. Midnight still forbids boolean-testing that secret. Fixed in 3.6.3: GUID/`UnitSeen` only.
 - `message == ""` on `CHAT_MSG_MONSTER_SAY` (secret string, tainted). Skip via `Compat.UsableString` before any compare.
 - `guid ~= ""` before `issecretvalue` in `Compat.UnitSeen`. Targeting from a macro (`TargetUnit` / action button) returns a secret `UnitGUID("target")`; `type()` is `"string"` so the empty-string compare ran and threw. `UsableString` first. Retail AddOns still had the old `type(guid) == "string" and guid ~= ""` at Compat.lua:123 (`PLAYER_TARGET_CHANGED` → `OnTarget` → `UnitSeen`); Documents already used `UsableString`.
+- `OpenMerchantAction` compared `UnitName("npc")` with `type(n) == "string" and n ~= ""`. A merchant name is often a secret string, so the cursor poll threw hundreds of times. `UsableString` first; if the name stays secret, the vendor line is skipped.
 
 ## Open work
 
