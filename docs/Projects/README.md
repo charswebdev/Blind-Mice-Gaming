@@ -31,7 +31,7 @@ Commit, push, and GitHub releases happen **only when asked**.
 | [Cooldown Assist](Cooldown-Assist.md) | Shipped | 1.1.1 |
 | [Exploration](Exploration.md) | Shipped | 2.0.3 |
 | [FPSDiag](FPSDiag.md) | Shipped | 0.3.2 |
-| [WowGPS](WowGPS.md) | Shipped | 1.0.1 |
+| [WowGPS](WowGPS.md) | Shipped | 1.0.2 |
 | [WowGPS - WoW Forever](WowGPS-Forever.md) | Shipped | 1.1.2 |
 | [Light Paws Loadouts (Retail)](Light-Paws-Loadouts-Retail.md) | Shipped | 1.2.5 |
 | [Light Paws Loadouts - Classic Era](Light-Paws-Loadouts-Classic-Era.md) | Shipped | 1.0.0 |

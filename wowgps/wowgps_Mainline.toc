@@ -6,7 +6,7 @@
 
 ## Author: Blind Mice Gaming
 
-## Version: 1.0.1
+## Version: 1.0.2
 
 ## SavedVariables: WowGPSDB
 
@@ -103,6 +103,8 @@ UI\SearchTab.lua
 UI\RouteTab.lua
 
 UI\SavedTab.lua
+
+UI\ProfilesTab.lua
 
 UI\ExportDialog.lua
 

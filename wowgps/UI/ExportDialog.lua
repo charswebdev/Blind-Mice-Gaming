@@ -42,6 +42,29 @@ function ExportDialog:Init()
     end)
     f.editBox = edit
 
+    local scroll = CreateFrame("ScrollFrame", nil, f, "UIPanelScrollFrameTemplate")
+    scroll:SetPoint("TOPLEFT", 14, -38)
+    scroll:SetPoint("BOTTOMRIGHT", -34, 48)
+    scroll:Hide()
+
+    local block = CreateFrame("EditBox", nil, scroll)
+    block:SetMultiLine(true)
+    block:SetAutoFocus(false)
+    block:SetFontObject("ChatFontNormal")
+    block:SetWidth(360)
+    block:SetHeight(180)
+    block:SetMaxLetters(262144)
+    block:SetScript("OnEscapePressed", function()
+        f:Hide()
+    end)
+    block:SetScript("OnEditFocusGained", function(self)
+        self:HighlightText()
+    end)
+    theme:StyleEditBox(block)
+    scroll:SetScrollChild(block)
+    f.scroll = scroll
+    f.blockBox = block
+
     local closeBtn = CreateFrame("Button", nil, f, "BackdropTemplate")
     closeBtn:SetSize(88, 26)
     closeBtn:SetPoint("BOTTOM", 0, 14)
@@ -57,10 +80,30 @@ end
 
 function ExportDialog:Show(text)
     self:Init()
-    local edit = self.frame.editBox
-    edit:SetText(text or "")
-    self.frame:Show()
-    self.frame:Raise()
-    edit:SetFocus()
-    edit:HighlightText()
+    local frame = self.frame
+    frame:SetSize(420, 132)
+    frame.scroll:Hide()
+    frame.editBox:Show()
+    frame.title:SetText(LibStub("AceLocale-3.0"):GetLocale("WowGPS")["EXPORT_PROMPT"])
+    frame.editBox:SetText(text or "")
+    frame:Show()
+    frame:Raise()
+    frame.editBox:SetFocus()
+    frame.editBox:HighlightText()
+end
+
+function ExportDialog:ShowBlock(text, title)
+    self:Init()
+    local L = LibStub("AceLocale-3.0"):GetLocale("WowGPS")
+    local frame = self.frame
+    frame:SetSize(460, 300)
+    frame.editBox:Hide()
+    frame.scroll:Show()
+    frame.title:SetText(title or L["PROFILE_EXPORT_PROMPT"])
+    local block = frame.blockBox
+    block:SetText(text or "")
+    frame:Show()
+    frame:Raise()
+    block:SetFocus()
+    block:HighlightText()
 end

@@ -252,6 +252,59 @@ function WowGPS:SlashHandler(input)
         return
     end
 
+    if cmd == "profile" then
+        local L = LibStub("AceLocale-3.0"):GetLocale("WowGPS")
+        local sub, arg = rest:match("^(%S+)%s*(.*)$")
+        sub = (sub or ""):lower()
+        arg = arg or ""
+        if sub == "new" then
+            local ok, result = ns.Database:CreateLocationProfile(arg)
+            if ok then
+                self:Print(string.format(L["PROFILE_CREATED"], result))
+                if ns.SavedTab then
+                    ns.SavedTab:NotifyProfileChange()
+                end
+            elseif result == "exists" then
+                self:Print(string.format(L["PROFILE_EXISTS"], ns.Database:NormalizeProfileName(arg) or arg))
+            else
+                self:Print(L["PROFILE_BAD_NAME"])
+            end
+        elseif sub == "use" or sub == "switch" then
+            local ok, result = ns.Database:SetActiveLocationProfile(arg)
+            if ok then
+                self:Print(string.format(L["PROFILE_SWITCHED"], result))
+                if ns.SavedTab then
+                    ns.SavedTab:NotifyProfileChange()
+                end
+            else
+                self:Print(L["PROFILE_MISSING"])
+            end
+        elseif sub == "delete" then
+            local name = ns.Database:NormalizeProfileName(arg) or ns.Database:GetActiveLocationProfile()
+            local ok, nextName = ns.Database:DeleteLocationProfile(name)
+            if ok then
+                self:Print(string.format(L["PROFILE_DELETED"], nextName or ""))
+                if ns.SavedTab then
+                    ns.SavedTab:NotifyProfileChange()
+                end
+            elseif nextName == "last" then
+                self:Print(L["PROFILE_LAST"])
+            else
+                self:Print(L["PROFILE_MISSING"])
+            end
+        elseif sub == "export" then
+            local text = ns.CustomLocations:ExportProfile()
+            if text and ns.ExportDialog then
+                ns.ExportDialog:ShowBlock(text, L["PROFILE_EXPORT_PROMPT"])
+            end
+        else
+            local name = ns.Database:GetActiveLocationProfile()
+            self:Print(string.format(L["PROFILE_SWITCHED"], name or ""))
+            self:Print("Usage: /gps profile new <name> | use <name> | export | delete [name]")
+        end
+        return
+    end
+
     if cmd == "export" then
         local dest = ns.CustomLocations:FindByName(rest)
         if dest then

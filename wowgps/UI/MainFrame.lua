@@ -116,9 +116,9 @@ function MainFrame:Init(addon)
     self.tabBar = tabBar
 
     self.tabs = {}
-    self.tabOrder = { "search", "route", "saved", "add" }
+    self.tabOrder = { "search", "route", "saved", "profiles", "add" }
     local tabNames = self.tabOrder
-    local tabLabels = { L["TAB_SEARCH"], L["TAB_ROUTE"], L["TAB_SAVED"], L["TAB_ADD"] }
+    local tabLabels = { L["TAB_SEARCH"], L["TAB_ROUTE"], L["TAB_SAVED"], L["TAB_PROFILES"], L["TAB_ADD"] }
     local tabCount = #tabNames
     local tabGap = 2
     local tabWidth = (c.WIDTH - 16 - tabGap * (tabCount - 1)) / tabCount
@@ -163,6 +163,7 @@ function MainFrame:Init(addon)
     ns.SearchTab:Build(self.panels.search, self)
     ns.RouteTab:Build(self.panels.route, self)
     ns.SavedTab:Build(self.panels.saved, self)
+    ns.ProfilesTab:Build(self.panels.profiles, self)
     ns.AddTab:Build(self.panels.add, self)
 
     self:LayoutTabs()
@@ -203,6 +204,9 @@ function MainFrame:OnResize()
     end
     if ns.SavedTab and ns.SavedTab.OnParentResize then
         ns.SavedTab:OnParentResize()
+    end
+    if ns.ProfilesTab and ns.ProfilesTab.OnParentResize then
+        ns.ProfilesTab:OnParentResize()
     end
     if ns.RouteTab and ns.RouteTab.OnParentResize then
         ns.RouteTab:OnParentResize()
@@ -295,6 +299,7 @@ function MainFrame:SelectTab(key, skipSessionSave, focusSearch)
             if name == "search" then ns.SearchTab:Show(focusSearch)
             elseif name == "route" then ns.RouteTab:Show()
             elseif name == "saved" then ns.SavedTab:Show()
+            elseif name == "profiles" then ns.ProfilesTab:Show()
             elseif name == "add" then ns.AddTab:Show()
             end
         else

@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.0.1** |
+| Version | **1.0.2** |
 | Type | In-game GPS / step-by-step travel |
 | Folder | `wowgps/` |
 | Author tools | `Tools/wowgps/` — destination/entrance builders, HandyNotes reference dumps |
@@ -16,16 +16,17 @@
 
 In-game GPS: search destinations, build a **smart route** (flight, portal, dungeon entrance, local hops), and show step-by-step directions with map pins. Intended to work with **Zygor pathfinding enabled**. TomTom is a fallback arrow.
 
-0.4.x grew the window and Route “Use item” layout; **1.0.0** is the first stable updater offer. **1.0.1** adds Retail Interface `120105` for patch 12.1.5.
+0.4.x grew the window and Route “Use item” layout; **1.0.0** is the first stable updater offer. **1.0.1** adds Retail Interface `120105` for patch 12.1.5. **1.0.2** adds the Profiles tab for saved waypoints.
 
 ## Features
 
-- Search, Route, Saved, Add-location tabs.
+- Search, Route, Saved, Profiles, and Add tabs.
 - Travel regions, map coords, route validator.
 - Midnight-local and Maw-local route special cases.
 - Travel actions + sub-step resolver + route tracker.
 - Zygor travel integration, TomTom, map pins, fallback arrow.
 - Custom personal locations; import/export.
+- Profiles tab: create, rename, load, delete, export, and import. Each profile stores every account-wide and character waypoint. Create starts empty. Export and import use `WGPSPROFILE` text. Existing saved places stay in a profile named Default.
 - Seed destinations + AreaTable + instance entrances JSON.
 
 ## Development plan
@@ -50,6 +51,7 @@ In-game GPS: search destinations, build a **smart route** (flight, portal, dunge
 ## What worked
 
 - Requiring Zygor for serious pathfinding instead of rewriting a traveler graph.
+- Keeping saved waypoints inside the active location profile, and moving older account/character stores into Default once, so a new profile does not wipe places that were already saved.
 - Keeping HandyNotes/Zygor dumps in Tools so the zip is not a copy of those addons.
 
 ## What did not work
@@ -60,4 +62,5 @@ In-game GPS: search destinations, build a **smart route** (flight, portal, dunge
 ## Open work
 
 - Destination coverage is seed + playtest, not a full Wowhead dump (and should not become one).
+- Playtest a location profile: create one, save places into it, export, import on another character, and confirm Default still has the old places.
 - Classic path quality depends on Zygor Classic being installed.

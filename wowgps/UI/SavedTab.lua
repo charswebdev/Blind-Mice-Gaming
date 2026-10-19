@@ -10,6 +10,18 @@ SavedTab.SECTION_GAP = 10
 SavedTab.ACTION_HEIGHT = 22
 SavedTab.ACTION_BOTTOM_PAD = 6
 
+function SavedTab:NotifyProfileChange()
+    if ns.SearchTab and ns.SearchTab.searchBox and ns.SearchTab.UpdateResults then
+        ns.SearchTab:UpdateResults(ns.SearchTab.searchBox:GetText() or "")
+    end
+    if self.RefreshList then
+        self:RefreshList()
+    end
+    if ns.ProfilesTab and ns.ProfilesTab.RefreshList then
+        ns.ProfilesTab:RefreshList()
+    end
+end
+
 function SavedTab:ExportRecord(record)
     if not record then
         return
@@ -415,7 +427,9 @@ function SavedTab:Build(parent, mainFrame)
     self.hint:SetPoint("TOPLEFT", headerRow, "BOTTOMLEFT", 0, -2)
     self.hint:SetPoint("TOPRIGHT", -12, 0)
     self.hint:SetJustifyH("LEFT")
-    self.hint:SetText(L["SAVED_HINT"])
+    self.hint:SetWordWrap(true)
+    self.hint:SetHeight(28)
+    self.hint:SetText(L["SAVED_HINT"]:format(""))
     theme:SetTextColor(self.hint, theme.colors.textMuted)
 
     local scroll = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
@@ -480,6 +494,11 @@ end
 function SavedTab:RefreshList()
     local L = LibStub("AceLocale-3.0"):GetLocale("WowGPS")
     self:HideDynamicRows()
+
+    local profileName = ns.Database:GetActiveLocationProfile()
+    if self.hint then
+        self.hint:SetText(string.format(L["SAVED_HINT"], profileName or ""))
+    end
 
     local totalCount = 0
     for _, scope in ipairs({ "account", "character" }) do

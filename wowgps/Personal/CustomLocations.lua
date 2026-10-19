@@ -3,8 +3,15 @@ local _, ns = ...
 local CustomLocations = {}
 ns.CustomLocations = CustomLocations
 
+local idSerial = 0
+
 local function newId()
-    return tostring(time()) .. "-" .. tostring(math.random(1000, 9999))
+    idSerial = idSerial + 1
+    return tostring(time()) .. "-" .. tostring(idSerial) .. "-" .. tostring(math.random(1000, 9999))
+end
+
+local function cleanField(value)
+    return tostring(value or ""):gsub("[\r\n:]", " ")
 end
 
 function CustomLocations:NormalizeTags(tags)
@@ -397,6 +404,38 @@ function CustomLocations:List(scope)
     return list
 end
 
+function CustomLocations:FormatRecordLine(record, scope)
+    if not record or not record.mapId or not record.name then
+        return nil
+    end
+    return string.format(
+        "WGPS:%s:%d:%.4f:%.4f:%s:%s:%s",
+        cleanField(record.name),
+        record.mapId,
+        record.x or 0,
+        record.y or 0,
+        cleanField(self:FormatTagsForExport(record)),
+        scope or record.scope or "account",
+        cleanField(record.note)
+    )
+end
+
+function CustomLocations:FormatCharacterLine(charKey, record)
+    if not record or not record.mapId or not record.name or not charKey then
+        return nil
+    end
+    return string.format(
+        "WGPSC:%s:%s:%d:%.4f:%.4f:%s:%s",
+        cleanField(charKey),
+        cleanField(record.name),
+        record.mapId,
+        record.x or 0,
+        record.y or 0,
+        cleanField(self:FormatTagsForExport(record)),
+        cleanField(record.note)
+    )
+end
+
 function CustomLocations:Export(id, scope)
     id = self:NormalizeRecordId(id)
     local store = self:GetStore(scope)
@@ -404,16 +443,46 @@ function CustomLocations:Export(id, scope)
     if not record then
         return nil
     end
-    return string.format(
-        "WGPS:%s:%d:%.4f:%.4f:%s:%s:%s",
-        record.name:gsub(":", " "),
-        record.mapId,
-        record.x,
-        record.y,
-        self:FormatTagsForExport(record):gsub(":", " "),
-        record.scope or "account",
-        (record.note or ""):gsub(":", " ")
-    )
+    return self:FormatRecordLine(record, record.scope or scope or "account")
+end
+
+function CustomLocations:ExportProfile(name)
+    local resolved, profile = ns.Database:GetLocationProfile(name)
+    if not resolved or not profile then
+        return nil
+    end
+    name = resolved
+
+    local lines = { "WGPSPROFILE:1:" .. cleanField(name) }
+    local accountLines = {}
+    for _, record in pairs(profile.account or {}) do
+        local line = self:FormatRecordLine(record, "account")
+        if line then
+            accountLines[#accountLines + 1] = line
+        end
+    end
+    table.sort(accountLines)
+    for i = 1, #accountLines do
+        lines[#lines + 1] = accountLines[i]
+    end
+
+    local characterLines = {}
+    for charKey, store in pairs(profile.characters or {}) do
+        if type(store) == "table" then
+            for _, record in pairs(store) do
+                local line = self:FormatCharacterLine(charKey, record)
+                if line then
+                    characterLines[#characterLines + 1] = line
+                end
+            end
+        end
+    end
+    table.sort(characterLines)
+    for i = 1, #characterLines do
+        lines[#lines + 1] = characterLines[i]
+    end
+
+    return table.concat(lines, "\n"), name, #accountLines + #characterLines
 end
 
 function CustomLocations:FindMapIdByZoneName(zoneName)
@@ -564,8 +633,8 @@ function CustomLocations:ParseWgpsLine(line)
     }
 end
 
-function CustomLocations:StoreImported(parsed)
-    if not parsed or not parsed.mapId or parsed.x == nil or parsed.y == nil then
+function CustomLocations:MakeRecord(parsed)
+    if not parsed or not parsed.mapId or parsed.x == nil or parsed.y == nil or not parsed.name then
         return nil
     end
 
@@ -574,7 +643,7 @@ function CustomLocations:StoreImported(parsed)
         scope = "account"
     end
 
-    local record = {
+    return {
         id = newId(),
         name = parsed.name,
         mapId = parsed.mapId,
@@ -585,10 +654,129 @@ function CustomLocations:StoreImported(parsed)
         tag = nil,
         scope = scope,
         note = parsed.note or "",
-        z = 0,
+        z = parsed.z or 0,
         flavor = ns.Destination:GetFlavor(),
         createdAt = time(),
     }
+end
+
+function CustomLocations:ParseCharacterLine(line)
+    line = (line or ""):gsub("^%s+", ""):gsub("%s+$", "")
+    local charKey, name, mapId, x, y, tagField, note =
+        line:match("^WGPSC:([^:]+):([^:]+):(%d+):([%d%.]+):([%d%.]+):([^:]*):?(.*)$")
+    if not charKey or charKey == "" then
+        return nil
+    end
+
+    mapId = tonumber(mapId)
+    x = tonumber(x)
+    y = tonumber(y)
+    if not mapId or not x or not y then
+        return nil
+    end
+    if x > 1 then
+        x = self:NormalizeCoord(x)
+    end
+    if y > 1 then
+        y = self:NormalizeCoord(y)
+    end
+    if not x or not y or x > 1 or y > 1 then
+        return nil
+    end
+
+    local mapInfo = C_Map.GetMapInfo(mapId)
+    return charKey, {
+        name = name,
+        mapId = mapId,
+        x = x,
+        y = y,
+        areaName = mapInfo and mapInfo.name or "",
+        tags = self:NormalizeTags(tagField or ""),
+        note = note or "",
+        scope = "character",
+    }
+end
+
+function CustomLocations:LooksLikeProfile(dataString)
+    return (dataString or ""):find("^%s*WGPSPROFILE:%d+:") ~= nil
+        or (dataString or ""):find("[\r\n]%s*WGPSPROFILE:%d+:") ~= nil
+end
+
+function CustomLocations:ImportProfile(dataString)
+    local profileName
+    local sawHeader = false
+    local account = {}
+    local characters = {}
+    local count = 0
+
+    for line in (dataString .. "\n"):gmatch("(.-)\r?\n") do
+        local trimmed = line:match("^%s*(.-)%s*$") or ""
+        if trimmed ~= "" then
+            local version, name = trimmed:match("^WGPSPROFILE:(%d+):(.+)$")
+            if version then
+                if tonumber(version) ~= 1 then
+                    return false, "bad_version", 0
+                end
+                profileName = name
+                sawHeader = true
+            elseif sawHeader then
+                local charKey, parsedCharacter = self:ParseCharacterLine(trimmed)
+                if charKey and parsedCharacter then
+                    local record = self:MakeRecord(parsedCharacter)
+                    if record then
+                        characters[charKey] = characters[charKey] or {}
+                        characters[charKey][record.id] = record
+                        count = count + 1
+                    end
+                else
+                    local parsed = self:ParseWgpsLine(trimmed)
+                    if parsed then
+                        if parsed.scope ~= "character" then
+                            parsed.scope = "account"
+                        end
+                        local record = self:MakeRecord(parsed)
+                        if record then
+                            if record.scope == "character" then
+                                local key = ns.Database:GetCharacterKey()
+                                characters[key] = characters[key] or {}
+                                characters[key][record.id] = record
+                            else
+                                account[record.id] = record
+                            end
+                            count = count + 1
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    if not sawHeader then
+        return false, "bad_format", 0
+    end
+
+    local ok, storedName = ns.Database:ReplaceLocationProfile(profileName, account, characters)
+    if not ok then
+        return false, storedName or "bad_format", 0
+    end
+    return true, storedName, count, "profile"
+end
+
+function CustomLocations:StoreImported(parsed)
+    if not parsed or not parsed.mapId or parsed.x == nil or parsed.y == nil then
+        return nil
+    end
+
+    local scope = parsed.scope or "account"
+    if scope ~= "account" and scope ~= "character" then
+        scope = "account"
+    end
+
+    local record = self:MakeRecord(parsed)
+    if not record then
+        return nil
+    end
+    record.scope = scope
     local store = self:GetStore(record.scope)
     store[record.id] = record
     return record
@@ -598,6 +786,9 @@ function CustomLocations:Import(dataString)
     dataString = (dataString or ""):gsub("^%s+", ""):gsub("%s+$", "")
     if dataString == "" then
         return false, "bad_format", 0
+    end
+    if self:LooksLikeProfile(dataString) then
+        return self:ImportProfile(dataString)
     end
 
     local imported = 0

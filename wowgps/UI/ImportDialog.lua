@@ -38,7 +38,7 @@ function ImportDialog:Init()
     edit:SetFontObject("ChatFontNormal")
     edit:SetWidth(400)
     edit:SetHeight(120)
-    edit:SetMaxLetters(8000)
+    edit:SetMaxLetters(262144)
     edit:SetScript("OnEscapePressed", function()
         f:Hide()
     end)
@@ -90,11 +90,17 @@ function ImportDialog:Accept()
         end
         if ns.SavedTab and ns.SavedTab.RefreshList then
             ns.SavedTab:RefreshList()
-        end
+        if ns.SavedTab and ns.SavedTab.NotifyProfileChange then
+            ns.SavedTab:NotifyProfileChange()
+        elseif ns.SavedTab and ns.SavedTab.RefreshList then
     else
         WowGPS:Print(L["IMPORT_FAILED"])
     end
-end
+        if ns.CustomLocations:LooksLikeProfile(text) then
+            WowGPS:Print(L["PROFILE_IMPORT_FAILED"])
+        else
+            WowGPS:Print(L["IMPORT_FAILED"])
+        end
 
 function ImportDialog:Show()
     self:Init()
