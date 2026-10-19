@@ -3,11 +3,11 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.2.0** (`updaterVersion` + GitHub tag `v1.2.0`) |
+| Version | **1.2.1** (`updaterVersion` + GitHub tag `v1.2.1`) |
 | Type | Desktop installer/updater for **all** BMG addons and first-run desktop apps |
 | Folder | `updater/` (source mostly local; **`catalog.json` tracked**) |
 | Catalog URL | GitHub `main` · `updater/catalog.json` in repo `charswebdev/Blind-Mice-Gaming` |
-| Setup | `https://github.com/charswebdev/Blind-Mice-Gaming/releases/download/v1.2.0/BMG-Updater-Setup-1.2.0.exe` |
+| Setup | `https://github.com/charswebdev/Blind-Mice-Gaming/releases/download/v1.2.1/BMG-Updater-Setup-1.2.1.exe` |
 | Author tools | `Tools/updater/` logo previews / installer art |
 
 ## Description
@@ -17,6 +17,7 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 ## Features
 
 - Catalog-driven list of addons (folder lists, toc interfaces, SavedVariables names) and apps (flavor, status shipped/planned, exe prefix).
+- **1.2.1:** Applications and addons are grouped by game flavor. An addon or app installs only when the player clicks Install. Automatic updates replace only copies that are already installed. Anniversary interface numbers are 20505 and up, so they are not listed under Burning Crusade. Forever interface numbers are not treated as Retail.
 - **2026-10-15:** Accessibility Helper **3.6.7**. Merchant cursor no longer compares a secret `UnitName("npc")`. If the name stays secret, the vendor line is skipped.
 - **2026-10-14:** AllQuest **1.1.6**. A Labyrinth chamber lists its scenario objectives and counts, not only the stage line.
 - **2026-10-14:** AllQuest **1.1.5**. Quest complete uses Blizzard’s quest-complete sound. A Labyrinth shows its name, tier, lives, chamber, and scenario objectives. Nemesis pack extras are not attached on a Labyrinth.
@@ -66,6 +67,8 @@ Version compare for addons is catalog `version` vs installed toc. **Short versio
 ## What worked
 
 - One catalog for addons + apps.
+- Click-to-install, then automatic updates only for copies that are already installed.
+- Applications and addons listed under a game-flavor heading instead of one mixed list.
 - Keeping addon folders at **repo root** so copy paths stay `source/AllQuest/`.
 - SSL via certifi on frozen Python (same class of bug as LPLM/LPTM).
 - Installing addon files while the client is running, then `/reload`.
@@ -77,6 +80,7 @@ Version compare for addons is catalog `version` vs installed toc. **Short versio
 - Running app installs before updater self-update (1.1.8 orders self-update first).
 - Progress UI that stayed empty until the download finished (1.1.8).
 - Waiting for Wow.exe to close before automatic addon updates. Addons load from disk on `/reload`; the game does not need to quit.
+- Anniversary and Burning Crusade Classic used the same interface band (20000–29999), so Anniversary addons also appeared under TBC. Anniversary is now 20505 and up. Forever interface numbers at 121000 and above were also counted as Retail; those numbers stay on WoW Forever.
 - 1.1.8 self-update waited until every addon TOC was fetched, and only ran if “Automatically update installed addons and apps” was on. A long-running instance never re-checked. Silent Setup also skipped launching the new exe (`skipifsilent`).
 
 ## Open work

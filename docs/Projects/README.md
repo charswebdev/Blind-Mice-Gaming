@@ -52,7 +52,7 @@ Commit, push, and GitHub releases happen **only when asked**.
 | [Light Paws Loadout Manager - Classic Era](Light-Paws-Loadout-Manager-Classic-Era.md) | Planned (in program) | catalog stub only |
 | [Light Paws Loadout Manager - Anniversary](Light-Paws-Loadout-Manager-Anniversary.md) | Planned | — |
 | [Light Paws Loadout Manager - Classic (MoP)](Light-Paws-Loadout-Manager-Classic-MoP.md) | Planned | — |
-| [Blind Mice Gaming Updater](BMG-Updater.md) | Shipped | 1.2.0 |
+| [Blind Mice Gaming Updater](BMG-Updater.md) | Shipped | 1.2.1 |
 
 ## Host
 
