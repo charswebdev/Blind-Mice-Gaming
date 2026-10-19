@@ -28,6 +28,7 @@ ns.Constants = {
         "Quest",
         "Rare",
         "Delve entrance",
+        "Labyrinth",
         "Dungeon entrance",
         "Raid entrance",
         "Scenario entrance",

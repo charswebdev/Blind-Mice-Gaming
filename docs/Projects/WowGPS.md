@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.0.2** |
+| Version | **1.0.3** |
 | Type | In-game GPS / step-by-step travel |
 | Folder | `wowgps/` |
 | Author tools | `Tools/wowgps/` — destination/entrance builders, HandyNotes reference dumps |
@@ -16,7 +16,7 @@
 
 In-game GPS: search destinations, build a **smart route** (flight, portal, dungeon entrance, local hops), and show step-by-step directions with map pins. Intended to work with **Zygor pathfinding enabled**. TomTom is a fallback arrow.
 
-0.4.x grew the window and Route “Use item” layout; **1.0.0** is the first stable updater offer. **1.0.1** adds Retail Interface `120105` for patch 12.1.5. **1.0.2** adds the Profiles tab for saved waypoints.
+0.4.x grew the window and Route “Use item” layout; **1.0.0** is the first stable updater offer. **1.0.1** adds Retail Interface `120105` for patch 12.1.5. **1.0.2** adds the Profiles tab for saved waypoints. **1.0.3** adds Labyrinth to the Search and Add type dropdowns.
 
 ## Features
 
@@ -27,6 +27,7 @@ In-game GPS: search destinations, build a **smart route** (flight, portal, dunge
 - Zygor travel integration, TomTom, map pins, fallback arrow.
 - Custom personal locations; import/export.
 - Profiles tab: create, rename, load, delete, export, and import. Each profile stores every account-wide and character waypoint. Create starts empty. Export and import use `WGPSPROFILE` text. Existing saved places stay in a profile named Default.
+- Search and Add type dropdowns include **Labyrinth**. Tag a saved place with it, then filter Search by Labyrinth.
 - Seed destinations + AreaTable + instance entrances JSON.
 
 ## Development plan
