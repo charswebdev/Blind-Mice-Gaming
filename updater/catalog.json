@@ -240,8 +240,8 @@
       "id": "lpl",
       "name": "Light Paws Loadouts",
       "folders": ["lpl"],
-      "version": "1.2.5",
-      "updated": "2026-10-13",
+      "version": "1.2.6",
+      "updated": "2026-10-20",
       "interfaces": [120105, 120100, 120007, 120001],
       "saved": ["LPLDB"]
     },
@@ -249,8 +249,8 @@
       "id": "lpl-classic-era",
       "name": "Light Paws Loadouts - Classic Era",
       "folders": ["lpl-classic-era"],
-      "version": "1.0.0",
-      "updated": "2026-08-22",
+      "version": "1.0.1",
+      "updated": "2026-10-20",
       "interfaces": [11509, 11508],
       "saved": ["LPLClassicEraDB"]
     },
@@ -258,8 +258,8 @@
       "id": "lpl-forever",
       "name": "Light Paws Loadouts - WoW Forever",
       "folders": ["lpl-forever"],
-      "version": "1.4.8",
-      "updated": "2026-09-27",
+      "version": "1.4.9",
+      "updated": "2026-10-20",
       "interfaces": [16002, 16001, 16000, 121500, 121000],
       "saved": ["LPLForeverDB"],
       "client": "forever"

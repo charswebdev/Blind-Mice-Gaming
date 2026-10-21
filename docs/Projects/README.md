@@ -33,9 +33,9 @@ Commit, push, and GitHub releases happen **only when asked**.
 | [FPSDiag](FPSDiag.md) | Shipped | 0.3.2 |
 | [WowGPS](WowGPS.md) | Shipped | 1.0.3 |
 | [WowGPS - WoW Forever](WowGPS-Forever.md) | Shipped | 1.1.2 |
-| [Light Paws Loadouts (Retail)](Light-Paws-Loadouts-Retail.md) | Shipped | 1.2.5 |
-| [Light Paws Loadouts - Classic Era](Light-Paws-Loadouts-Classic-Era.md) | Shipped | 1.0.0 |
-| [Light Paws Loadouts - WoW Forever](Light-Paws-Loadouts-Forever.md) | Shipped (phase 4) | 1.4.8 |
+| [Light Paws Loadouts (Retail)](Light-Paws-Loadouts-Retail.md) | Shipped | 1.2.6 |
+| [Light Paws Loadouts - Classic Era](Light-Paws-Loadouts-Classic-Era.md) | Shipped | 1.0.1 |
+| [Light Paws Loadouts - WoW Forever](Light-Paws-Loadouts-Forever.md) | Shipped (phase 4) | 1.4.9 |
 | [Light Paws - Anniversary](Light-Paws-Loadouts-Anniversary.md) | Planned | — |
 | [Light Paws Classic (MoP)](Light-Paws-Loadouts-Classic-MoP.md) | Planned | — |
 | [Season of Discovery LPL](Light-Paws-Loadouts-SoD.md) | Planned (later) | — |

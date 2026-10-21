@@ -94,6 +94,14 @@ local TAB_DEFINITIONS = {
         bottom = false,
     },
     {
+        id = "profiles",
+        label = "Profiles",
+        description = "Save every LPL vault in a profile. Create, rename, load, delete, export, and import.",
+        iconStem = "profiles_64",
+        order = 80,
+        bottom = false,
+    },
+    {
         id = "builds",
         label = "Import / Export",
         description = "Import and export Classic Era LPL loadouts and sets.",
@@ -119,6 +127,43 @@ local function OnTabClick(tabData)
     end
 end
 
+local function FitRail(height, topCount, bottomCount)
+    local function stacksFit(size, gap)
+        local function stack(count)
+            if count <= 0 then
+                return 0
+            end
+            return (count * size) + ((count - 1) * gap)
+        end
+        local bottomReserve = BOTTOM_PAD
+        if bottomCount > 0 then
+            bottomReserve = BOTTOM_PAD + stack(bottomCount) + DIVIDER_GAP
+        end
+        local available = height - TOP_PAD - bottomReserve - 4
+        return stack(topCount) <= available
+    end
+    if stacksFit(TAB_SIZE, TAB_GAP) then
+        return TAB_SIZE, TAB_GAP
+    end
+    for size = TAB_SIZE - 1, 22, -1 do
+        if stacksFit(size, 2) then
+            return size, 2
+        end
+    end
+    return 22, 1
+end
+
+local function ResizeTab(tab, size)
+    if not tab then
+        return
+    end
+    tab:SetSize(size, size)
+    if tab.icon then
+        local iconSize = math.max(16, math.floor(size * (32 / 48)))
+        tab.icon:SetSize(iconSize, iconSize)
+    end
+end
+
 local function CollectTabs(bottom)
     local list = {}
     for _, tabData in ipairs(TAB_DEFINITIONS) do
@@ -130,6 +175,20 @@ local function CollectTabs(bottom)
         return (a.order or 0) < (b.order or 0)
     end)
     return list
+end
+
+function LPL.Sidebar:RequiredFrameHeight()
+    local topCount = #CollectTabs(false)
+    local bottomCount = #CollectTabs(true)
+    local topNeeded = TAB_SIZE
+    if topCount > 1 then
+        topNeeded = ((topCount - 1) * TAB_STEP) + TAB_SIZE
+    end
+    local bottomReserve = BOTTOM_PAD
+    if bottomCount > 0 then
+        bottomReserve = BOTTOM_PAD + (bottomCount * TAB_SIZE) + ((bottomCount - 1) * TAB_GAP) + DIVIDER_GAP
+    end
+    return 36 + TOP_PAD + topNeeded + 4 + bottomReserve
 end
 
 function LPL.Sidebar:Layout()
@@ -145,8 +204,13 @@ function LPL.Sidebar:Layout()
     end
 
     local height = sidebar:GetHeight() or 0
+    if height < 80 then
+        return
+    end
     local bottomCount = #bottomDefs
     local topCount = #topDefs
+    local size, gap = FitRail(height, topCount, bottomCount)
+    local step = size + gap
 
     -- Bottom stack: Settings at the very bottom, Import above it.
     local bottomY = BOTTOM_PAD
@@ -154,15 +218,16 @@ function LPL.Sidebar:Layout()
         local tabData = bottomDefs[i]
         local tab = self.bottomTabs[tabData.id]
         if tab then
+            ResizeTab(tab, size)
             tab:ClearAllPoints()
             tab:SetPoint("BOTTOM", sidebar, "BOTTOM", 0, bottomY)
-            bottomY = bottomY + TAB_STEP
+            bottomY = bottomY + step
         end
     end
 
     local bottomReserve = BOTTOM_PAD
     if bottomCount > 0 then
-        bottomReserve = BOTTOM_PAD + (bottomCount * TAB_SIZE) + ((bottomCount - 1) * TAB_GAP) + DIVIDER_GAP
+        bottomReserve = BOTTOM_PAD + (bottomCount * size) + ((bottomCount - 1) * gap) + DIVIDER_GAP
     end
 
     if self.divider then
@@ -176,19 +241,11 @@ function LPL.Sidebar:Layout()
         end
     end
 
-    local available = math.max(TAB_SIZE, height - TOP_PAD - bottomReserve - 4)
-    local step = TAB_STEP
-    if topCount > 1 then
-        local needed = ((topCount - 1) * TAB_STEP) + TAB_SIZE
-        if needed > available then
-            step = math.max(36, math.floor((available - TAB_SIZE) / (topCount - 1)))
-        end
-    end
-
     local topY = -TOP_PAD
     for _, tabData in ipairs(topDefs) do
         local tab = self.tabs[tabData.id]
         if tab then
+            ResizeTab(tab, size)
             tab:ClearAllPoints()
             tab:SetPoint("TOP", sidebar, "TOP", 0, topY)
             topY = topY - step

@@ -2,7 +2,7 @@
 ## Title: Light Paws Loadouts - WoW Forever
 ## Notes: Save talents, action bars, key bindings, equipment, Edit Mode layouts, and loadouts for WoW Forever. |cffffcc00/lpl|r to open.
 ## Author: Blind Mice Gaming
-## Version: 1.4.8
+## Version: 1.4.9
 ## Category: Blind Mice Gaming
 ## Category-enUS: Blind Mice Gaming
 ## IconTexture: Interface\AddOns\lpl-forever\icons\lpl_32.blp
@@ -23,4 +23,5 @@ Modules\Vault\SectionUI.lua
 Modules\Talents\TalentAPI.lua
 Modules\Talents\TalentStore.lua
 Modules\Talents\TalentFrame.lua
+Modules\Profiles.lua
 Core\Init.lua

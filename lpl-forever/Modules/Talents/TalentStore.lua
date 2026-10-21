@@ -4,17 +4,26 @@ LPL.TalentStore = LPL.TalentStore or {}
 local Store = LPL.TalentStore
 
 local function Root()
-    local db = LPL.DB:Bind(false)
-    if type(db.talents) ~= "table" then
-        db.talents = { nextId = 1, builds = {} }
+    local talents
+    if LPL.Profiles and LPL.Profiles.Section then
+        talents = LPL.Profiles:Section("talents")
+    else
+        local db = LPL.DB:Bind(false)
+        if type(db.talents) ~= "table" then
+            db.talents = { nextId = 1, builds = {} }
+        end
+        talents = db.talents
     end
-    if type(db.talents.builds) ~= "table" then
-        db.talents.builds = {}
+    if type(talents) ~= "table" then
+        talents = { nextId = 1, builds = {} }
     end
-    if type(db.talents.nextId) ~= "number" or db.talents.nextId < 1 then
-        db.talents.nextId = 1
+    if type(talents.builds) ~= "table" then
+        talents.builds = {}
     end
-    return db.talents
+    if type(talents.nextId) ~= "number" or talents.nextId < 1 then
+        talents.nextId = 1
+    end
+    return talents
 end
 
 function Store:List()

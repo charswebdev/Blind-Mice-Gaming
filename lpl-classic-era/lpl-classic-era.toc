@@ -4,7 +4,7 @@
 ## Category-enUS: Blind Mice Gaming
 ## IconTexture: Interface\AddOns\lpl-classic-era\icons\lpl_32.blp
 ## Notes: Classic Era sibling of Light Paws Loadouts. Plan and apply Era loadouts - talents, gear, bars, keybinds, conditions, macros, and more. |cffffcc00/lpl|r to open.
-## Version: 1.0.0
+## Version: 1.0.1
 ## DefaultState: enabled
 ## SavedVariables: LPLClassicEraDB
 
@@ -114,5 +114,6 @@ Modules\AddonSets\AddonSetSetList.lua
 Modules\AddonSets\AddonSetEditor.lua
 Modules\AddonSets.lua
 Modules\AddonsManager.lua
+Modules\Profiles.lua
 Modules\Settings.lua
 Core\Init.lua

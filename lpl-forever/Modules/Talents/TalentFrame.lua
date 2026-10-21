@@ -32,6 +32,7 @@ local TABS = {
     { id = "macros", label = "Macro Manager", stem = "macros_64", bottom = false },
     { id = "addonsets", label = "Addon Sets", stem = "addonsets_64", bottom = false },
     { id = "addonsmanager", label = "Addons Manager", stem = "addons_64", bottom = false },
+    { id = "profiles", label = "Profiles", stem = "profiles_64", bottom = false },
     { id = "builds", label = "Import / Export", stem = "import_64", bottom = true },
     { id = "settings", label = "Settings", stem = "settings_64", bottom = true },
 }
@@ -395,6 +396,9 @@ local function ShowPage(page)
     frame.laterPage:SetShown(page == "later")
     if LPL.Sections then
         LPL.Sections:SetShown(page == "section")
+    end
+    if frame.profilesPage then
+        frame.profilesPage:SetShown(page == "profiles")
     end
 end
 
@@ -1286,6 +1290,14 @@ function UI:OpenSection(id, label)
         ShowList()
         return
     end
+    if id == "profiles" then
+        SetTabActive("profiles")
+        if LPL.Profiles then
+            LPL.Profiles:Show(frame)
+        end
+        ShowPage("profiles")
+        return
+    end
     if id == "builds" then
         SetTabActive("builds")
         ShowPage("import")
@@ -1416,25 +1428,72 @@ local function CreateSidebar(parent)
     Paint(sidebar, SIDEBAR_BG, BORDER)
 
     local tabs = {}
-    local topCount = 0
-    local bottomCount = 0
-    for i = 1, #TABS do
-        if TABS[i].bottom then
-            bottomCount = bottomCount + 1
-        else
-            topCount = topCount + 1
+    local topButtons = {}
+    local bottomButtons = {}
+
+    local function FitRail(height, topCount, bottomCount)
+        local function stacksFit(size, gap)
+            local function stack(count)
+                if count <= 0 then
+                    return 0
+                end
+                return (count * size) + ((count - 1) * gap)
+            end
+            local bottomReserve = 10
+            if bottomCount > 0 then
+                bottomReserve = 10 + stack(bottomCount) + 8
+            end
+            return stack(topCount) <= (height - 10 - bottomReserve)
+        end
+        if stacksFit(TAB, TAB_GAP) then
+            return TAB, TAB_GAP
+        end
+        for size = TAB - 1, 22, -1 do
+            if stacksFit(size, 2) then
+                return size, 2
+            end
+        end
+        return 22, 1
+    end
+
+    local function ResizeTab(tab, size)
+        tab:SetSize(size, size)
+        if tab.icon then
+            local iconSize = math.max(16, math.floor(size * (32 / 48)))
+            tab.icon:SetSize(iconSize, iconSize)
         end
     end
 
-    local topIndex = 0
-    local bottomFromBottom = 10
+    local function LayoutRail()
+        local height = sidebar:GetHeight() or 0
+        if height < 80 then
+            return
+        end
+        local size, gap = FitRail(height, #topButtons, #bottomButtons)
+        local step = size + gap
+        local bottomY = 10
+        for i = 1, #bottomButtons do
+            local tab = bottomButtons[i]
+            ResizeTab(tab, size)
+            tab:ClearAllPoints()
+            tab:SetPoint("BOTTOM", sidebar, "BOTTOM", 0, bottomY)
+            bottomY = bottomY + step
+        end
+        local topY = -10
+        for i = 1, #topButtons do
+            local tab = topButtons[i]
+            ResizeTab(tab, size)
+            tab:ClearAllPoints()
+            tab:SetPoint("TOP", sidebar, "TOP", 0, topY)
+            topY = topY - step
+        end
+    end
+
     for i = #TABS, 1, -1 do
         local data = TABS[i]
         if data.bottom then
             local tab = CreateFrame("Button", nil, sidebar, "BackdropTemplate")
             tab:SetSize(TAB, TAB)
-            tab:SetPoint("BOTTOM", sidebar, "BOTTOM", 0, bottomFromBottom)
-            bottomFromBottom = bottomFromBottom + TAB + TAB_GAP
             tab.moduleID = data.id
             tab.accent = tab:CreateTexture(nil, "BACKGROUND")
             tab.accent:SetWidth(3)
@@ -1445,6 +1504,7 @@ local function CreateSidebar(parent)
             local icon = tab:CreateTexture(nil, "ARTWORK")
             icon:SetSize(32, 32)
             icon:SetPoint("CENTER")
+            tab.icon = icon
             LPL:SetIconTexture(icon, data.stem)
             local label = data.label
             local id = data.id
@@ -1460,6 +1520,7 @@ local function CreateSidebar(parent)
                 GameTooltip:Hide()
             end)
             tabs[#tabs + 1] = tab
+            bottomButtons[#bottomButtons + 1] = tab
         end
     end
 
@@ -1468,8 +1529,6 @@ local function CreateSidebar(parent)
         if not data.bottom then
             local tab = CreateFrame("Button", nil, sidebar, "BackdropTemplate")
             tab:SetSize(TAB, TAB)
-            tab:SetPoint("TOP", sidebar, "TOP", 0, -10 - (topIndex * (TAB + TAB_GAP)))
-            topIndex = topIndex + 1
             tab.moduleID = data.id
             tab.accent = tab:CreateTexture(nil, "BACKGROUND")
             tab.accent:SetWidth(3)
@@ -1480,6 +1539,7 @@ local function CreateSidebar(parent)
             local icon = tab:CreateTexture(nil, "ARTWORK")
             icon:SetSize(32, 32)
             icon:SetPoint("CENTER")
+            tab.icon = icon
             LPL:SetIconTexture(icon, data.stem)
             local label = data.label
             local id = data.id
@@ -1495,9 +1555,12 @@ local function CreateSidebar(parent)
                 GameTooltip:Hide()
             end)
             tabs[#tabs + 1] = tab
+            topButtons[#topButtons + 1] = tab
         end
     end
     parent.tabs = tabs
+    sidebar:SetScript("OnSizeChanged", LayoutRail)
+    LayoutRail()
 end
 
 local function CreateContent(parent)

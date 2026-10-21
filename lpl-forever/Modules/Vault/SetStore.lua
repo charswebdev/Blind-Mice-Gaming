@@ -4,11 +4,16 @@ LPL.SetStore = LPL.SetStore or {}
 local Store = LPL.SetStore
 
 local function Bucket(key)
-    local db = LPL.DB:Bind(false)
-    local bucket = db[key]
-    if type(bucket) ~= "table" then
-        bucket = {}
-        db[key] = bucket
+    local bucket
+    if LPL.Profiles and LPL.Profiles.Section then
+        bucket = LPL.Profiles:Section(key)
+    else
+        local db = LPL.DB:Bind(false)
+        bucket = db[key]
+        if type(bucket) ~= "table" then
+            bucket = {}
+            db[key] = bucket
+        end
     end
     if type(bucket.sets) ~= "table" then
         bucket.sets = {}

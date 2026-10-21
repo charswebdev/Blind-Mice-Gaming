@@ -114,6 +114,42 @@ local DEFAULTS = {
         addonprofiles = {},
         housing = {},
     },
+    profiles = {},
+    activeProfile = "Default",
+}
+
+LPL.DB.PROFILE_FLAVOR = "retail"
+
+LPL.DB.PROFILE_KEYS = {
+    "talents",
+    "actionBars",
+    "keybinds",
+    "equipment",
+    "pvpTalents",
+    "cooldownManager",
+    "editMode",
+    "loadouts",
+    "macros",
+    "addonSets",
+    "addonProfiles",
+    "housing",
+    "conditions",
+}
+
+LPL.DB.PROFILE_COUNT_FIELD = {
+    talents = "builds",
+    actionBars = "sets",
+    keybinds = "sets",
+    equipment = "sets",
+    pvpTalents = "sets",
+    cooldownManager = "sets",
+    editMode = "sets",
+    loadouts = "sets",
+    macros = "sets",
+    addonSets = "sets",
+    addonProfiles = "sets",
+    housing = "sets",
+    conditions = "rules",
 }
 
 local function DeepCopy(source)
@@ -145,6 +181,7 @@ function LPL.DB:Initialize()
     MergeDefaults(LPLDB, DEFAULTS)
     self.data = LPLDB
     self.data.ui.shown = false
+    self:EnsureProfiles()
     if LPL.BuildStore and LPL.BuildStore.MigrateStorage then
         LPL.BuildStore:MigrateStorage()
     end
@@ -163,6 +200,223 @@ function LPL.DB:SyncFromGlobal()
     if _G.LPLDB then
         self.data = _G.LPLDB
     end
+    if self.data then
+        self:EnsureProfiles()
+    end
+end
+
+function LPL.DB:NormalizeProfileName(name)
+    name = tostring(name or ""):gsub("[\r\n]", " ")
+    name = name:match("^%s*(.-)%s*$") or ""
+    if #name > 40 then
+        name = name:sub(1, 40):match("^%s*(.-)%s*$") or ""
+    end
+    if name == "" then
+        return nil
+    end
+    return name
+end
+
+function LPL.DB:BlankProfile()
+    local profile = {}
+    for _, key in ipairs(self.PROFILE_KEYS) do
+        profile[key] = DeepCopy(DEFAULTS[key])
+    end
+    return profile
+end
+
+function LPL.DB:EnsureProfiles()
+    if self._ensuringProfiles or not self.data then
+        return
+    end
+    self._ensuringProfiles = true
+    local data = self.data
+    if type(data.profiles) ~= "table" then
+        data.profiles = {}
+    end
+    if not data.profilesMigrated then
+        local profile = {}
+        for _, key in ipairs(self.PROFILE_KEYS) do
+            if type(data[key]) == "table" then
+                profile[key] = data[key]
+            else
+                profile[key] = DeepCopy(DEFAULTS[key])
+            end
+        end
+        if type(data.profiles.Default) ~= "table" then
+            data.profiles.Default = profile
+        end
+        data.activeProfile = "Default"
+        data.profilesMigrated = true
+    end
+    local name = data.activeProfile
+    if type(name) ~= "string" or name == "" or type(data.profiles[name]) ~= "table" then
+        if type(data.profiles.Default) == "table" then
+            name = "Default"
+        else
+            name = next(data.profiles)
+        end
+        if not name then
+            name = "Default"
+            data.profiles[name] = self:BlankProfile()
+        end
+        data.activeProfile = name
+    end
+    local profile = data.profiles[name]
+    for _, key in ipairs(self.PROFILE_KEYS) do
+        if type(profile[key]) ~= "table" then
+            profile[key] = DeepCopy(DEFAULTS[key])
+        else
+            MergeDefaults(profile[key], DEFAULTS[key])
+        end
+        data[key] = profile[key]
+    end
+    self._ensuringProfiles = false
+end
+
+function LPL.DB:GetActiveProfileName()
+    self:SyncFromGlobal()
+    if not self.data then
+        self:Initialize()
+    end
+    return self.data.activeProfile or "Default"
+end
+
+function LPL.DB:ListProfiles()
+    self:GetActiveProfileName()
+    local names = {}
+    for profileName in pairs(self.data.profiles or {}) do
+        names[#names + 1] = profileName
+    end
+    table.sort(names, function(a, b)
+        return tostring(a):lower() < tostring(b):lower()
+    end)
+    return names
+end
+
+function LPL.DB:CountProfilePlaces(name)
+    self:GetActiveProfileName()
+    local profile = self.data.profiles[name]
+    if type(profile) ~= "table" then
+        return 0
+    end
+    local count = 0
+    for _, key in ipairs(self.PROFILE_KEYS) do
+        local section = profile[key]
+        local field = self.PROFILE_COUNT_FIELD[key]
+        local bucket = type(section) == "table" and section[field] or nil
+        if type(bucket) == "table" then
+            for _ in pairs(bucket) do
+                count = count + 1
+            end
+        end
+    end
+    return count
+end
+
+function LPL.DB:LoadProfile(name)
+    self:GetActiveProfileName()
+    name = self:NormalizeProfileName(name) or name
+    if type(self.data.profiles[name]) ~= "table" then
+        return false, "missing"
+    end
+    self.data.activeProfile = name
+    self:EnsureProfiles()
+    return true, name
+end
+
+function LPL.DB:CreateProfile(name)
+    self:GetActiveProfileName()
+    name = self:NormalizeProfileName(name)
+    if not name then
+        return false, "bad_name"
+    end
+    if self.data.profiles[name] then
+        return false, "exists"
+    end
+    self.data.profiles[name] = self:BlankProfile()
+    self.data.activeProfile = name
+    self:EnsureProfiles()
+    return true, name
+end
+
+function LPL.DB:RenameProfile(oldName, newName)
+    self:GetActiveProfileName()
+    if type(self.data.profiles[oldName]) ~= "table" then
+        return false, "missing"
+    end
+    newName = self:NormalizeProfileName(newName)
+    if not newName then
+        return false, "bad_name"
+    end
+    if newName == oldName then
+        return true, newName
+    end
+    if self.data.profiles[newName] then
+        return false, "exists"
+    end
+    self.data.profiles[newName] = self.data.profiles[oldName]
+    self.data.profiles[oldName] = nil
+    if self.data.activeProfile == oldName then
+        self.data.activeProfile = newName
+    end
+    self:EnsureProfiles()
+    return true, newName
+end
+
+function LPL.DB:DeleteProfile(name)
+    self:GetActiveProfileName()
+    if type(self.data.profiles[name]) ~= "table" then
+        return false, "missing"
+    end
+    local count = 0
+    for _ in pairs(self.data.profiles) do
+        count = count + 1
+    end
+    if count <= 1 then
+        return false, "last"
+    end
+    self.data.profiles[name] = nil
+    if self.data.activeProfile == name then
+        local fallback = self.data.profiles.Default and "Default" or next(self.data.profiles)
+        self.data.activeProfile = fallback
+    end
+    self:EnsureProfiles()
+    return true, self.data.activeProfile
+end
+
+function LPL.DB:CopyProfileSections(profile)
+    local sections = {}
+    if type(profile) ~= "table" then
+        return sections
+    end
+    for _, key in ipairs(self.PROFILE_KEYS) do
+        if type(profile[key]) == "table" then
+            sections[key] = DeepCopy(profile[key])
+        end
+    end
+    return sections
+end
+
+function LPL.DB:InstallProfile(name, sections)
+    self:GetActiveProfileName()
+    name = self:NormalizeProfileName(name)
+    if not name then
+        return false, "bad_name"
+    end
+    local profile = self:BlankProfile()
+    if type(sections) == "table" then
+        for _, key in ipairs(self.PROFILE_KEYS) do
+            if type(sections[key]) == "table" then
+                profile[key] = DeepCopy(sections[key])
+                MergeDefaults(profile[key], DEFAULTS[key])
+            end
+        end
+    end
+    self.data.profiles[name] = profile
+    self.data.activeProfile = name
+    self:EnsureProfiles()
+    return true, name
 end
 
 function LPL.DB:GetUI()
@@ -395,9 +649,14 @@ function LPL.DB:RestoreFrameState(frame)
     if LPL.Sidebar and LPL.Sidebar.RequiredFrameHeight then
         minHeight = LPL.Sidebar:RequiredFrameHeight()
     end
+    local screenCap = minHeight
+    if type(GetScreenHeight) == "function" then
+        screenCap = math.max(560, GetScreenHeight() - 40)
+    end
+    local fitHeight = math.min(minHeight, screenCap)
 
     local width = tonumber(frameState.width) or 980
-    local height = tonumber(frameState.height) or minHeight
+    local height = tonumber(frameState.height) or fitHeight
     local x = tonumber(frameState.x) or 0
     local y = tonumber(frameState.y) or 0
     local point = frameState.point or "CENTER"
@@ -405,5 +664,5 @@ function LPL.DB:RestoreFrameState(frame)
 
     frame:ClearAllPoints()
     frame:SetPoint(point, UIParent, relativePoint, x, y)
-    frame:SetSize(math.max(720, width), math.max(minHeight, height))
+    frame:SetSize(math.max(720, width), math.max(fitHeight, math.min(height, screenCap)))
 end

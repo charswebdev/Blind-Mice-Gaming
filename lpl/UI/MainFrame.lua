@@ -15,6 +15,18 @@ local function MinHeight()
     end
     return DEFAULT_HEIGHT
 end
+
+local function ScreenCap()
+    local screen = 1200
+    if type(GetScreenHeight) == "function" then
+        screen = GetScreenHeight()
+    end
+    return math.max(560, screen - 40)
+end
+
+local function OpenHeight()
+    return math.min(math.max(DEFAULT_HEIGHT, MinHeight()), ScreenCap())
+end
 local PROFILE_ICON_SIZE = 32
 
 local function CreateProfileIcon(titleBar)
@@ -106,8 +118,7 @@ function LPL.MainFrame:Create()
     self.frame = frame
     frame:Hide()
 
-    local minHeight = MinHeight()
-    frame:SetSize(DEFAULT_WIDTH, math.max(DEFAULT_HEIGHT, minHeight))
+    frame:SetSize(DEFAULT_WIDTH, OpenHeight())
     frame:SetFrameStrata("DIALOG")
     frame:SetFrameLevel(100)
     frame:SetClampedToScreen(true)
@@ -115,10 +126,10 @@ function LPL.MainFrame:Create()
     frame:EnableMouse(true)
     frame:SetResizable(true)
     if frame.SetResizeBounds then
-        frame:SetResizeBounds(MIN_WIDTH, minHeight, MAX_WIDTH, MAX_HEIGHT)
+        frame:SetResizeBounds(MIN_WIDTH, 560, MAX_WIDTH, math.max(MAX_HEIGHT, ScreenCap()))
     else
-        frame:SetMinResize(MIN_WIDTH, minHeight)
-        frame:SetMaxResize(MAX_WIDTH, MAX_HEIGHT)
+        frame:SetMinResize(MIN_WIDTH, 560)
+        frame:SetMaxResize(MAX_WIDTH, math.max(MAX_HEIGHT, ScreenCap()))
     end
     LPL.Theme:ApplyBackdrop(frame, "panel", "bgPrimary", "border")
 
@@ -206,6 +217,9 @@ function LPL.MainFrame:Create()
             if not activeID then
                 LPL.Modules:Activate(LPL.DB:GetUI().lastTab or "talents")
             end
+        end
+        if LPL.Sidebar and LPL.Sidebar.Layout then
+            LPL.Sidebar:Layout()
         end
         LPL.Sidebar:RefreshActiveTab()
         LPL.DB:GetUI().shown = true

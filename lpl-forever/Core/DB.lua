@@ -52,6 +52,9 @@ function DB:Bind(countLoad)
         bound = true
     end
     self.data = db
+    if LPL.Profiles and LPL.Profiles.Migrate then
+        LPL.Profiles:Migrate(db)
+    end
     return db
 end
 
