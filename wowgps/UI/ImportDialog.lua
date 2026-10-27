@@ -90,17 +90,18 @@ function ImportDialog:Accept()
         end
         if ns.SavedTab and ns.SavedTab.RefreshList then
             ns.SavedTab:RefreshList()
+        end
         if ns.SavedTab and ns.SavedTab.NotifyProfileChange then
             ns.SavedTab:NotifyProfileChange()
-        elseif ns.SavedTab and ns.SavedTab.RefreshList then
+        end
     else
-        WowGPS:Print(L["IMPORT_FAILED"])
-    end
-        if ns.CustomLocations:LooksLikeProfile(text) then
+        if ns.CustomLocations and ns.CustomLocations.LooksLikeProfile and ns.CustomLocations:LooksLikeProfile(text) then
             WowGPS:Print(L["PROFILE_IMPORT_FAILED"])
         else
             WowGPS:Print(L["IMPORT_FAILED"])
         end
+    end
+end
 
 function ImportDialog:Show()
     self:Init()
