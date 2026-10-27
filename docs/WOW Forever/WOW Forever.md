@@ -1,8 +1,8 @@
 # WOW Forever
 
-Client folders (first that exists): `_classic_beta_`, `_forever_`, `_wow_forever_`, `_camelot_`. Artifact pack key: `forever`.
+Client folders (first that exists): `_forever_`, `_wow_forever_`, `_camelot_`. Artifact pack key: `forever`. Never `_classic_beta_`.
 
-Live Battle.net product on this machine is `wow_classic_beta` in `_classic_beta_` (build `1.60.1.69893`, ForeverBeta, `Interface` `16001`, exe `WowB.exe`). Keep `_forever_` / `_wow_forever_` / `_camelot_` as fallbacks if Blizzard renames the folder.
+Live Battle.net product is `wowf` in `_forever_` (build **1.60.1.70634**, Interface `16001`, exe `Wow.exe`). Addon TOCs keep `16002`, `16001`, `16000`, `121500`, and `121000`, and `AllowLoadGameType: forever, camelot`.
 
 Mainline UI family next to Midnight (Edit Mode, Housing). Blizzard’s UI Discord: Forever is game type **Camelot** (name may change before launch); Midnight is **Standard**. Shares Midnight addon APIs, including secret values and AuraContainer. TOC also lists `121500` / `121000` for a later 12.x Forever client.
 
@@ -27,5 +27,5 @@ Treat Forever as its own flavor: own addon folder, own SavedVariables, own updat
 
 - Secrets: same rules as Midnight. Do not arithmetic-compare `UnitHealth` / `UnitPower`; use percent APIs and `SetValue`.
 - Focus, arena, Edit Mode, 3D portraits: assume present (Mainline).
-- Live folder today is `_classic_beta_`. Still try `_forever_`, then `_wow_forever_`, then `_camelot_` if that product folder is missing.
+- Live folder is `_forever_` only. `_wow_forever_` and `_camelot_` are name fallbacks. Never install into `_classic_beta_`.
 - Season of Discovery remains a later Classic-family flavor, not Forever.

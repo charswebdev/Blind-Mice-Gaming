@@ -3,10 +3,10 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.0.2** |
+| Version | **1.0.3** |
 | Type | In-game addon (VI / TTS) |
 | Folder | `AccessibilityHelper-forever/` |
-| Clients | `_classic_beta_` (ForeverBeta) |
+| Clients | `_forever_` (wowf 1.60.1.70634, Interface 16001) |
 | SavedVariables | `AccessibilityHelperForeverDB` |
 | Slash | `/ah` settings · `/ahtip` tooltip · `/ahcmds` |
 | Install | BMG Updater folder `AccessibilityHelper-forever` |
@@ -26,7 +26,7 @@ WoW Forever copy of Accessibility Helper. It is its own addon folder and saved-v
 
 ## Development plan
 
-1.0.2 is the first Forever package in the updater: the 3.6.5 readers, Forever interface numbers, and tooltip-only defaults. The catalog row uses `client: "forever"` so it installs into `_classic_beta_`.
+1.0.3 loads on WoW Forever in `_forever_` only. The toc allows game type `forever` (and `camelot`) and Interface `16001` for patch 1.60.1. The catalog row uses `client: "forever"`. Never install into `_classic_beta_`.
 
 ## Sources and data
 

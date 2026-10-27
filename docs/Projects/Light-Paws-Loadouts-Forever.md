@@ -3,10 +3,10 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** (phase 4 Edit Mode and loadouts) |
-| Version | **1.4.9** |
+| Version | **1.5.0** |
 | Type | In-game composite loadout vault |
 | Folder | `lpl-forever/` |
-| Clients | `_classic_beta_` (ForeverBeta) |
+| Clients | `_forever_` (wowf 1.60.1.70634, Interface 16001) |
 | SavedVariables | `LPLForeverDB` |
 | Slash | `/lpl` |
 | Install | BMG Updater folder `lpl-forever` |
@@ -21,7 +21,7 @@ Phase 3, started in 1.2.8, turns on Action Bars, Keybinding Profiles, and Equipm
 
 Phase 4, started in 1.4.5, turns on Edit Mode layouts and composite loadouts. A new layout has a paste box. Paste a Blizzard Edit Mode string there, or click **Update from current character** to read the custom layout active in Edit Mode. Apply puts that layout back on the screen. The saved layout string stays after `/reload`. A new loadout shows a dropdown for talents, action bars, keybindings, equipment, and Edit Mode. Open a dropdown to attach a saved set. **+** adds another link for that piece. **X** removes it. Apply uses the first link in each piece, the same way as the other Light Paws packages. **Update from current character** selects the sets that already match this character.
 
-Icons are this package’s own files in `lpl-forever/icons/` (98 files, copied from Retail `lpl/icons/` on 2026-09-26). The AddOns list icon is `Interface\AddOns\lpl-forever\icons\lpl_32.blp`. The window uses `lpl_64.blp` from that same folder. Do not point Forever at Retail `lpl\icons`. Do not install Retail `lpl/` into `_classic_beta_`.
+Icons are this package’s own files in `lpl-forever/icons/` (98 files, copied from Retail `lpl/icons/` on 2026-09-26). The AddOns list icon is `Interface\AddOns\lpl-forever\icons\lpl_32.blp`. The window uses `lpl_64.blp` from that same folder. Do not point Forever at Retail `lpl\icons`. Do not install Retail `lpl/` into `_forever_`. Never `_classic_beta_`. The toc allows game type `forever` (and `camelot`). |
 
 ## Features
 

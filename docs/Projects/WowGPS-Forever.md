@@ -3,19 +3,19 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.1.2** |
+| Version | **1.1.3** |
 | Type | In-game GPS window |
 | Folder | `wowgps-forever/` |
-| Clients | `_classic_beta_` (ForeverBeta) |
+| Clients | `_forever_` (wowf 1.60.1.70634, Interface 16001) |
 | SavedVariables | `WowGPSForeverDB` |
 | Slash | `/gps` |
 | Install | BMG Updater folder `wowgps-forever` |
 
 ## Description
 
-Search lists vanilla zones and cities by the names this client returns, plus flight masters and dungeon entrances from the client’s own map data, plus places you saved. `/gps` opens the window. Nothing opens on login. Saved places stay in `WowGPSForeverDB` after `/reload`. The window uses the same dark layout, gold title, and WowGPS icon as retail WowGPS. The icon file is a copy in `wowgps-forever/Media/`. Do not point Forever at Retail `wowgps\Media`. Do not install Retail `wowgps/` into `_classic_beta_`.
+Search lists vanilla zones and cities by the names this client returns, plus flight masters and dungeon entrances from the client’s own map data, plus places you saved. `/gps` opens the window. Nothing opens on login. Saved places stay in `WowGPSForeverDB` after `/reload`. The window uses the same dark layout, gold title, and WowGPS icon as retail WowGPS. The icon file is a copy in `wowgps-forever/Media/`. Do not point Forever at Retail `wowgps\Media`. Do not install Retail `wowgps/` into `_forever_`. The toc allows game type `forever` (and `camelot`).
 
-The catalog row is `wowgps-forever` **1.1.2**. The toc uses the same Forever interface list as the other Forever addons: `16002`, `16001`, `16000`, `121500`, `121000`. Saved data is `WowGPSForeverDB`, loaded with `LoadSavedVariablesFirst`. The keybind header is `WOWGPS`, the same pattern as Light Paws Loadouts.
+The catalog row is `wowgps-forever` **1.1.3**. It installs only into `_forever_`. Never `_classic_beta_`. The toc uses the same Forever interface list as the other Forever addons: `16002`, `16001`, `16000`, `121500`, `121000`. Saved data is `WowGPSForeverDB`, loaded with `LoadSavedVariablesFirst`. The keybind header is `WOWGPS`, the same pattern as Light Paws Loadouts.
 
 ## Features
 

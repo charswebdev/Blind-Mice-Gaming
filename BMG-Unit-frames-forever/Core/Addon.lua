@@ -143,7 +143,7 @@ local function Start()
     end
     local iface = UF.Compat.interface or "?"
     local title = (UF.Flavor and UF.Flavor.title) or "BMG Unit Frames"
-    local version = "1.2.1"
+    local version = "1.2.2"
     if C_AddOns and C_AddOns.GetAddOnMetadata then
         version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version") or version
     elseif GetAddOnMetadata then

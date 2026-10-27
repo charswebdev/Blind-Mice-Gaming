@@ -3,11 +3,11 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.2.1** (`updaterVersion` + GitHub tag `v1.2.1`) |
+| Version | **1.2.2** (`updaterVersion` + GitHub tag `v1.2.2`) |
 | Type | Desktop installer/updater for **all** BMG addons and first-run desktop apps |
 | Folder | `updater/` (source mostly local; **`catalog.json` tracked**) |
 | Catalog URL | GitHub `main` · `updater/catalog.json` in repo `charswebdev/Blind-Mice-Gaming` |
-| Setup | `https://github.com/charswebdev/Blind-Mice-Gaming/releases/download/v1.2.1/BMG-Updater-Setup-1.2.1.exe` |
+| Setup | `https://github.com/charswebdev/Blind-Mice-Gaming/releases/download/v1.2.2/BMG-Updater-Setup-1.2.2.exe` |
 | Author tools | `Tools/updater/` logo previews / installer art |
 
 ## Description
@@ -17,6 +17,7 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 ## Features
 
 - Catalog-driven list of addons (folder lists, toc interfaces, SavedVariables names) and apps (flavor, status shipped/planned, exe prefix).
+- **1.2.2:** WoW Forever installs only into `_forever_` (product `wowf`, Interface `16001`). Never `_classic_beta_`.
 - **1.2.1:** Applications and addons are grouped by game flavor. An addon or app installs only when the player clicks Install. Automatic updates replace only copies that are already installed. Anniversary interface numbers are 20505 and up, so they are not listed under Burning Crusade. Forever interface numbers are not treated as Retail.
 - **2026-10-15:** Accessibility Helper **3.6.7**. Merchant cursor no longer compares a secret `UnitName("npc")`. If the name stays secret, the vendor line is skipped.
 - **2026-10-14:** AllQuest **1.1.6**. A Labyrinth chamber lists its scenario objectives and counts, not only the stage line.
@@ -29,17 +30,17 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 - **2026-10-13:** Cooldown Assist **1.1.1**. Retail Interface **120105** (patch 12.1.5). Older Interface numbers stay so 12.1.0 still loads.
 - **2026-10-13:** AllQuest **1.1.4**. Retail Interface **120105** (patch 12.1.5). Data packs stay 1.0.0. Older Interface numbers stay so 12.1.0 still loads.
 - **2026-10-13:** Accessibility Helper **3.6.6**. Retail Interface **120105** (patch 12.1.5). Older Interface numbers stay so 12.1.0 still loads.
-- **2026-10-02:** catalog lists **WowGPS - WoW Forever** (`wowgps-forever`, **1.1.2**, `WowGPSForeverDB`, `client: "forever"`). Search, an arrow, saved places, flight and dungeon pins, boat and zeppelin steps, and import/export. Do not install Retail `wowgps/` into `_classic_beta_`.
+- **2026-10-02:** catalog lists **WowGPS - WoW Forever** (`wowgps-forever`, **1.1.2**, `WowGPSForeverDB`, `client: "forever"`). Search, an arrow, saved places, flight and dungeon pins, boat and zeppelin steps, and import/export. Do not install Retail `wowgps/` into `_forever_`.
 - **2026-10-01:** Light Paws Loadouts (Retail) **1.2.4**. Drag a saved build onto an action bar. Pressing that button applies the build and does not open the window. Housing, Macros, and Addons Manager have no drag button.
 - **2026-09-21:** Light Paws Loadouts (Retail) **1.1.7**. Talent import rejects a Blizzard string whose tree hash does not match the live tree.
-- **2026-09-27:** catalog lists **Light Paws Loadouts - WoW Forever** phase 4 (`lpl-forever`, **1.4.8**, `LPLForeverDB`, `client: "forever"`). Edit Mode layouts and composite loadouts. This replaces the 1.4.3 package. Do not install Retail `lpl/` into `_classic_beta_`.
-- **2026-09-27:** catalog lists **Light Paws Loadouts - WoW Forever** phase 3 (`lpl-forever`, **1.4.3**, `LPLForeverDB`, `client: "forever"`). Action bars, keybinding profiles, and equipment. This replaces the 1.2.7 talent-only package. Do not install Retail `lpl/` into `_classic_beta_`.
-- **2026-09-27:** catalog lists **Light Paws Loadouts - WoW Forever** phase 2 (`lpl-forever`, **1.2.7**, `LPLForeverDB`, `client: "forever"`). Talent builds only. This replaces the 1.0.1 package. Do not install Retail `lpl/` into `_classic_beta_`.
-- **2026-09-27:** catalog lists **Accessibility Helper - WoW Forever** (`AccessibilityHelper-forever`, **1.0.2**, `AccessibilityHelperForeverDB`, `client: "forever"`). Tooltip reader is on by default. Do not install Retail `AccessibilityHelper/` into `_classic_beta_`.
-- **2026-09-26:** BMG Unit Frames - WoW Forever is **1.2.1** (`BMG-Unit-frames-forever`, `BMGUnitFramesForeverDB`, `client: "forever"`). Interfaces `16002`, `16001`, `16000`, `121500`, `121000`. Author and AddOns category Blind Mice Gaming. Key Bindings category **BMGUF**. Export selects the layout code for Ctrl+C and does not call protected `CopyToClipboard`. Installs into `_classic_beta_`, then `_forever_` / `_wow_forever_` / `_camelot_`.
-- **2026-09-17:** catalog lists **five** BMG Unit Frames packages. Forever is **1.2.1**; Retail / Era / Anniversary / Classic are **1.1.1**. Forever installs into `_classic_beta_` (live ForeverBeta), then `_forever_` / `_wow_forever_` / `_camelot_`. Players refresh the catalog from `main`. The shipped 1.2.0 exe needs a local `app.py` that includes that Forever folder list.
-- **2026-09-17:** catalog also lists **Light Paws Loadouts - WoW Forever** (`lpl-forever`, `1.0.1`, `LPLForeverDB`, `client: "forever"`). Same Forever product folders as Unit Frames. Do not install Retail `lpl/` into `_classic_beta_`.
-- **2026-09-17:** catalog also lists **AllQuest - WoW Forever** (`AllQuest-forever` + `AllQuest_Data_Forever`, `1.0.0`, `AllQuestForeverDB` / `AllQuestForeverCharDB`, `client: "forever"`). Tracker-first; journal pack is a stub. Do not install Retail `AllQuest/` or Midnight/Era packs into `_classic_beta_`.
+- **2026-09-27:** catalog lists **Light Paws Loadouts - WoW Forever** phase 4 (`lpl-forever`, **1.4.8**, `LPLForeverDB`, `client: "forever"`). Edit Mode layouts and composite loadouts. This replaces the 1.4.3 package. Do not install Retail `lpl/` into `_forever_`.
+- **2026-09-27:** catalog lists **Light Paws Loadouts - WoW Forever** phase 3 (`lpl-forever`, **1.4.3**, `LPLForeverDB`, `client: "forever"`). Action bars, keybinding profiles, and equipment. This replaces the 1.2.7 talent-only package. Do not install Retail `lpl/` into `_forever_`.
+- **2026-09-27:** catalog lists **Light Paws Loadouts - WoW Forever** phase 2 (`lpl-forever`, **1.2.7**, `LPLForeverDB`, `client: "forever"`). Talent builds only. This replaces the 1.0.1 package. Do not install Retail `lpl/` into `_forever_`.
+- **2026-09-27:** catalog lists **Accessibility Helper - WoW Forever** (`AccessibilityHelper-forever`, **1.0.2**, `AccessibilityHelperForeverDB`, `client: "forever"`). Tooltip reader is on by default. Do not install Retail `AccessibilityHelper/` into `_forever_`.
+- **2026-09-26:** BMG Unit Frames - WoW Forever is **1.2.1** (`BMG-Unit-frames-forever`, `BMGUnitFramesForeverDB`, `client: "forever"`). Interfaces `16002`, `16001`, `16000`, `121500`, `121000`. Author and AddOns category Blind Mice Gaming. Key Bindings category **BMGUF**. Export selects the layout code for Ctrl+C and does not call protected `CopyToClipboard`. Installs into `_forever_` only. Never `_classic_beta_`.
+- **2026-09-17:** catalog lists **five** BMG Unit Frames packages. Forever is **1.2.1**; Retail / Era / Anniversary / Classic are **1.1.1**. Forever installs into `_forever_` only. Never `_classic_beta_`. Players refresh the catalog from `main`. The shipped 1.2.0 exe needs a local `app.py` that includes that Forever folder list.
+- **2026-09-17:** catalog also lists **Light Paws Loadouts - WoW Forever** (`lpl-forever`, `1.0.1`, `LPLForeverDB`, `client: "forever"`). Same Forever product folders as Unit Frames. Do not install Retail `lpl/` into `_forever_`.
+- **2026-09-17:** catalog also lists **AllQuest - WoW Forever** (`AllQuest-forever` + `AllQuest_Data_Forever`, `1.0.0`, `AllQuestForeverDB` / `AllQuestForeverCharDB`, `client: "forever"`). Tracker-first; journal pack is a stub. Do not install Retail `AllQuest/` or Midnight/Era packs into `_forever_`.
 - Install/update addons into the correct WoW `_retail_` / `_classic_era_` / … `Interface/AddOns` trees.
 - Download GitHub release Setups for desktop apps.
 - Self-update of the updater exe.
