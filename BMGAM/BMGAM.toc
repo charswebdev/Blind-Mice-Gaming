@@ -1,0 +1,47 @@
+## Interface: 120105, 120100, 120007, 120001
+## Title: BMG Alt Manager
+## Version: 1.0.1
+## Notes: A graphical alt manager for this account.
+## Notes-enUS: Roster and Overview for characters on this account. Blind Mice Gaming.
+## Author: Blind Mice Gaming
+## Category-enUS: Blind Mice Gaming
+## IconTexture: Interface\AddOns\BMGAM\Media\Icon.tga
+## AddonCompartmentFunc: BMGAM_OnAddonCompartmentClick
+## SavedVariables: bmgam_SavedVariables
+## DefaultState: enabled
+## X-License: All Rights Reserved
+## Dependencies: BMGAM_Account, BMGAM_Quests, BMGAM_Achievements, BMGAM_Collections
+## OptionalDeps: Titan
+
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
+Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+
+Core\DB.lua
+Core\Store.lua
+Core\Transfer.lua
+Data\Factions.lua
+Data\QuestMaps.lua
+Data\AchievementOrder.lua
+Data\Manuscripts.lua
+Core\Scan.lua
+UI\Theme.lua
+UI\Overview.lua
+UI\Gear.lua
+UI\Bags.lua
+UI\Bank.lua
+UI\Professions.lua
+UI\Currency.lua
+UI\Reputation.lua
+UI\Mail.lua
+UI\Auction.lua
+UI\Quests.lua
+UI\Achievements.lua
+UI\Collections.lua
+UI\Vault.lua
+UI\Settings.lua
+UI\MinimapButton.lua
+UI\Window.lua
+UI\Broker.lua
+Core\Read.lua
+Core\Init.lua

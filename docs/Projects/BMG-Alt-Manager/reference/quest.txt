@@ -1,0 +1,68 @@
+Current Quest
+   Character
+      World Name
+         Content Name
+            Zone Name
+               Quest Name 1
+               Quest Name 2
+            Zone Name
+               Quest Name 4
+               Quest Name 5
+               Quest Name 6
+            Zone Name
+               Quest Name 7
+         Content Name
+            Zone Name
+               Quest Name 8
+               Quest Name 9
+            Zone Name
+               Quest Name 10
+               Quest Name 11
+               Quest Name 12
+            Zone Name
+               Quest Name 13
+Completed Quest
+   Character
+      World Name
+         Content Name
+            Zone Name
+               Quest Name 1
+               Quest Name 2
+            Zone Name
+               Quest Name 4
+               Quest Name 5
+               Quest Name 6
+            Zone Name
+               Quest Name 7
+         Content Name
+            Zone Name
+               Quest Name 8
+               Quest Name 9
+            Zone Name
+               Quest Name 10
+               Quest Name 11
+               Quest Name 12
+            Zone Name
+   Warband
+      World Name
+         Content Name
+            Zone Name
+               Quest Name 1
+               Quest Name 2
+            Zone Name
+               Quest Name 4
+               Quest Name 5
+               Quest Name 6
+            Zone Name
+               Quest Name 7
+         Content Name
+            Zone Name
+               Quest Name 8
+               Quest Name 9
+            Zone Name
+               Quest Name 10
+               Quest Name 11
+               Quest Name 12
+            Zone Name
+               Quest Name 13
+            Quest Name 13

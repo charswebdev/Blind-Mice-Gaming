@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WoW loads Bindings.xml from this folder. Do not list it in the .toc. -->
+<Bindings>
+    <Binding name="BMGAM_TOGGLE" category="BMG Alt Manager">
+        if BMGAM_ToggleWindow then
+            BMGAM_ToggleWindow()
+        end
+    </Binding>
+    <Binding name="BMGAM_READUNDERMOUSE" description="Read what is under the mouse." category="BMG Alt Manager" default="F6">
+        if BMGAM_ReadUnderMouse then
+            BMGAM_ReadUnderMouse()
+        end
+    </Binding>
+</Bindings>

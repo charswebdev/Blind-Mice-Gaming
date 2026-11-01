@@ -160,6 +160,16 @@
       "client": "forever"
     },
     {
+      "id": "BMGAM",
+      "name": "BMG Alt Manager",
+      "folders": ["BMGAM", "BMGAM_Account", "BMGAM_Quests", "BMGAM_Achievements", "BMGAM_Collections"],
+      "version": "1.0.1",
+      "updated": "2026-10-31",
+      "interfaces": [120105, 120100, 120007, 120001],
+      "saved": ["bmgam_SavedVariables", "bmgam_Account", "bmgam_Quests", "bmgam_Achievements", "bmgam_Collections"],
+      "client": "retail"
+    },
+    {
       "id": "BMG-Unit-frames",
       "name": "BMG Unit Frames",
       "folders": ["BMG-Unit-frames"],

@@ -1,0 +1,10 @@
+## Interface: 120105, 120100, 120007, 120001
+## Title: BMG Alt Manager Account
+## Version: 1.0.1
+## Notes: Shared collection catalog for BMG Alt Manager.
+## Author: Blind Mice Gaming
+## Category-enUS: Blind Mice Gaming
+## SavedVariables: bmgam_Account
+## DefaultState: enabled
+
+Core.lua

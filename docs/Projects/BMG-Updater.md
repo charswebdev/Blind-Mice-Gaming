@@ -17,6 +17,7 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 ## Features
 
 - Catalog-driven list of addons (folder lists, toc interfaces, SavedVariables names) and apps (flavor, status shipped/planned, exe prefix).
+- **2026-10-31:** catalog lists **BMG Alt Manager** (`BMGAM`, **1.0.1**, `bmgam_SavedVariables`, `client: "retail"`). The install also copies `BMGAM_Account`, `BMGAM_Quests`, `BMGAM_Achievements`, and `BMGAM_Collections`. Midnight only. Those four must stay enabled or the main addon will not load.
 - **1.2.2:** WoW Forever installs only into `_forever_` (product `wowf`, Interface `16001`). Never `_classic_beta_`.
 - **1.2.1:** Applications and addons are grouped by game flavor. An addon or app installs only when the player clicks Install. Automatic updates replace only copies that are already installed. Anniversary interface numbers are 20505 and up, so they are not listed under Burning Crusade. Forever interface numbers are not treated as Retail.
 - **2026-10-15:** Accessibility Helper **3.6.7**. Merchant cursor no longer compares a secret `UnitName("npc")`. If the name stays secret, the vendor line is skipped.

@@ -1,0 +1,10 @@
+## Interface: 120105, 120100, 120007, 120001
+## Title: BMG Alt Manager Quests
+## Version: 1.0.1
+## Notes: Saved quests for BMG Alt Manager.
+## Author: Blind Mice Gaming
+## Category-enUS: Blind Mice Gaming
+## SavedVariables: bmgam_Quests
+## DefaultState: enabled
+
+Core.lua

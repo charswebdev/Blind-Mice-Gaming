@@ -1,0 +1,10 @@
+## Interface: 120105, 120100, 120007, 120001
+## Title: BMG Alt Manager Achievements
+## Version: 1.0.1
+## Notes: Saved achievements for BMG Alt Manager.
+## Author: Blind Mice Gaming
+## Category-enUS: Blind Mice Gaming
+## SavedVariables: bmgam_Achievements
+## DefaultState: enabled
+
+Core.lua
