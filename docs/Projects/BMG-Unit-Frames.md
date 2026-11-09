@@ -2,8 +2,8 @@
 
 | Field | Value |
 |-------|--------|
-| Status | **Shipped** (five flavor packages) |
-| Version | **1.2.2** Forever; **1.1.2** Retail; **1.1.1** Era / Anniversary / Classic |
+| Status | **Removed** (2026-11-08) |
+| Version | Removed. Last shipped: **1.2.2** Forever; **1.1.9** Retail / Era / Anniversary / Classic |
 | Type | In-game unit frames (high-contrast, movable, accessible) |
 | Optional deps | AccessibilityHelper (TTS if present) |
 
@@ -17,7 +17,7 @@ Separate package per WoW flavor — own folder, own SavedVariables, own updater 
 | Classic (MoP) | `_classic_` | `BMG-Unit-frames-classic/` | `BMGUnitFramesClassicDB` | `50504`, `50503` |
 | WoW Forever | `_forever_` (wowf 1.60.1.70634) | `BMG-Unit-frames-forever/` | `BMGUnitFramesForeverDB` | `16002`, `16001`, `16000`, `121500`, `121000` |
 
-Interface numbers match the current live patch plus the previous one so a weekly bump does not unload the addon. Retail **1.1.2** adds Interface `120105` for patch 12.1.5.
+Interface numbers match the current live patch plus the previous one so a weekly bump does not unload the addon.
 
 Slash `/bmguf` · `/uf` · Key Bindings → **BMG Unit Frames** (open settings, lock/unlock, read target).
 
@@ -82,10 +82,10 @@ Forever is its own folder. Author **Blind Mice Gaming**. AddOns category **Blind
 | **1.2.5** | TOC `16002` / `16000` for Forever 1.60.1.69913. Flush assigns a **new** SavedVariables table (Forever will not write an `issecrettable`). Never boolean-test secret range/quest flags. |
 | **1.2.6** | Forever never re-hydrates over the session table (edits to Default were treated as “no custom data” and wiped before logout). Settings, drag, lock, import, and save flush the payload string the same way LPL Forever does. |
 | **1.2.7** | Reverted Forever persist experiments. Same in-place `BMGUnitFramesForeverDB` as Retail / Leatrix / Baganator. `## LoadSavedVariablesFirst: 1`. One-time unwrap of the old `payload` wrapper. |
-| **Removed 2026-09-18** | WoW Forever package deleted locally (`BMG-Unit-frames-forever/`, catalog row, Forever AddOns copy), then recreated. Retail / Era / Anniversary / Classic on `main` stay at **1.1.1**. |
+| **Removed 2026-09-18** | WoW Forever package deleted (`BMG-Unit-frames-forever/`, catalog row, Forever AddOns copy). Retail / Era / Anniversary / Classic stay at **1.1.9**. |
 | **1.2.0 (2026-09-26)** | Forever package recreated from Retail 1.1.9. Own folder and `BMGUnitFramesForeverDB`. Author and AddOns category Blind Mice Gaming. Key Bindings category **BMGUF**. `LoadSavedVariablesFirst`. Interface `16002` / `16001` / `16000`. |
 | **1.2.1 (2026-09-26)** | Shipped Forever **1.2.1**. Export selects the layout code and does not call protected `CopyToClipboard`. |
-| **1.2.2 (2026-10-27)** | Forever loads in `_forever_` on patch 1.60.1 (Interface `16001`, game type `forever`). Never `_classic_beta_`. |
+| **Removed 2026-11-08** | All five packages deleted from the repo, the updater catalog, and this PC’s AddOns folders. The updater no longer installs them. |
 
 ## Sources and data
 
@@ -124,6 +124,4 @@ Forever is its own folder. Author **Blind Mice Gaming**. AddOns category **Blind
 
 ## Open work
 
-- Playtest fill layout after `/reload` (Retail + Era first). Existing saved frames keep their height; health now fills that window.
-- Season of Discovery package later (names still open).
-- Playtest the Forever package on `_forever_` (`/bmguf`, move a frame, `/reload`).
+None. Removed on 2026-11-08. Do not add a catalog row or an AddOns copy unless a new package is approved.
