@@ -157,6 +157,28 @@ local function SaveFramePosition()
     db.ui.frame.locked = frame.locked == true
 end
 
+local function ClampScale(value)
+    value = tonumber(value) or 1
+    if value < 0.8 then
+        value = 0.8
+    elseif value > 1.2 then
+        value = 1.2
+    end
+    return math.floor((value * 20) + 0.5) / 20
+end
+
+local function ApplyFrameScale(value)
+    if not frame then
+        return 1
+    end
+    local scale = ClampScale(value)
+    frame:SetScale(scale)
+    local db = LPL.DB:Bind(false)
+    db.ui = type(db.ui) == "table" and db.ui or {}
+    db.ui.scale = scale
+    return scale
+end
+
 local BUTTON_BG = { 0.18, 0.18, 0.22, 1 }
 local BUTTON_HOVER = { 0.24, 0.24, 0.30, 1 }
 local BUTTON_PRESSED = { 0.14, 0.14, 0.18, 1 }
@@ -346,6 +368,32 @@ local function SplitClusters(talents, stepX)
     return groups
 end
 
+local function AbsorbToThree(panels)
+    local function AppendNodes(into, from)
+        for i = 1, #from.nodes do
+            into.nodes[#into.nodes + 1] = from.nodes[i]
+        end
+    end
+    while #panels > 3 do
+        local thin
+        for i = 1, #panels do
+            if #panels[i].nodes < 4 then
+                thin = i
+                break
+            end
+        end
+        local index = thin or #panels
+        local neighbor
+        if index == 1 then
+            neighbor = 2
+        else
+            neighbor = index - 1
+        end
+        AppendNodes(panels[neighbor], panels[index])
+        table.remove(panels, index)
+    end
+end
+
 local NODE_ART = {
     square = {
         normal = "talents-node-square-yellow",
@@ -398,6 +446,9 @@ local function ShowPage(page)
     end
     if frame.profilesPage then
         frame.profilesPage:SetShown(page == "profiles")
+    end
+    if frame.settingsPage then
+        frame.settingsPage:SetShown(page == "settings")
     end
 end
 
@@ -901,6 +952,7 @@ local function PlaceNodes()
             }
         end
     end
+    AbsorbToThree(panels)
     if #panels < 1 then
         if frame.detail and LPL.TalentAPI:EditorClassID() then
             local label = LPL.TalentAPI:ClassLabel(LPL.TalentAPI:EditorClassID()) or "That class"
@@ -1434,6 +1486,15 @@ function UI:OpenSection(id, label)
         ShowPage("profiles")
         return
     end
+    if id == "settings" then
+        SetTabActive("settings")
+        ShowPage("settings")
+        if frame.RefreshSettings then
+            frame:RefreshSettings()
+        end
+        Speak("Settings.")
+        return
+    end
     if id == "builds" then
         SetTabActive("builds")
         ShowPage("import")
@@ -1955,6 +2016,65 @@ local function CreateContent(parent)
         UI:ImportCode()
     end)
 
+    local settingsPage = CreateFrame("Frame", nil, host)
+    settingsPage:SetAllPoints(host)
+    settingsPage:Hide()
+    frame.settingsPage = settingsPage
+    local settingsTitle = settingsPage:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    settingsTitle:SetPoint("TOPLEFT", 16, -16)
+    settingsTitle:SetText("Settings")
+    settingsTitle:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
+    local scaleLabel = settingsPage:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    scaleLabel:SetPoint("TOPLEFT", settingsTitle, "BOTTOMLEFT", 0, -28)
+    scaleLabel:SetText("UI Scale")
+    scaleLabel:SetTextColor(TEXT[1], TEXT[2], TEXT[3])
+    local scaleValue = settingsPage:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    scaleValue:SetPoint("LEFT", scaleLabel, "RIGHT", 12, 0)
+    scaleValue:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
+    frame.settingsScaleValue = scaleValue
+    local slider = CreateFrame("Slider", nil, settingsPage, "OptionsSliderTemplate")
+    slider:SetPoint("TOPLEFT", scaleLabel, "BOTTOMLEFT", 0, -16)
+    slider:SetWidth(280)
+    slider:SetMinMaxValues(0.8, 1.2)
+    slider:SetValueStep(0.05)
+    if slider.SetObeyStepOnDrag then
+        slider:SetObeyStepOnDrag(true)
+    end
+    if slider.Low then
+        slider.Low:SetText("80%")
+        slider.High:SetText("120%")
+        slider.Text:SetText("")
+    end
+    frame.settingsSlider = slider
+    local settingsReady = false
+    slider:SetScript("OnValueChanged", function(_, value)
+        if not settingsReady then
+            return
+        end
+        local scale = ApplyFrameScale(value)
+        scaleValue:SetText(string.format("%.0f%%", scale * 100))
+    end)
+    local scaleHint = settingsPage:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    scaleHint:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 0, -12)
+    scaleHint:SetText("Changes the size of this window.")
+    scaleHint:SetTextColor(TEXT[1], TEXT[2], TEXT[3])
+    local versionLabel = settingsPage:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    versionLabel:SetPoint("BOTTOMLEFT", 16, 16)
+    versionLabel:SetText("Light Paws Loadouts - WoW Forever v" .. (LPL.VERSION or ""))
+    versionLabel:SetTextColor(TEXT[1], TEXT[2], TEXT[3])
+    function frame:RefreshSettings()
+        local db = LPL.DB:Bind(false)
+        local scale = 1
+        if type(db.ui) == "table" then
+            scale = ClampScale(db.ui.scale)
+        end
+        settingsReady = false
+        slider:SetValue(scale)
+        scaleValue:SetText(string.format("%.0f%%", scale * 100))
+        settingsReady = true
+        frame:SetScale(scale)
+    end
+
     local laterPage = CreateFrame("Frame", nil, host)
     laterPage:SetAllPoints(host)
     laterPage:Hide()
@@ -1993,6 +2113,9 @@ local function Ensure()
         frame:ClearAllPoints()
         frame:SetPoint(db.ui.frame.point, UIParent, db.ui.frame.relativePoint or db.ui.frame.point, db.ui.frame.x or 0, db.ui.frame.y or 0)
         frame.locked = db.ui.frame.locked == true
+    end
+    if type(db.ui) == "table" then
+        frame:SetScale(ClampScale(db.ui.scale))
     end
 
     local titleBar = CreateFrame("Frame", nil, frame, "BackdropTemplate")

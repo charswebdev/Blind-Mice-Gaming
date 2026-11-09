@@ -36,7 +36,7 @@ Commit, push, and GitHub releases happen **only when asked**.
 | [WowGPS - WoW Forever](WowGPS-Forever.md) | Shipped | 1.1.3 |
 | [Light Paws Loadouts (Retail)](Light-Paws-Loadouts-Retail.md) | Shipped | 1.2.6 |
 | [Light Paws Loadouts - Classic Era](Light-Paws-Loadouts-Classic-Era.md) | Shipped | 1.0.1 |
-| [Light Paws Loadouts - WoW Forever](Light-Paws-Loadouts-Forever.md) | Shipped (phase 5) | 1.5.3 |
+| [Light Paws Loadouts - WoW Forever](Light-Paws-Loadouts-Forever.md) | Shipped (phase 5) | 1.5.4 |
 | [Light Paws - Anniversary](Light-Paws-Loadouts-Anniversary.md) | Planned | — |
 | [Light Paws Classic (MoP)](Light-Paws-Loadouts-Classic-MoP.md) | Planned | — |
 | [Season of Discovery LPL](Light-Paws-Loadouts-SoD.md) | Planned (later) | — |
@@ -72,6 +72,6 @@ Every flavor is **three products**: in-game LPL + desktop LPLM + desktop LPTM. S
 | Anniversary (TBC) | `_anniversary_` | planned | planned | planned |
 | Classic / MoP | `_classic_` (one client today) | planned | planned | planned |
 | Season of Discovery | SoD client | later | later | later |
-| WoW Forever | `_forever_` | shipped 1.5.3 (phase 5) | later | later |
+| WoW Forever | `_forever_` | shipped 1.5.4 (phase 5) | later | later |
 
 **Build order:** Era addon + LPTM (done) → Era LPLM → Anniversary trio → Classic/MoP trio → SoD. Do not start Anniversary/MoP/SoD **code** until assigned.

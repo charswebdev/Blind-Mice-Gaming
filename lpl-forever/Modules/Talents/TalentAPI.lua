@@ -521,6 +521,9 @@ local function NodeRecord(configID, nodeID, node)
         end
     end
     local maxRank = PlainNumber(node.maxRanks) or 1
+    if Enum and Enum.TraitNodeType and node.type == Enum.TraitNodeType.SubTreeSelection then
+        return nil
+    end
     local rawSubTreeID = node.subTreeID
     local treeName = SubTreeDisplayName(configID, rawSubTreeID) or SubTreeDisplayName(configID, entrySubTreeID)
     if treeName == nil and type(node.subTreeInfo) == "table" then
