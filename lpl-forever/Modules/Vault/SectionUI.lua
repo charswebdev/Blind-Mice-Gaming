@@ -72,6 +72,39 @@ local SECTIONS = {
             return LPL.LoadoutAPI
         end,
     },
+    macros = {
+        title = "Saved Macros",
+        hint = "Double-click a macro to edit it.",
+        detail = "Write the macro in the box, or click Load from macros and pick one. Account and Character choose where Apply writes it. The name is the macro name.",
+        newLabel = "New Macro",
+        emptyLabel = "New Macro",
+        noun = "macro",
+        api = function()
+            return LPL.MacroAPI
+        end,
+    },
+    addonsets = {
+        title = "Saved Addon Sets",
+        hint = "Green dot = the addons enabled on this character. Double-click a set to edit it.",
+        detail = "Addons are grouped like the Blizzard addon list. Click a gold header to collapse it. Gold marks an addon this set turns on. Apply turns those on and the others off, then asks you to reload. Blizzard addons and this addon stay as they are.",
+        newLabel = "New Addon Set",
+        emptyLabel = "New Addon Set",
+        noun = "addon set",
+        api = function()
+            return LPL.AddonSetAPI
+        end,
+    },
+    addonsmanager = {
+        title = "Saved Addon Profiles",
+        hint = "Double-click a profile to edit the paste string.",
+        detail = "Open the Addon dropdown and choose the addon. Paste an import string. The addon is filled in when the string is recognized. Apply tells you where to paste it.",
+        newLabel = "New Profile",
+        emptyLabel = "New Addon Profile",
+        noun = "addon profile",
+        api = function()
+            return LPL.AddonProfileAPI
+        end,
+    },
 }
 
 local sectionId
@@ -284,6 +317,18 @@ local function HidePools()
     end
     if page and page.loadoutPanel then
         page.loadoutPanel:Hide()
+    end
+    if page and page.profileMenu then
+        page.profileMenu:Hide()
+    end
+    if page and page.macroPanel then
+        page.macroPanel:Hide()
+    end
+    if page and page.addonSetPanel then
+        page.addonSetPanel:Hide()
+    end
+    if page and page.profilePanel then
+        page.profilePanel:Hide()
     end
 end
 
@@ -1530,6 +1575,10 @@ function RefreshEditor()
         RefreshLoadouts(page, api)
         return
     end
+    if api.DrawEditor and (sectionId == "macros" or sectionId == "addonsets" or sectionId == "addonsmanager") then
+        api:DrawEditor(page, draft, RefreshEditor)
+        return
+    end
     if sectionId == "actionbars" then
         RefreshActionBars(page, api)
         return
@@ -1777,6 +1826,30 @@ local function CopySet(saved)
             end
         end
     end
+    copy.talents = {}
+    if type(saved.talents) == "table" then
+        for slot = 1, 3 do
+            local id = LPL:PlainNumber(saved.talents[slot] or saved.talents[tostring(slot)])
+            if id then
+                copy.talents[tostring(slot)] = id
+            end
+        end
+    end
+    copy.body = LPL:PlainString(saved.body) or ""
+    copy.icon = LPL:PlainNumber(saved.icon)
+    copy.macroScope = saved.macroScope == "character" and "character" or "account"
+    copy.addons = {}
+    if type(saved.addons) == "table" then
+        for i = 1, #saved.addons do
+            local name = LPL:PlainString(saved.addons[i])
+            if name then
+                copy.addons[#copy.addons + 1] = name
+            end
+        end
+    end
+    copy.addonKey = LPL:PlainString(saved.addonKey) or "custom"
+    copy.addonLabel = LPL:PlainString(saved.addonLabel) or ""
+    copy.paste = type(saved.paste) == "string" and not (issecretvalue and issecretvalue(saved.paste)) and saved.paste or ""
     return copy
 end
 
@@ -1968,6 +2041,9 @@ function UI:SaveDraft()
     end
     ReleaseHold()
     SyncEditModeDraft()
+    if api.SyncDraft then
+        api:SyncDraft(UI.page, draft)
+    end
     local name = ReadName(UI.page.nameBox, draft.name or api:SuggestName())
     local saved
     if draft.id then
@@ -1987,6 +2063,9 @@ function UI:ApplyCurrent()
         return
     end
     SyncEditModeDraft()
+    if api.SyncDraft then
+        api:SyncDraft(UI.page, draft)
+    end
     local set = draft or api:Get(selectedId)
     if not set then
         Notice("Select a saved " .. spec.noun .. " first.", true)
@@ -2028,6 +2107,11 @@ function UI:LoadFromCharacter()
         draft.links = live.links
         if UI.page then
             UI.page.loadoutSlotDraft = nil
+        end
+    elseif api.ApplyCapture then
+        api:ApplyCapture(draft, live)
+        if live.name and UI.page and UI.page.nameBox then
+            UI.page.nameBox:SetText(live.name)
         end
     elseif sectionId == "editmode" then
         draft.layoutString = live.layoutString or ""

@@ -110,6 +110,26 @@ function Store:Update(key, id, record, name, fallback)
     if type(record.links) == "table" then
         existing.links = record.links
     end
+    if type(record.talents) == "table" then
+        existing.talents = record.talents
+    end
+    if record.classID ~= nil or record.classFile ~= nil then
+        existing.classID = LPL:PlainNumber(record.classID)
+        existing.classFile = LPL:PlainString(record.classFile)
+    end
+    if record.body ~= nil or record.icon ~= nil or record.macroScope ~= nil then
+        existing.body = type(record.body) == "string" and record.body or ""
+        existing.icon = LPL:PlainNumber(record.icon) or existing.icon
+        existing.macroScope = record.macroScope == "character" and "character" or "account"
+    end
+    if type(record.addons) == "table" then
+        existing.addons = record.addons
+    end
+    if record.paste ~= nil or record.addonKey ~= nil then
+        existing.paste = type(record.paste) == "string" and record.paste or ""
+        existing.addonKey = LPL:PlainString(record.addonKey) or "custom"
+        existing.addonLabel = LPL:PlainString(record.addonLabel) or ""
+    end
     return existing
 end
 

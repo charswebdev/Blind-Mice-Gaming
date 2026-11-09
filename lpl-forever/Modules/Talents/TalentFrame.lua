@@ -24,7 +24,6 @@ local SELECTED = { 0.28, 0.05, 0.09, 1 }
 local TABS = {
     { id = "loadouts", label = "Loadouts", stem = "builds_64", bottom = false },
     { id = "talents", label = "Talents", stem = "talents_64", bottom = false },
-    { id = "pvp", label = "PVP Talents", stem = "pvp_64", bottom = false },
     { id = "actionbars", label = "Action Bars", stem = "actionbars_64", bottom = false },
     { id = "keybinds", label = "Keybinding Profiles", stem = "keybinds_64", bottom = false },
     { id = "equipment", label = "Equipment", stem = "equipment_64", bottom = false },
@@ -903,6 +902,10 @@ local function PlaceNodes()
         end
     end
     if #panels < 1 then
+        if frame.detail and LPL.TalentAPI:EditorClassID() then
+            local label = LPL.TalentAPI:ClassLabel(LPL.TalentAPI:EditorClassID()) or "That class"
+            frame.detail:SetText(label .. " talent trees could not be loaded on this character.")
+        end
         return
     end
 
@@ -1224,10 +1227,6 @@ function UI:ChangeRank(tabIndex, talentIndex, delta, talentName)
     if not draft then
         return
     end
-    if not LPL.TalentAPI:SameClass(draft) then
-        Speak("This build is for a different class.")
-        return
-    end
     local ok, reason
     if delta > 0 then
         ok, reason = LPL.TalentAPI:CanAdd(draft, tabIndex, talentIndex)
@@ -1255,9 +1254,139 @@ function UI:ChangeRank(tabIndex, talentIndex, delta, talentName)
     PlaceNodes()
 end
 
+local function ClassButtonText()
+    local classID = draft and LPL:PlainNumber(draft.classID)
+    local _, playerID = LPL.TalentAPI:PlayerClass()
+    classID = classID or playerID
+    local name = classID and LPL.TalentAPI:ClassLabel(classID) or "Class"
+    return "Class: " .. name
+end
+
+local function RefreshClassButton()
+    if frame.classButton and frame.classButton.label then
+        frame.classButton.label:SetText(ClassButtonText())
+    end
+end
+
+local function ApplyDraftClass(classID, classFile)
+    if not draft then
+        return
+    end
+    local current = LPL:PlainNumber(draft.classID)
+    draft.classID = classID
+    draft.classFile = classFile
+    if current ~= classID then
+        draft.tabs = {}
+        draft.totalPoints = 0
+    end
+    LPL.TalentAPI:SetEditorClass(classID)
+    local tabCount = LPL.TalentAPI:TabCount()
+    if current ~= classID then
+        for tabIndex = 1, tabCount do
+            local info = LPL.TalentAPI:TabInfo(tabIndex)
+            draft.tabs[tostring(tabIndex)] = {
+                name = info.name,
+                points = 0,
+                ranks = {},
+            }
+        end
+    end
+    RefreshClassButton()
+    if frame.classMenu then
+        frame.classMenu:Hide()
+    end
+    PlaceNodes()
+    if tabCount < 1 then
+        local label = LPL.TalentAPI:ClassLabel(classID) or "That class"
+        frame.detail:SetText(label .. " talent trees could not be loaded on this character.")
+    else
+        frame.detail:SetText("Plan up to 51 points. Apply spends the unspent points you have. Left click adds a rank. Right click removes one.")
+    end
+end
+
+local function EnsureClassMenu()
+    if frame.classMenu then
+        return frame.classMenu
+    end
+    local catcher = CreateFrame("Button", nil, UIParent)
+    catcher:SetAllPoints(UIParent)
+    catcher:SetFrameStrata("FULLSCREEN_DIALOG")
+    catcher:EnableMouse(true)
+    catcher:SetFrameLevel(1)
+    catcher:Hide()
+    local menu = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    menu:SetFrameStrata("FULLSCREEN_DIALOG")
+    menu:SetFrameLevel(20)
+    menu:SetClampedToScreen(true)
+    menu:EnableMouse(true)
+    menu:Hide()
+    menu.buttons = {}
+    Paint(menu, { 0.08, 0.08, 0.10, 1 }, BORDER)
+    menu:SetScript("OnShow", function()
+        catcher:Show()
+    end)
+    menu:SetScript("OnHide", function()
+        catcher:Hide()
+    end)
+    catcher:SetScript("OnClick", function()
+        menu:Hide()
+    end)
+    frame.classMenu = menu
+    return menu
+end
+
+local function OpenClassMenu()
+    if not draft then
+        return
+    end
+    local menu = EnsureClassMenu()
+    local classes = LPL.TalentAPI:Classes()
+    local selected = LPL:PlainNumber(draft.classID)
+    local width = 200
+    local y = 6
+    for i = 1, #classes do
+        local class = classes[i]
+        local button = menu.buttons[i]
+        if not button then
+            button = CreateFrame("Button", nil, menu, "BackdropTemplate")
+            button:SetHeight(22)
+            button.label = button:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            button.label:SetPoint("LEFT", 8, 0)
+            button.label:SetPoint("RIGHT", -8, 0)
+            button.label:SetJustifyH("LEFT")
+            menu.buttons[i] = button
+        end
+        button:SetWidth(width - 12)
+        button:ClearAllPoints()
+        button:SetPoint("TOPLEFT", 6, -y)
+        button.label:SetText(class.name)
+        local picked = class.id == selected
+        Paint(button, picked and { 0.16, 0.14, 0.08, 1 } or { 0.08, 0.08, 0.10, 1 }, { 0.08, 0.08, 0.10, 1 })
+        button.label:SetTextColor(picked and GOLD[1] or TEXT[1], picked and GOLD[2] or TEXT[2], picked and GOLD[3] or TEXT[3])
+        local classID = class.id
+        local classFile = class.file
+        button:SetScript("OnClick", function()
+            ApplyDraftClass(classID, classFile)
+        end)
+        button:Show()
+        y = y + 24
+    end
+    for i = #classes + 1, #menu.buttons do
+        menu.buttons[i]:Hide()
+    end
+    menu:SetSize(width, y + 4)
+    menu:ClearAllPoints()
+    menu:SetPoint("TOPLEFT", frame.classButton, "BOTTOMLEFT", 0, -2)
+    menu:Show()
+end
+
 local function ShowList()
     mode = "list"
     draft = nil
+    LPL.TalentAPI:SetEditorClass(nil)
+    if frame.classMenu then
+        frame.classMenu:Hide()
+    end
     SetTabActive("talents")
     ShowPage("list")
     RefreshList()
@@ -1267,10 +1396,17 @@ local function ShowEditor(build, isNew)
     mode = "editor"
     draft = build
     viewTab = 1
+    if draft and not LPL:PlainNumber(draft.classID) then
+        local file, id = LPL.TalentAPI:PlayerClass()
+        draft.classFile = draft.classFile or file
+        draft.classID = id
+    end
+    LPL.TalentAPI:SetEditorClass(draft and draft.classID)
     SetTabActive("talents")
     ShowPage("editor")
     frame.nameBox:SetText((build and build.name) or "Leveling")
     frame.detail:SetText("Plan up to 51 points. Apply spends the unspent points you have. Left click adds a rank. Right click removes one.")
+    RefreshClassButton()
     PlaceNodes()
     if isNew then
         Speak("New talent build.")
@@ -1278,7 +1414,7 @@ local function ShowEditor(build, isNew)
 end
 
 function UI:OpenSection(id, label)
-    if id == "actionbars" or id == "keybinds" or id == "equipment" or id == "editmode" or id == "loadouts" then
+    if id == "actionbars" or id == "keybinds" or id == "equipment" or id == "editmode" or id == "loadouts" or id == "macros" or id == "addonsets" or id == "addonsmanager" then
         SetTabActive(id)
         ShowPage("section")
         if LPL.Sections then
@@ -1381,7 +1517,10 @@ function UI:LoadFromCharacter()
     draft.totalPoints = live.totalPoints
     draft.classFile = live.classFile
     draft.classID = live.classID
+    LPL.TalentAPI:SetEditorClass(live.classID)
+    RefreshClassButton()
     Speak("Updated this build from your character.")
+    frame.detail:SetText("Plan up to 51 points. Apply spends the unspent points you have. Left click adds a rank. Right click removes one.")
     PlaceNodes()
 end
 
@@ -1671,8 +1810,22 @@ local function CreateContent(parent)
     editorPage:Hide()
     frame.editorPage = editorPage
 
+    local classButton = CreateFrame("Button", nil, editorPage, "BackdropTemplate")
+    classButton:SetSize(200, 24)
+    classButton:SetPoint("TOPLEFT", 16, -8)
+    Paint(classButton, { 0.08, 0.08, 0.10, 1 }, GOLD)
+    classButton.label = classButton:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    classButton.label:SetPoint("LEFT", 8, 0)
+    classButton.label:SetPoint("RIGHT", -8, 0)
+    classButton.label:SetJustifyH("LEFT")
+    classButton.label:SetText("Class")
+    classButton:SetScript("OnClick", function()
+        OpenClassMenu()
+    end)
+    frame.classButton = classButton
+
     local detail = editorPage:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    detail:SetPoint("TOPLEFT", 16, -10)
+    detail:SetPoint("LEFT", classButton, "RIGHT", 12, 0)
     detail:SetPoint("RIGHT", editorPage, "RIGHT", -16, 0)
     detail:SetJustifyH("LEFT")
     detail:SetHeight(32)

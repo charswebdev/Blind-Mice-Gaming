@@ -53,8 +53,15 @@ function API:ConfigID()
     return nil
 end
 
+local editorClassID
+local readingPlayer = false
+
 function API:Available()
-    return self:ConfigID() ~= nil and self:TabCount() > 0
+    local previous = readingPlayer
+    readingPlayer = true
+    local ready = self:ConfigID() ~= nil and self:TabCount() > 0
+    readingPlayer = previous
+    return ready
 end
 
 function API:PlayerClass()
@@ -66,6 +73,76 @@ function API:PlayerClass()
         return nil, nil
     end
     return PlainString(classFile), PlainNumber(classID)
+end
+
+function API:SetEditorClass(classID)
+    local _, playerID = self:PlayerClass()
+    classID = PlainNumber(classID)
+    if classID and playerID and classID ~= playerID then
+        editorClassID = classID
+    else
+        editorClassID = nil
+    end
+end
+
+function API:EditorClassID()
+    if readingPlayer then
+        return nil
+    end
+    return editorClassID
+end
+
+function API:ClassFileForID(classID)
+    classID = PlainNumber(classID)
+    if not classID or type(GetClassInfo) ~= "function" then
+        return nil
+    end
+    local ok, _, file = pcall(GetClassInfo, classID)
+    if not ok then
+        return nil
+    end
+    return PlainString(file)
+end
+
+function API:ClassLabel(classID)
+    classID = PlainNumber(classID)
+    if not classID or type(GetClassInfo) ~= "function" then
+        return nil
+    end
+    local ok, name = pcall(GetClassInfo, classID)
+    if not ok then
+        return nil
+    end
+    return PlainString(name)
+end
+
+function API:Classes()
+    local list = {}
+    local count = 13
+    if type(GetNumClasses) == "function" then
+        local ok, num = pcall(GetNumClasses)
+        num = ok and PlainNumber(num) or nil
+        if num and num > 0 then
+            count = num
+        end
+    end
+    if type(GetClassInfo) ~= "function" then
+        return list
+    end
+    for id = 1, count do
+        local ok, name, file = pcall(GetClassInfo, id)
+        if ok then
+            name = PlainString(name)
+            file = PlainString(file)
+            if name and file then
+                list[#list + 1] = { id = id, name = name, file = file }
+            end
+        end
+    end
+    table.sort(list, function(a, b)
+        return a.name < b.name
+    end)
+    return list
 end
 
 local CLASS_TREES = {
@@ -125,7 +202,10 @@ function API:SpecializationNames()
     end
 
     local classID
-    if PlayerUtil and PlayerUtil.GetClassID then
+    if editorClassID and not readingPlayer then
+        classID = editorClassID
+    end
+    if not classID and PlayerUtil and PlayerUtil.GetClassID then
         local ok, id = pcall(PlayerUtil.GetClassID)
         if ok and type(id) == "number" and id > 0 then
             classID = id
@@ -198,7 +278,11 @@ function API:SpecializationNames()
         for i = #names, 1, -1 do
             names[i] = nil
         end
-        local trees = CLASS_TREES[ClassFile() or ""]
+        local treeFile = ClassFile()
+        if editorClassID and not readingPlayer then
+            treeFile = self:ClassFileForID(editorClassID) or treeFile
+        end
+        local trees = CLASS_TREES[treeFile or ""]
         if trees then
             for index = 1, #trees do
                 Add(trees[index])
@@ -219,14 +303,18 @@ function API:ClassName()
 end
 
 function API:Unspent()
+    local previous = readingPlayer
+    readingPlayer = true
     local configID = self:ConfigID()
     local tabs = self:Tabs()
     local treeID = tabs[1] and tabs[1].treeID
     if not configID or not treeID or not (C_Traits and C_Traits.GetTreeCurrencyInfo) then
+        readingPlayer = previous
         return 0
     end
     local ok, infos = pcall(C_Traits.GetTreeCurrencyInfo, configID, treeID, false)
     if not ok or type(infos) ~= "table" then
+        readingPlayer = previous
         return 0
     end
     local total = 0
@@ -236,6 +324,7 @@ function API:Unspent()
             total = total + quantity
         end
     end
+    readingPlayer = previous
     return total
 end
 
@@ -543,8 +632,112 @@ local function AssignGrid(nodes)
     end
 end
 
+local function FirstSpecID(classID)
+    local getter
+    if C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfoForClassID then
+        getter = C_SpecializationInfo.GetSpecializationInfoForClassID
+    elseif type(GetSpecializationInfoForClassID) == "function" then
+        getter = GetSpecializationInfoForClassID
+    end
+    if not getter then
+        return nil
+    end
+    for index = 1, 4 do
+        local ok, specID = pcall(getter, classID, index)
+        if ok then
+            if type(specID) == "table" then
+                specID = specID.specID or specID.id
+            end
+            specID = PlainNumber(specID)
+            if specID and specID > 0 then
+                return specID
+            end
+        end
+    end
+    return nil
+end
+
+function API:PrepareClassView(classID)
+    classID = PlainNumber(classID)
+    if not classID then
+        return nil, nil
+    end
+    local _, playerID = self:PlayerClass()
+    if not playerID or classID == playerID then
+        return self:ConfigID(), nil
+    end
+    if not (C_ClassTalents and C_ClassTalents.InitializeViewLoadout and C_ClassTalents.ViewLoadout) then
+        return nil, nil
+    end
+    local specID = FirstSpecID(classID)
+    if not specID then
+        return nil, nil
+    end
+    local level = 60
+    if type(GetMaxPlayerLevel) == "function" then
+        local ok, maxLevel = pcall(GetMaxPlayerLevel)
+        maxLevel = ok and PlainNumber(maxLevel) or nil
+        if maxLevel and maxLevel > 0 then
+            level = maxLevel
+        end
+    elseif type(GetMaxLevelForPlayerExpansion) == "function" then
+        local ok, maxLevel = pcall(GetMaxLevelForPlayerExpansion)
+        maxLevel = ok and PlainNumber(maxLevel) or nil
+        if maxLevel and maxLevel > 0 then
+            level = maxLevel
+        end
+    end
+    if not pcall(C_ClassTalents.InitializeViewLoadout, specID, level) then
+        return nil, nil
+    end
+    pcall(C_ClassTalents.ViewLoadout, {})
+    local configID = Constants and Constants.TraitConsts and Constants.TraitConsts.VIEW_TRAIT_CONFIG_ID
+    configID = PlainNumber(configID)
+    if not configID and C_Traits and C_Traits.GetConfigsByType and Enum and Enum.TraitConfigType then
+        local viewType = Enum.TraitConfigType.View
+        if viewType then
+            local ok, ids = pcall(C_Traits.GetConfigsByType, viewType)
+            if ok and type(ids) == "table" then
+                configID = PlainNumber(ids[1])
+            end
+        end
+    end
+    local treeID
+    if C_ClassTalents.GetTraitTreeForSpec then
+        local treeOk, id = pcall(C_ClassTalents.GetTraitTreeForSpec, specID)
+        treeID = treeOk and PlainNumber(id) or nil
+    end
+    if not configID or not treeID then
+        return nil, nil
+    end
+    return configID, treeID
+end
+
+function API:ClassTabs(classID)
+    local configID, treeID = self:PrepareClassView(classID)
+    if not configID or not treeID then
+        return {}
+    end
+    local nodes = ReadNodes(configID, treeID)
+    if #nodes < 1 then
+        return {}
+    end
+    AssignGrid(nodes)
+    return {
+        {
+            index = 1,
+            treeID = treeID,
+            name = "Talents",
+            nodes = nodes,
+        },
+    }
+end
+
 function API:Tabs()
     ClearHeaders()
+    if editorClassID and not readingPlayer then
+        return self:ClassTabs(editorClassID)
+    end
     local configID = self:ConfigID()
     if not configID or not (C_Traits and C_Traits.GetConfigInfo) then
         return {}
@@ -848,6 +1041,8 @@ function API:CanRemove(build, tabIndex, talentIndex)
 end
 
 function API:Capture()
+    local previous = readingPlayer
+    readingPlayer = true
     local classFile, classID = self:PlayerClass()
     local tabs = {}
     local total = 0
@@ -869,6 +1064,7 @@ function API:Capture()
             ranks = ranks,
         }
     end
+    readingPlayer = previous
     return {
         classFile = classFile,
         classID = classID,
@@ -1217,17 +1413,23 @@ function API:LearnOne(tabIndex, talentIndex)
 end
 
 function API:Apply(build)
+    local previous = readingPlayer
+    readingPlayer = true
+    local function finish(...)
+        readingPlayer = previous
+        return ...
+    end
     if type(build) ~= "table" then
-        return false, "No talent build selected."
+        return finish(false, "No talent build selected.")
     end
     if not self:Available() then
-        return false, "Talents are not available on this client."
+        return finish(false, "Talents are not available on this client.")
     end
     if InCombatLockdown and InCombatLockdown() then
-        return false, "Cannot apply talents in combat."
+        return finish(false, "Cannot apply talents in combat.")
     end
     if not self:SameClass(build) then
-        return false, "This build is for a different class."
+        return finish(false, "This build is for a different class.")
     end
 
     local tabCount = self:TabCount()
@@ -1237,7 +1439,7 @@ function API:Apply(build)
             local talent = talents[i]
             local wanted = self:DraftRank(build, tabIndex, talent.talentIndex)
             if talent.rank > wanted then
-                return false, "Your character already spent points this build does not use. Reset talents at your class trainer, then apply again."
+                return finish(false, "Your character already spent points this build does not use. Reset talents at your class trainer, then apply again.")
             end
         end
     end
@@ -1270,17 +1472,17 @@ function API:Apply(build)
         end
         if self:Unspent() < 1 then
             if learned > 0 then
-                return true, "Applied " .. tostring(learned) .. " ranks. No unspent talent points left."
+                return finish(true, "Applied " .. tostring(learned) .. " ranks. No unspent talent points left.")
             end
             if not self:MatchesLive(build) then
-                return false, "All of your talent points are already spent, and this build is different. Reset talents at your class trainer, then apply again."
+                return finish(false, "All of your talent points are already spent, and this build is different. Reset talents at your class trainer, then apply again.")
             end
-            return false, "All of your talent points are already spent."
+            return finish(false, "All of your talent points are already spent.")
         end
         local before = choice.rank
         local ok, err = self:LearnOne(choiceTab, choice.talentIndex)
         if not ok and (err == "Cannot change talents in combat." or err == "Talent purchase is not available.") then
-            return false, err
+            return finish(false, err)
         end
         local afterInfo = ok and self:TalentInfo(choiceTab, choice.talentIndex) or nil
         local after = afterInfo and afterInfo.rank or before
@@ -1307,10 +1509,10 @@ function API:Apply(build)
         end
     end
     if not remaining then
-        return true, "Talents applied (" .. self:Summary(build) .. ")."
+        return finish(true, "Talents applied (" .. self:Summary(build) .. ").")
     end
     if learned > 0 then
-        return true, "Applied " .. tostring(learned) .. " ranks. The rest of this build needs more talent points."
+        return finish(true, "Applied " .. tostring(learned) .. " ranks. The rest of this build needs more talent points.")
     end
-    return false, "No talents from this build could be learned yet."
+    return finish(false, "No talents from this build could be learned yet.")
 end

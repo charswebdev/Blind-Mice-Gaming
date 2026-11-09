@@ -11,6 +11,7 @@ local SEGMENTS = {
     { key = "keybinds", label = "Keybinding Profiles" },
     { key = "equipment", label = "Equipment" },
     { key = "editmode", label = "Edit Mode" },
+    { key = "addonsets", label = "Addon Sets" },
 }
 
 local function CopyIdList(value)
@@ -63,6 +64,9 @@ local function Records(key)
     if key == "editmode" and LPL.EditModeAPI then
         return LPL.EditModeAPI:List()
     end
+    if key == "addonsets" and LPL.AddonSetAPI then
+        return LPL.AddonSetAPI:List()
+    end
     return {}
 end
 
@@ -86,6 +90,9 @@ local function FindRecord(key, id)
     if key == "editmode" and LPL.EditModeAPI then
         return LPL.EditModeAPI:Get(id)
     end
+    if key == "addonsets" and LPL.AddonSetAPI then
+        return LPL.AddonSetAPI:Get(id)
+    end
     return nil
 end
 
@@ -108,6 +115,9 @@ local function SegmentMatches(key, id)
     end
     if key == "editmode" then
         return LPL.EditModeAPI and LPL.EditModeAPI:Matches(record) or false
+    end
+    if key == "addonsets" then
+        return LPL.AddonSetAPI and LPL.AddonSetAPI:Matches(record) or false
     end
     return false
 end
@@ -187,6 +197,9 @@ function API:LinkSummary(key, id)
     end
     if key == "editmode" and LPL.EditModeAPI then
         return LPL.EditModeAPI:Summary(record)
+    end
+    if key == "addonsets" and LPL.AddonSetAPI then
+        return LPL.AddonSetAPI:Summary(record)
     end
     return "Attached"
 end
@@ -357,6 +370,13 @@ local function ApplySegment(key, id)
             return false, "that Edit Mode layout is missing"
         end
         return LPL.EditModeAPI:Apply(set)
+    end
+    if key == "addonsets" then
+        local set = FindRecord(key, id)
+        if not set or not LPL.AddonSetAPI then
+            return false, "that addon set is missing"
+        end
+        return LPL.AddonSetAPI:Apply(set)
     end
     return false, "unknown piece"
 end

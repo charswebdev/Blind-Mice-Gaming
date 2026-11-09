@@ -218,8 +218,8 @@
       "id": "lpl-forever",
       "name": "Light Paws Loadouts - WoW Forever",
       "folders": ["lpl-forever"],
-      "version": "1.5.0",
-      "updated": "2026-10-27",
+      "version": "1.5.3",
+      "updated": "2026-11-08",
       "interfaces": [16002, 16001, 16000, 121500, 121000],
       "saved": ["LPLForeverDB"],
       "client": "forever"
