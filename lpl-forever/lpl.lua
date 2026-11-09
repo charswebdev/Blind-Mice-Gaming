@@ -1,6 +1,6 @@
 local addonName, LPL = ...
 
-LPL.VERSION = "1.5.4"
+LPL.VERSION = "1.5.5"
 LPL.ADDON_NAME = addonName or "lpl-forever"
 LPL.TITLE = "Light Paws Loadouts - WoW Forever"
 

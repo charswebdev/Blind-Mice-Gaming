@@ -25,6 +25,9 @@ local function Boot(countLoad)
         local talents = (LPL.TalentAPI and LPL.TalentAPI:Available()) and "Talents ready." or "Talents are not available on this client."
         print("|cff00ff00[" .. LPL.TITLE .. "]|r v" .. LPL.VERSION .. " loaded. " .. talents .. " |cff00ff00/lpl|r")
     end
+    if LPL.Minimap then
+        LPL.Minimap:Create()
+    end
 end
 
 local events = CreateFrame("Frame")

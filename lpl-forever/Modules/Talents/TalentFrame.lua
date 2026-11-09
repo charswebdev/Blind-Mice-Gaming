@@ -2058,6 +2058,34 @@ local function CreateContent(parent)
     scaleHint:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 0, -12)
     scaleHint:SetText("Changes the size of this window.")
     scaleHint:SetTextColor(TEXT[1], TEXT[2], TEXT[3])
+    local minimapCheck = CreateFrame("CheckButton", "LPLForeverMinimapCheck", settingsPage, "UICheckButtonTemplate")
+    minimapCheck:SetPoint("TOPLEFT", scaleHint, "BOTTOMLEFT", -4, -18)
+    minimapCheck:SetSize(24, 24)
+    local minimapText = minimapCheck.Text or _G["LPLForeverMinimapCheckText"]
+    if minimapText then
+        minimapText:SetText("Show minimap button")
+        minimapText:SetTextColor(TEXT[1], TEXT[2], TEXT[3])
+    end
+    if LPL.Minimap then
+        LPL.Minimap.check = minimapCheck
+        local shown = true
+        if LPL.Minimap.Settings then
+            shown = LPL.Minimap:Settings().shown == true
+        end
+        minimapCheck:SetChecked(shown)
+    end
+    minimapCheck:SetScript("OnClick", function(self)
+        if LPL.Minimap then
+            LPL.Minimap:SetShown(self:GetChecked() and true or false)
+        end
+    end)
+    local minimapHint = settingsPage:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    minimapHint:SetPoint("TOPLEFT", minimapCheck, "BOTTOMLEFT", 28, -2)
+    minimapHint:SetPoint("RIGHT", settingsPage, "RIGHT", -16, 0)
+    minimapHint:SetJustifyH("LEFT")
+    minimapHint:SetWordWrap(true)
+    minimapHint:SetText("Left-click the minimap icon, or the Light Paws Loadouts icon or name on a broker bar, to open this window.")
+    minimapHint:SetTextColor(TEXT[1], TEXT[2], TEXT[3])
     local versionLabel = settingsPage:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     versionLabel:SetPoint("BOTTOMLEFT", 16, 16)
     versionLabel:SetText("Light Paws Loadouts - WoW Forever v" .. (LPL.VERSION or ""))
@@ -2073,6 +2101,9 @@ local function CreateContent(parent)
         scaleValue:SetText(string.format("%.0f%%", scale * 100))
         settingsReady = true
         frame:SetScale(scale)
+        if LPL.Minimap and LPL.Minimap.check and LPL.Minimap.Settings then
+            LPL.Minimap.check:SetChecked(LPL.Minimap:Settings().shown == true)
+        end
     end
 
     local laterPage = CreateFrame("Frame", nil, host)

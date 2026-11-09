@@ -3,15 +3,21 @@
 ## Title: Light Paws Loadouts - WoW Forever
 ## Notes: Save talents, action bars, key bindings, equipment, Edit Mode, loadouts, macros, and addon sets for WoW Forever. |cffffcc00/lpl|r to open.
 ## Author: Blind Mice Gaming
-## Version: 1.5.4
+## Version: 1.5.5
 ## Category: Blind Mice Gaming
 ## Category-enUS: Blind Mice Gaming
 ## IconTexture: Interface\AddOns\lpl-forever\icons\lpl_32.blp
 ## SavedVariables: LPLForeverDB
 ## LoadSavedVariablesFirst: 1
 ## DefaultState: enabled
+## OptionalDeps: Titan
 
 lpl.lua
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+UI\Minimap.lua
+UI\Broker.lua
 Core\DB.lua
 Core\Plain.lua
 Modules\Vault\SetStore.lua
