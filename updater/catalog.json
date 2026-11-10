@@ -170,6 +170,16 @@
       "client": "retail"
     },
     {
+      "id": "BMGAM-forever",
+      "name": "BMG Alt Manager - WoW Forever",
+      "folders": ["BMGAM-forever"],
+      "version": "1.0.0",
+      "updated": "2026-11-09",
+      "interfaces": [16002, 16001, 16000, 121500, 121000],
+      "saved": ["bmgam_SavedVariables"],
+      "client": "forever"
+    },
+    {
       "id": "CooldownAssist",
       "name": "Cooldown Assist",
       "folders": ["CooldownAssist"],

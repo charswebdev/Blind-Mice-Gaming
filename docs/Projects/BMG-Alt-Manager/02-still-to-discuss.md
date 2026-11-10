@@ -27,7 +27,7 @@ The approved reference is [bags-page-full.jpg](reference/bags-page-full.jpg). Ch
 
 The page in that drawing:
 
-- One section per bag the character is carrying, in this order: Backpack, then the equipped bags, then the Midnight reagent bag. A bag slot with no bag equipped is left out. Older flavors have no reagent bag.
+- One section per bag the character is carrying, in this order: Backpack, then the equipped bags, then the reagent bag. A bag slot with no bag equipped is left out. Era, Anniversary, and MoP have no reagent bag. WoW Forever has one. Charlotte noted that on 2026-11-09.
 - Each header shows the bag icon in that bag’s quality color, the name in bold gold, and how full it is, such as 16 / 20. The backpack is not an item, so its icon stays cream.
 - Filled slots are the item icon with a quality-colored border. A stack bigger than 1 shows the count in the corner. Empty slots are dark boxes, so free space stays visible. Item names are not printed on the grid.
 - Worn gear stays on the Gear page.

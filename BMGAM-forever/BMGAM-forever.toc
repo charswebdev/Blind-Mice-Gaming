@@ -1,0 +1,42 @@
+## Interface: 16002, 16001, 16000, 121500, 121000
+## AllowLoadGameType: forever, camelot
+## Title: BMG Alt Manager
+## Version: 1.0.0
+## Notes: Roster, Overview, Gear, Bags, Bank, Professions, Currency, Reputation, Mail, Auction, Quests, Achievements, Collections, and Settings for characters on this WoW Forever account.
+## Notes-enUS: Roster and Overview for characters on this account. Blind Mice Gaming.
+## Author: Blind Mice Gaming
+## Category-enUS: Blind Mice Gaming
+## IconTexture: Interface\AddOns\BMGAM-forever\Media\Icon.tga
+## AddonCompartmentFunc: BMGAM_OnAddonCompartmentClick
+## SavedVariables: bmgam_SavedVariables
+## DefaultState: enabled
+## X-License: All Rights Reserved
+## OptionalDeps: Titan
+
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+
+Core\DB.lua
+Core\Scan.lua
+Core\Lists.lua
+Core\Transfer.lua
+Core\Read.lua
+UI\Theme.lua
+UI\Overview.lua
+UI\Gear.lua
+UI\Bags.lua
+UI\Bank.lua
+UI\Professions.lua
+UI\Currency.lua
+UI\Reputation.lua
+UI\Mail.lua
+UI\Auction.lua
+UI\Quests.lua
+UI\Achievements.lua
+UI\Collections.lua
+UI\Settings.lua
+UI\MinimapButton.lua
+UI\Window.lua
+UI\Broker.lua
+Core\Init.lua

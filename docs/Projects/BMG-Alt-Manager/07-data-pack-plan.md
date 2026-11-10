@@ -16,7 +16,7 @@ The design pack has the look and the phase order. It does not yet say what a cha
 - The character key is the player GUID plus the realm. The name is for display. Two realms can share a name.
 - Do not copy AltVault or Altoholic code or data files into these notes.
 - Do not store secrets or full tooltip text. That rule is already locked.
-- Midnight-only systems stay in their own section: reagent bag, warband bank, renown, and the Great Vault. They are not copied onto Era, Anniversary, MoP, or Forever.
+- Midnight-only systems stay in their own section: warband bank, renown, and the Great Vault. They are not copied onto Era, Anniversary, MoP, or Forever. The reagent bag is Midnight and WoW Forever. Era, Anniversary, and MoP do not get one.
 
 ## Batch 1 — the character record and the shell
 

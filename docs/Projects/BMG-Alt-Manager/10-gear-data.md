@@ -32,7 +32,9 @@ Slot numbers are the client inventory slots. Paper-doll order is the order a cha
 | 18 | Off hand | 17 | Yes | Yes | Yes | Yes |
 | 19 | Ranged | 18 | No | Yes | Yes | No |
 
-Midnight has no ranged slot. MoP removed the ranged slot. Era and Anniversary keep it. Confirm the MoP and Anniversary lists on those clients before those flavors are coded. Forever is not in this table. Its slot list is written when the Forever client is in front of us.
+Midnight has no ranged slot. MoP removed the ranged slot. Era and Anniversary keep it. Confirm the MoP and Anniversary lists on those clients before those flavors are coded.
+
+WoW Forever, checked 2026-11-08 on this PC (client 1.60.1.70862, Interface 16001), keeps every Midnight slot plus Ranged (18) and Ammo (0). Both stay on the Gear page, including **Empty Slot**. Shirt and tabard stay locked. The saved scan for a cloth character had the shirt, chest, belt, legs, boots, wrists, gloves, one ring, the cloak, and a hammer filled, and Ammo and Ranged empty. The Gear page follows that character sheet. The left column is Head, Neck, Shoulder, Back, Chest, Shirt, Tabard, Wrist, Main hand, then Ranged. The right column is Hands, Waist, Legs, Feet, Finger, Finger, Trinket, Trinket, Off hand, then Ammo. Ammo shows the stack count, the way the sheet shows 899 beside the bow, and it has no durability, enchant, or gem line. Ranged uses whatever durability, enchant, and sockets the client reports.
 
 Profession tools are not gear slots. They stay with the Professions talk.
 

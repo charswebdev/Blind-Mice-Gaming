@@ -2,7 +2,7 @@
 
 Batch 3 of the data pack. Approved on 2026-10-29. Gear and Bags are read by `BMGAM` as of 2026-10-30. The other pages in this file are still notes.
 
-Each page says what the snapshot stores, which Midnight functions supply it, and what is still unconfirmed. Forever is not written here. Its functions are recorded when the Forever client is in front of us.
+Each page says what the snapshot stores, which Midnight functions supply it, and what is still unconfirmed. The Forever check from 2026-11-08 is in the section **WoW Forever** at the end of this file.
 
 Names are saved at scan time. Full tooltips are not stored. Gold, silver, and copper stay on the character record from batch 1. The Currency page reads that money. It does not store a second copy.
 
@@ -317,4 +317,62 @@ The item choices inside a ready slot are not stored. A ready slot shows Tier: an
 | Skill-line calls | Older professions |
 | Currency function | Older flavors |
 | Completed-quest history call | Quests |
-| Every Forever function | Not written in this file |
+| Every Forever function | Written below, from the 2026-11-08 check |
+
+## WoW Forever
+
+Checked 2026-11-08 on this PC. Client `1.60.1.70862`, Interface `16001`, product `wowf`, game type `camelot`, folder `_forever_`. The client does not keep loose FrameXML on disk, so this list comes from a scan that already ran here (Syndicator saved data for characters on account FREYAHEART, including Elenna Briarfield and Freya Emberhammer) and from addons that loaded on this same client without those calls showing up as errors. No Forever Alt Manager files were created.
+
+Secret values still apply. A value that cannot be read is dropped, the same rule as Midnight.
+
+### Gear
+
+The saved equipment list uses classic slot numbers and includes slot 0. Slots present: Ammo `0`, Head `1`, Neck `2`, Shoulder `3`, Shirt `4`, Chest `5`, Waist `6`, Legs `7`, Feet `8`, Wrist `9`, Hands `10`, Finger `11`, Finger `12`, Trinket `13`, Trinket `14`, Back `15`, Main Hand `16`, Off Hand `17`, Ranged `18`, Tabard `19`. Ammo and Ranged were empty on the cloth character and are still stored. Shirt and tabard stay locked on the page.
+
+Calls that already ran: `GetInventoryItemID`, `GetInventoryItemLink`, `C_Item.DoesItemExist`, `C_Item.IsBound`.
+
+### Bags
+
+`C_Container.GetContainerItemInfo` already ran. The backpack and four bag slots are in use. One character had a Light Quiver in a bag slot.
+
+Charlotte noted on 2026-11-09 that reagent bags are on WoW Forever. The reagent bag is its own section after the four bags, the same place Midnight puts it, when that bag has slots. An empty reagent-bag slot is left off. The slot after the reagent bag is the keyring. The bag bar on this client is the backpack, bags 1 through 4, `CharacterReagentBag0Slot`, then `KeyRingButton`. Its bag id is `Enum.BagIndex.Keyring`. On Forever its size comes from `GetKeyRingSize()`, not from `C_Container.GetContainerNumSlots`. The page uses the bag’s own name, and a reagent bag with no name yet says Reagent Bag.
+
+### Bank
+
+Personal bank on this client uses `C_Bank` bank tabs (`FetchPurchasedBankTabData`, `BANK_TABS_CHANGED`). Step 18.4 reads those tabs only while the bank is open. The saved tab list stays empty until then, and the page says Not scanned yet.
+
+Warband bank is off. The bag addon turns that bank off on Forever, and the saved warband bank is empty.
+
+Guild bank uses the classic calls: `GetNumGuildBankTabs`, `GetGuildBankTabInfo`, `GetGuildBankItemLink`, `GetGuildBankMoney`. No guild bank has been opened on this account, so no contents are saved. The Bank page keeps the section and says **Not scanned yet** until it is opened. If that first open has no tabs, the section stays with that message.
+
+### Currency, mail, auctions
+
+`C_CurrencyInfo.GetCurrencyListInfo` already ran. One character’s list was a single header, Unknown, and no currencies. Gold is stored on its own (955 copper on that character). Step 18.6 reads that list on login and when a currency changes. A collapsed header is opened once so a currency under it is not missed. The token list on this client stays at the header Unknown until a currency is discovered, so that list alone does not show the rows. The page still lists the Forever currencies, and reads each amount with `C_CurrencyInfo.GetCurrencyInfo`. Honor Points `1792` and Rank Points `3468` sit under Player vs. Player. Tarnished Undermine Real `3469` sits under Dungeon and Raid. Merchant's Favor `3402` sits under Professions & Tradeskills. Darkmoon Prize Ticket `515` sits under Miscellaneous. An amount the character does not have, including a currency this character has not discovered, is stored as 0. A header name from the client’s own category replaces the fallback name when that category lists the currency. Midnight headers such as Crests and Delves are not added.
+
+### Reputation
+
+Step 18.7 reads the reputation panel with `C_Reputation.GetNumFactions` and `GetFactionDataByIndex`, or `GetNumFactions` and `GetFactionInfo` when those are the calls this client has. Every reputation header is opened for the read, including with `ExpandAllFactionHeaders` and `ExpandFactionHeader(0)`, and then a header that was closed is closed again. The page then lists every Forever faction under Alliance, Alliance Forces, Horde, Horde Forces, Steamwheedle Cartel, and Other. A standing the client returns is kept. A faction this character has not discovered is still listed, at Neutral 0 / 3,000 when the client has no standing for it. The groups follow that client order. Each faction stores the normal standing, from Hated through Exalted, the standing floor, and the next mark. The bar is that standing’s bar. A friendship rank, when the client has one, stays on that faction. There is no Friendship header. Renown, Delver Companion, and Warband reputation stay off. Alliance and Horde stay headers when the client uses them as headers. They are not extra rows.
+
+Step 18.8 reads the inbox while the mailbox is open, with `GetInboxNumItems`, `GetInboxHeaderInfo`, and `GetInboxItem`. Login reads `HasNewMail` and `GetLatestThreeSenders` without a mailbox. A letter sent with `SendMail` is stored on the recipient when that recipient is already on this account. Cash-on-delivery is left off. Sent mail is not an outbox. Days left keep counting down from the time the inbox was saved.
+
+Step 18.9 reads owned auctions and bids on login with `C_AuctionHouse.QueryOwnedAuctions` and `QueryBids` when this client is not the old auction house. Asking again while that window is open is skipped. `GetOwnedAuctionInfo` and `GetBidInfo` supply the rows after `OWNED_AUCTIONS_UPDATED` and `BIDS_UPDATED`. A sold auction is left off. When `IsUsingLegacyAuctionClient` says this is the old auction house, the lists are read with `GetNumAuctionItems` and `GetAuctionItemInfo` while the Auction House is open. Time left uses the same bands as the Auction House: 30 min, 2 hours, 12 hours, or 2 days.
+
+Step 18.10 reads the quest log on login. A collapsed header is opened for the read and then closed again. Current quests use `C_QuestLog.GetInfo` or `GetQuestLogTitle`. Finished quests use `C_QuestLog.GetAllCompletedQuestIDs`, then `GetQuestsCompleted` when that first call is missing. The title comes from `C_QuestLog.GetTitleForQuestID`. The zone comes from the quest’s map when the client has one, and a current quest with no map keeps the quest log header. A quest with no zone is still stored. Account-wide is stored only when `C_QuestLog.IsQuestFlaggedCompletedOnAccount` says so, and Warband is shown only then. Tracking Quest, a [DNT] title, and a title that is only Level and a number are left off.
+
+Step 18.11 reads achievements on login with `GetCategoryList`, `GetCategoryInfo`, and `GetAchievementInfo`. Statistics are left off. An earned row stores the client’s date and who earned it. Who is Account Wide when the client marks that achievement account-wide. A chain uses `GetPreviousAchievement` and `GetNextAchievement` when those calls exist. An achievement that is not earned stores its progress.
+
+Step 18.13 is Settings. The minimap button follows `account.minimap`. Read under the mouse uses the `BMGAM_READUNDERMOUSE` binding, F6 unless it was changed, and the row says Not bound when no key is stored. `/avread` reads the same way. Export writes this Forever saved data, marked `client = "forever"`. Import refuses a code that is not that Forever export, including a retail BMGAM2 code.
+
+### Professions and quests
+
+`Blizzard_Professions` has loaded on this client. WhatsTraining, also installed here, reads skill lines with `GetNumSkillLines`. Step 18.5 stores the profession list on login from `GetProfessions` and `GetProfessionInfo`, and adds a profession skill line `GetNumSkillLines` returns when that line is a profession this client knows. The line under the profession uses that skill line’s own name, skill, and maximum. Midnight expansion names are not invented. Recipes are read only while the profession window is open, from `C_TradeSkillUI` when that client returns them, and from `GetNumTradeSkills` when it does not. Each recipe keeps its learned flag. A filtered profession window does not replace a longer saved list.
+
+Questie Forever (Interface `16001`) is loaded and reads completed quests with `C_QuestLog.GetAllCompletedQuestIDs`, then `GetQuestsCompleted` if that first call is missing.
+
+### Collections
+
+Addons on this install call `C_MountJournal`, `C_PetJournal`, `C_ToyBox`, `C_Heirloom`, and `C_TransmogCollection`. Step 18.12 reads those journals on login, and `C_TransmogSets` when this client has it. A type with no rows is left off the page. Manuscripts and Decor are not read. Heirlooms are stored when `C_Heirloom` returns them. The icon stays beside the name. Collected and Not Collected both start closed.
+
+### Left off
+
+Vault stays off. There is no weekly-rewards scan. Warband reputation, Delver’s Journey, Prey, and Traveler’s Journey stay off. Achievements are read with `GetCategoryList` and `GetAchievementInfo`. Statistics stay off.

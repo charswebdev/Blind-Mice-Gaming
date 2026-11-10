@@ -95,7 +95,7 @@ Every expandable header is bold gold and can collapse. Gear has no search box. E
 | 15 | Classic Era, including Hardcore | 15 |
 | 16 | Anniversary | 16 |
 | 17 | Classic (MoP) | 17 |
-| 18 | WoW Forever | 18 |
+| 18 | WoW Forever. Same icons and layout as Midnight, one tab per step | 18 |
 | 19 | Updater rows, only when Charlotte says to ship | 19 |
 
 ### 0. Design
@@ -206,13 +206,38 @@ MoP starts from the Midnight addon and drops what that client does not have. Con
 
 ### 18. WoW Forever
 
-Forever starts from the Midnight addon and drops what that client does not have. Forever’s calls and slot list are confirmed on that client before this phase is coded. Vault is left out. The ranged slot is shown only when that client has it. Forever installs only into `_forever_`.
+Forever starts from the Midnight addon and drops what that client does not have. Forever’s calls and slot list are confirmed on that client before this phase is coded. Vault is left out. The ranged slot is shown only when that client has it. Forever installs only into `_forever_`. The folder is `BMGAM-forever`. The slash command stays `/bmgam`.
 
-Dropped on any of these flavors when the client does not have them: Vault, the reagent bag, the warband bank, the guild bank, Renown, Delver Companion, Warband reputation, hero talents, the Delver's Journey, Prey, and Traveler's Journey headers, and any collection header that client lacks. Older currencies omit zeros. Reputation is the standard bar only. A flavor that has the ranged slot shows it, including **Empty Slot** when nothing is equipped. A flavor that does not have it leaves the row off.
+Charlotte asked on 2026-11-08 to build Forever in the same small steps as Midnight, and to keep Midnight’s icons and layout. The window, roster cards, tab row, page columns, gold headers, search boxes, and Settings page match the approved Midnight pictures. A tab Forever does not have is left off the row. The pages that remain keep the same places, the same type, and the same spacing. No new icon set and no new window drawing.
+
+The pictures already approved for Midnight are the pictures Forever uses. That includes the addon icon, the close button, the settings gear, the trash can, the class and race art taken from the client, the coin icons, and every tab picture for a tab this client keeps. Tab tooltips use the same names. Gear still has no search box. Every other Forever tab has one. Settings stays the gear button, not a tab.
+
+Forever’s own steps, each played on `_forever_` before the next one starts:
+
+| Step | What is built |
+|------|----------------|
+| 18.0 | Done 2026-11-08. Calls, gear slots, and collection types are in [`11-client-apis.md`](11-client-apis.md). No addon files |
+| 18.1 | Done 2026-11-08 in `BMGAM-forever` at 0.1.0. Window, roster, and Overview, with the same layout and icons. The other Forever tabs are on the row and empty. Forget-a-character works. Search is on Overview. Shipped in the updater catalog as 1.0.0 on 2026-11-09 |
+| 18.2 | Done 2026-11-08 in `BMGAM-forever`. Gear follows the character sheet: left side armor, then Main hand and Ranged; right side armor, then Off hand and Ammo. Ammo shows the stack count. No search box. Shipped in the updater catalog as 1.0.0 on 2026-11-09 |
+| 18.3 | Done 2026-11-09 in `BMGAM-forever`. Bags: Backpack, four bags, then the reagent bag when that bag has slots. Charlotte noted on 2026-11-09 that Forever has reagent bags. The keyring shows only when it has a size. Search matches item names. Shipped in the updater catalog as 1.0.0 on 2026-11-09 |
+| 18.4 | Done 2026-11-09 in `BMGAM-forever`. Bank: personal bank tabs, read while the bank is open. Guild bank says Not scanned yet until it is opened. No warband bank. Search matches item names. Shipped in the updater catalog as 1.0.0 on 2026-11-09 |
+| 18.5 | Done 2026-11-09 in `BMGAM-forever`. Professions: Primary and Secondary. The line under a profession is the skill line this client returns, with skill and maximum. No Midnight expansion names. Recipes are saved when that profession window is open. A line that has not been opened says Not scanned yet. Search matches profession names, skill line names, and recipe names. Shipped in the updater catalog as 1.0.0 on 2026-11-09 |
+| 18.6 | Done 2026-11-09 in `BMGAM-forever`. Currency: Character and Account Wide gold, then Honor Points, Rank Points, Tarnished Undermine Real, Merchant's Favor, and Darkmoon Prize Ticket under Player vs. Player, Dungeon and Raid, Professions & Tradeskills, and Miscellaneous. A currency this character does not have shows 0. A zero is dim. Search matches currency names, header names, and Account or PvP. Shipped in the updater catalog as 1.0.0 on 2026-11-09 |
+| 18.7 | Done 2026-11-09 in `BMGAM-forever`. Reputation: Alliance, Alliance Forces, Horde, Horde Forces, Steamwheedle Cartel, and Other, with the normal standing bar. No Renown, Delver Companion, or Warband header. A faction this character has not discovered stays at Neutral 0 / 3,000. Every header is opened for the read, then a header that was closed is closed again. Search matches faction names and standings. Shipped in the updater catalog as 1.0.0 on 2026-11-09 |
+| 18.8 | Done 2026-11-09 in `BMGAM-forever`. Mail: Inbox only. Login shows the new-mail notice and up to three sender names. The full inbox, with subject, days left, coins, and items, is read while the mailbox is open. A letter sent to another character on this account is saved on that character when it is sent. Sent mail and cash-on-delivery stay off. Not scanned yet, No new mail, and Inbox is empty are the empty states. Search matches sender, subject, and item names. Shipped in the updater catalog as 1.0.0 on 2026-11-09 |
+| 18.9 | Done 2026-11-09 in `BMGAM-forever`. Auction: Auctions and Bids. Time left uses 30 min, 2 hours, 12 hours, or 2 days. No bid says No bids. No buyout says None. Sold auctions stay off. The modern auction cache is read on login. The older auction house is read while it is open. Not scanned yet, No auctions, and No bids are the empty states. Search matches item names. Shipped in the updater catalog as 1.0.0 on 2026-11-09 |
+| 18.10 | Done 2026-11-09 in `BMGAM-forever`. Quests: Current Quest and Completed Quest, grouped by zone. Character is under both. Warband shows only when the client marks a finished quest account-wide. A quest with no zone stays on the list. Tracking Quest, a [DNT] title, and a title that is only Level and a number stay off. Not scanned yet, No quests, and No completed quests are the empty states. Search matches quest names. Shipped in the updater catalog as 1.0.0 on 2026-11-09 |
+| 18.11 | Done 2026-11-09 in `BMGAM-forever`. Achievements: this client’s categories. Statistics stay off. An earned name is bold green with the client’s date and who earned it. Who says Account Wide when the client marks it account-wide. An unearned name is bold yellow and shows progress. Headers start closed. Not scanned yet and No achievements are the empty states. Search matches achievement names and category names. Shipped in the updater catalog as 1.0.0 on 2026-11-09 |
+| 18.12 | Done 2026-11-09 in `BMGAM-forever`. Collections: only the types this client returns. Manuscripts and Decor stay off. Heirlooms are included when this client has them. The icon stays beside the name. Collected and Not Collected start closed. Not scanned yet and No collections are the empty states. Search matches names and the obtain text. Shipped in the updater catalog as 1.0.0 on 2026-11-09 |
+| 18.13 | Done 2026-11-09 in `BMGAM-forever`. Settings: minimap On or Off, the read-under-mouse key (F6 unless it was changed, or Not bound), `/avread`, and Export / Import for this Forever copy only. A retail export does not load. Shipped in the updater catalog as 1.0.0 on 2026-11-09 |
+
+Steps 18.0 through 18.13 are done. Forever shipped as 1.0.0 on 2026-11-09. A retail export code does not load into the Forever copy. The Forever saved data is marked `client = "forever"`.
+
+Dropped on any of these flavors when the client does not have them: Vault, the reagent bag, the warband bank, the guild bank, Renown, Delver Companion, Warband reputation, hero talents, the Delver's Journey, Prey, and Traveler's Journey headers, and any collection header that client lacks. WoW Forever has the reagent bag, so that section stays. Older currencies omit zeros. Reputation is the standard bar only. A flavor that has the ranged slot shows it, including **Empty Slot** when nothing is equipped. A flavor that does not have it leaves the row off.
 
 ### 19. Ship
 
-Only when Charlotte says to ship. Then a catalog row per flavor that is actually built, a patch version bump, and the updater. No catalog row is added during planning.
+Only when Charlotte says to ship. Then a catalog row per flavor that is actually built, a patch version bump, and the updater. No catalog row is added during planning. WoW Forever shipped on 2026-11-09 as `BMGAM-forever` 1.0.0. Midnight stays 1.0.1. Era, Anniversary, and MoP are not shipped.
 
 ## Load
 
@@ -269,5 +294,5 @@ Each approved picture has a phase. A later coding phase uses that picture and th
 | Classic Era, including Hardcore | 15 |
 | Anniversary | 16 |
 | Classic (MoP) | 17 |
-| WoW Forever | 18 |
+| WoW Forever. Same icons and layout as Midnight, one tab per step | 18 |
 | Updater rows | 19, only when Charlotte says to ship |

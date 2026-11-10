@@ -28,7 +28,7 @@ Commit, push, and GitHub releases happen **only when asked**.
 | [AllQuest](AllQuest.md) | Shipped | 1.1.6 |
 | [AllQuest - WoW Forever](AllQuest-Forever.md) | Shipped | 1.0.0 |
 | [BMG Unit Frames](BMG-Unit-Frames.md) | Removed | — |
-| [BMG Alt Manager](BMG-Alt-Manager.md) | Phase 14 complete — Settings. Midnight done. | 1.0.1 |
+| [BMG Alt Manager](BMG-Alt-Manager.md) | Midnight 1.0.1 shipped. Forever 1.0.0 shipped. | 1.0.1 / 1.0.0 |
 | [Cooldown Assist](Cooldown-Assist.md) | Shipped | 1.1.1 |
 | [Exploration](Exploration.md) | Shipped | 2.0.3 |
 | [FPSDiag](FPSDiag.md) | Shipped | 0.3.2 |

@@ -17,6 +17,7 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 ## Features
 
 - Catalog-driven list of addons (folder lists, toc interfaces, SavedVariables names) and apps (flavor, status shipped/planned, exe prefix).
+- **2026-11-09:** catalog lists **BMG Alt Manager - WoW Forever** (`BMGAM-forever`, **1.0.0**, `bmgam_SavedVariables`, `client: "forever"`). Installs into `_forever_` only. Do not install Retail `BMGAM` into `_forever_`. A retail export does not load into this copy.
 - **2026-11-08:** BMG Unit Frames is removed from the catalog. Retail, Classic Era, Anniversary, Classic (MoP), and WoW Forever are gone. The updater no longer installs them.
 - **2026-11-08:** Light Paws Loadouts - WoW Forever **1.5.5** (`lpl-forever`, `LPLForeverDB`, `client: "forever"`). A minimap button opens the window. A broker plugin shows the icon and the name, and clicking either one opens the window. Do not install Retail `lpl/` into `_forever_`.
 - **2026-11-08:** Light Paws Loadouts - WoW Forever **1.5.4** (`lpl-forever`, `LPLForeverDB`, `client: "forever"`). Settings sets the window scale. A class talent page shows three trees. A node past the third tree stays in that tree. Do not install Retail `lpl/` into `_forever_`.
