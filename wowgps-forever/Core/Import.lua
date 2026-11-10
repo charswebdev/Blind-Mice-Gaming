@@ -127,12 +127,7 @@ function Import:ParseWgps(line)
     if not name then
         return nil
     end
-    local tag = tagField or ""
-    local comma = string.find(tag, ",", 1, true)
-    if comma then
-        tag = string.sub(tag, 1, comma - 1)
-    end
-    return self:Finish(name, mapId, x, y, "", Trim(tag), note or "", scope)
+    return self:Finish(name, mapId, x, y, "", Trim(tagField or ""), note or "", scope)
 end
 
 function Import:ParseWay(line)

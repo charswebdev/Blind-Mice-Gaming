@@ -211,10 +211,16 @@ function Theme:StyleSmallButton(button, variant)
 end
 
 function Theme:CreateDropdown(parent, name, width, initialText, getItems, onPick)
-    if not UIDropDownMenu_Initialize or not UIDropDownMenuTemplate then
+    if not UIDropDownMenu_Initialize or not UIDropDownMenu_CreateInfo then
         return nil
     end
-    local dropdown = CreateFrame("Frame", name, parent, "UIDropDownMenuTemplate")
+    local ok, dropdown = pcall(CreateFrame, "Frame", name, parent, "UIDropDownMenuTemplate")
+    if not ok or not dropdown then
+        return nil
+    end
+    if dropdown.SetFrameLevel and parent.GetFrameLevel then
+        dropdown:SetFrameLevel(parent:GetFrameLevel() + 5)
+    end
     UIDropDownMenu_SetWidth(dropdown, width or 160)
     UIDropDownMenu_Initialize(dropdown, function(_, level)
         local items = getItems() or {}
@@ -233,5 +239,15 @@ function Theme:CreateDropdown(parent, name, width, initialText, getItems, onPick
         end
     end)
     UIDropDownMenu_SetText(dropdown, initialText or "")
+    if hooksecurefunc and ToggleDropDownMenu then
+        hooksecurefunc("ToggleDropDownMenu", function(_, _, owner)
+            if owner == dropdown and DropDownList1 then
+                DropDownList1:SetFrameStrata("TOOLTIP")
+                if DropDownList1.SetToplevel then
+                    DropDownList1:SetToplevel(true)
+                end
+            end
+        end)
+    end
     return dropdown
 end

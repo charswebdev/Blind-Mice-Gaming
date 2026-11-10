@@ -7,12 +7,28 @@ local TYPE_OPTIONS = {
     "Farm",
     "Quest",
     "Rare",
+    "Delve entrance",
+    "Labyrinth",
     "Dungeon entrance",
     "Raid entrance",
+    "Scenario entrance",
     "Cave entrance",
+    "Covenant Sanctum",
     "NPC",
-    "Vendor",
+    "Elite",
+    "Hunter pet",
+    "Battle Pet",
+    "Transmog",
+    "Toys",
+    "Mount",
+    "Glyphs",
+    "Treasures",
+    "Ritual Sites",
+    "Decor",
+    "Trainers",
+    "Services",
     "Travel point",
+    "Vendor",
     "Other",
 }
 
@@ -59,6 +75,7 @@ function Add:Build(parent)
     header:SetText("Save location")
     theme:SetReadableFont(header, 14)
     theme:SetTextColor(header, c.text)
+    self.header = header
 
     local hint = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     hint:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -2)
@@ -70,11 +87,13 @@ function Add:Build(parent)
     local scroll = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
     scroll:SetPoint("TOPLEFT", hint, "BOTTOMLEFT", -4, -8)
     scroll:SetPoint("BOTTOMRIGHT", -28, 44)
+    self.scroll = scroll
     local form = CreateFrame("Frame", nil, scroll)
     form:SetSize(268, 420)
     scroll:SetScrollChild(form)
     scroll:EnableMouseWheel(true)
     scroll:SetScript("OnMouseWheel", function(frame, delta)
+        Add:CloseTypeMenu()
         local maxScroll = math.max(0, form:GetHeight() - frame:GetHeight())
         local nextScroll = math.min(maxScroll, math.max(0, frame:GetVerticalScroll() - (delta * 28)))
         frame:SetVerticalScroll(nextScroll)
@@ -207,19 +226,34 @@ function Add:Build(parent)
     tagLabel:SetText("Type")
     theme:SetTextColor(tagLabel, c.textMuted)
 
-    self.selectedType = nil
-    local tagDropdown = theme:CreateDropdown(organizeCard, "WowGPSForeverTagDropdown", 180, "Select type...", function()
-        local items = {}
-        for i = 1, #TYPE_OPTIONS do
-            local text = TYPE_OPTIONS[i]
-            items[i] = { text = text, checked = Add.selectedType == text, value = text }
-        end
-        return items
-    end, function(item)
-        Add.selectedType = item.value
+    self.selectedTags = {}
+    local typeBtn = CreateFrame("Button", nil, organizeCard, "BackdropTemplate")
+    typeBtn:SetHeight(22)
+    typeBtn:SetPoint("LEFT", tagLabel, "RIGHT", 8, 0)
+    typeBtn:SetPoint("RIGHT", organizeCard, "RIGHT", -10, 0)
+    typeBtn:SetFrameLevel(organizeCard:GetFrameLevel() + 5)
+    typeBtn:SetText("Select type...")
+    theme:StyleSmallButton(typeBtn)
+    typeBtn:SetBackdropColor(0, 0, 0, 1)
+    typeBtn:SetBackdropBorderColor(0.82, 0.68, 0.22, 1)
+    typeBtn._themeBaseBg = { 0, 0, 0, 1 }
+    typeBtn._themeHoverBg = { 0.08, 0.08, 0.08, 1 }
+    local typeText = typeBtn:GetFontString()
+    if typeText then
+        typeText:ClearAllPoints()
+        typeText:SetPoint("LEFT", 8, 0)
+        typeText:SetPoint("RIGHT", -8, 0)
+        typeText:SetJustifyH("LEFT")
+    end
+    typeBtn:SetScript("OnClick", function()
+        Add:ToggleTypeMenu()
     end)
-    if tagDropdown then
-        tagDropdown:SetPoint("TOPLEFT", tagLabel, "TOPRIGHT", -8, 4)
+    self.typeButton = typeBtn
+    self:BuildTypeMenu()
+    if parent.HookScript then
+        parent:HookScript("OnHide", function()
+            Add:CloseTypeMenu()
+        end)
     end
 
     local scopeLabel = organizeCard:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
@@ -239,6 +273,7 @@ function Add:Build(parent)
     if scopeDropdown then
         scopeDropdown:SetPoint("TOPLEFT", scopeLabel, "TOPRIGHT", -8, 4)
     end
+    self.scopeDropdown = scopeDropdown
 
     local saveBtn = CreateFrame("Button", nil, parent, "BackdropTemplate")
     saveBtn:SetSize(80, 26)
@@ -248,6 +283,18 @@ function Add:Build(parent)
     saveBtn:SetScript("OnClick", function()
         Add:Save()
     end)
+    self.saveBtn = saveBtn
+
+    local cancelBtn = CreateFrame("Button", nil, parent, "BackdropTemplate")
+    cancelBtn:SetSize(80, 26)
+    cancelBtn:SetPoint("LEFT", saveBtn, "RIGHT", 8, 0)
+    cancelBtn:SetText("Cancel")
+    theme:StyleSmallButton(cancelBtn)
+    cancelBtn:SetScript("OnClick", function()
+        Add:CancelEdit()
+    end)
+    cancelBtn:Hide()
+    self.cancelBtn = cancelBtn
 
     local importBtn = CreateFrame("Button", nil, parent, "BackdropTemplate")
     importBtn:SetSize(80, 26)
@@ -259,6 +306,7 @@ function Add:Build(parent)
             GPS.ImportDialog:Show()
         end
     end)
+    self.importBtn = importBtn
 
     self.nameBox = nameBox
     self.noteBox = noteBox
@@ -267,6 +315,315 @@ function Add:Build(parent)
     self.xBox = xBox
     self.yBox = yBox
     self:UpdateLocationMode()
+    self:RefreshTypeButton()
+    self:RefreshEditor()
+end
+
+function Add:BuildTypeMenu()
+    local theme = GPS.Theme
+    local c = theme.colors
+    local blocker = CreateFrame("Button", nil, UIParent)
+    blocker:SetAllPoints(UIParent)
+    blocker:SetFrameStrata("HIGH")
+    blocker:Hide()
+    blocker:SetScript("OnClick", function()
+        Add:CloseTypeMenu()
+    end)
+    self.typeBlocker = blocker
+
+    local rowHeight = 22
+    local menuHeight = (#TYPE_OPTIONS * rowHeight) + 8
+    if menuHeight > 286 then
+        menuHeight = 286
+    end
+    local menu = CreateFrame("Frame", "WowGPSForeverTypeMenu", UIParent, "BackdropTemplate")
+    menu:SetFrameStrata("TOOLTIP")
+    menu:SetSize(200, menuHeight)
+    theme:StyleCard(menu)
+    menu:SetBackdropColor(0, 0, 0, 1)
+    menu:SetBackdropBorderColor(0.82, 0.68, 0.22, 1)
+    menu:Hide()
+    menu:EnableMouse(true)
+    self.typeMenu = menu
+    self.typeRows = {}
+
+    local scroll = CreateFrame("ScrollFrame", nil, menu)
+    scroll:SetPoint("TOPLEFT", 4, -4)
+    scroll:SetPoint("BOTTOMRIGHT", -16, 4)
+    scroll:EnableMouseWheel(true)
+    local content = CreateFrame("Frame", nil, scroll)
+    content:SetSize(176, #TYPE_OPTIONS * rowHeight)
+    scroll:SetScrollChild(content)
+    scroll:SetScript("OnMouseWheel", function(frame, delta)
+        local maxScroll = math.max(0, content:GetHeight() - frame:GetHeight())
+        local nextScroll = math.min(maxScroll, math.max(0, frame:GetVerticalScroll() - (delta * rowHeight)))
+        frame:SetVerticalScroll(nextScroll)
+    end)
+
+    for i = 1, #TYPE_OPTIONS do
+        local text = TYPE_OPTIONS[i]
+        local row = CreateFrame("Button", nil, content)
+        row:SetHeight(rowHeight)
+        row:SetPoint("TOPLEFT", 0, -((i - 1) * rowHeight))
+        row:SetPoint("TOPRIGHT", 0, -((i - 1) * rowHeight))
+        row.check = row:CreateTexture(nil, "OVERLAY")
+        row.check:SetSize(16, 16)
+        row.check:SetPoint("LEFT", 2, 0)
+        row.check:SetTexture("Interface\\Buttons\\UI-CheckBox-Check")
+        row.check:Hide()
+        row.label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        row.label:SetPoint("LEFT", 22, 0)
+        row.label:SetPoint("RIGHT", -4, 0)
+        row.label:SetJustifyH("LEFT")
+        row.label:SetText(text)
+        theme:SetTextColor(row.label, c.text)
+        row:SetScript("OnClick", function()
+            if Add.selectedTags[text] then
+                Add.selectedTags[text] = nil
+            else
+                Add.selectedTags[text] = true
+            end
+            Add:RefreshTypeButton()
+        end)
+        row:SetScript("OnMouseWheel", function(_, delta)
+            local maxScroll = math.max(0, content:GetHeight() - scroll:GetHeight())
+            local nextScroll = math.min(maxScroll, math.max(0, scroll:GetVerticalScroll() - (delta * rowHeight)))
+            scroll:SetVerticalScroll(nextScroll)
+        end)
+        self.typeRows[i] = row
+    end
+end
+
+function Add:RefreshTypeButton()
+    local labels = {}
+    for i = 1, #TYPE_OPTIONS do
+        local text = TYPE_OPTIONS[i]
+        local on = self.selectedTags and self.selectedTags[text]
+        if on then
+            labels[#labels + 1] = text
+        end
+        local row = self.typeRows and self.typeRows[i]
+        if row then
+            if on then
+                row.check:Show()
+                GPS.Theme:SetTextColor(row.label, GPS.Theme.colors.accent)
+            else
+                row.check:Hide()
+                GPS.Theme:SetTextColor(row.label, GPS.Theme.colors.text)
+            end
+        end
+    end
+    if self.typeButton then
+        if #labels == 0 then
+            self.typeButton:SetText("Select type...")
+        else
+            self.typeButton:SetText(table.concat(labels, ", "))
+        end
+        local typeText = self.typeButton:GetFontString()
+        if typeText then
+            typeText:SetText(self.typeButton:GetText() or "")
+        end
+    end
+end
+
+function Add:ChosenTag()
+    local labels = {}
+    for i = 1, #TYPE_OPTIONS do
+        local text = TYPE_OPTIONS[i]
+        if self.selectedTags and self.selectedTags[text] then
+            labels[#labels + 1] = text
+        end
+    end
+    if #labels == 0 then
+        return nil
+    end
+    return table.concat(labels, ";")
+end
+
+function Add:CloseTypeMenu()
+    if self.typeMenu then
+        self.typeMenu:Hide()
+    end
+    if self.typeBlocker then
+        self.typeBlocker:Hide()
+    end
+end
+
+function Add:ToggleTypeMenu()
+    local menu = self.typeMenu
+    local button = self.typeButton
+    if not menu or not button then
+        return
+    end
+    if menu:IsShown() then
+        self:CloseTypeMenu()
+        return
+    end
+    self:RefreshTypeButton()
+    menu:ClearAllPoints()
+    local left = button:GetLeft() or 0
+    local bottom = button:GetBottom() or 0
+    local top = button:GetTop() or bottom
+    local width = button:GetWidth() or 180
+    if width < 180 then
+        width = 180
+    end
+    menu:SetWidth(width)
+    local height = menu:GetHeight() or 0
+    if bottom < height + 8 then
+        menu:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", left, top)
+    else
+        menu:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left, bottom)
+    end
+    menu:Show()
+    if self.typeBlocker then
+        self.typeBlocker:Show()
+    end
+end
+
+function Add:ScopeLabel(scope)
+    if scope == "character" then
+        return "This character"
+    end
+    return "Account-wide"
+end
+
+function Add:SetScope(scope)
+    self.selectedScope = scope == "character" and "character" or "account"
+    if self.scopeDropdown and UIDropDownMenu_SetText then
+        UIDropDownMenu_SetText(self.scopeDropdown, self:ScopeLabel(self.selectedScope))
+    end
+end
+
+function Add:ApplyTags(tag)
+    self.selectedTags = {}
+    local text = GPS:PlainString(tag) or ""
+    for part in string.gmatch(text, "[^;]+") do
+        local trimmed = string.match(part, "^%s*(.-)%s*$")
+        if trimmed and trimmed ~= "" then
+            self.selectedTags[trimmed] = true
+        end
+    end
+    self:RefreshTypeButton()
+end
+
+function Add:ButtonText(button, text)
+    if not button then
+        return
+    end
+    button:SetText(text)
+    local font = button:GetFontString()
+    if font then
+        font:SetText(text)
+    end
+end
+
+function Add:ClearForm()
+    if self.nameBox then
+        self.nameBox:SetText("")
+    end
+    if self.noteBox then
+        self.noteBox:SetText("")
+    end
+    if self.zoneBox then
+        self.zoneBox:SetText("")
+    end
+    if self.mapBox then
+        self.mapBox:SetText("")
+    end
+    if self.xBox then
+        self.xBox:SetText("")
+    end
+    if self.yBox then
+        self.yBox:SetText("")
+    end
+    self.selectedTags = {}
+    self.useCurrent = false
+    if self.useCurrentCheck then
+        self.useCurrentCheck:SetChecked(false)
+    end
+    self:UpdateLocationMode()
+    self:CloseTypeMenu()
+    self:RefreshTypeButton()
+    if self.scroll then
+        self.scroll:SetVerticalScroll(0)
+    end
+end
+
+function Add:RefreshEditor()
+    local editing = self.editing ~= nil
+    if self.header then
+        self.header:SetText(editing and "Edit location" or "Save location")
+    end
+    self:ButtonText(self.saveBtn, editing and "Update" or "Save")
+    if self.cancelBtn then
+        if editing then
+            self.cancelBtn:Show()
+        else
+            self.cancelBtn:Hide()
+        end
+    end
+    if self.importBtn and self.saveBtn then
+        self.importBtn:ClearAllPoints()
+        if editing and self.cancelBtn then
+            self.importBtn:SetPoint("LEFT", self.cancelBtn, "RIGHT", 8, 0)
+        else
+            self.importBtn:SetPoint("LEFT", self.saveBtn, "RIGHT", 8, 0)
+        end
+    end
+end
+
+function Add:Load(dest)
+    if not dest or not dest.id then
+        return
+    end
+    self.editing = {
+        id = dest.id,
+        scope = dest.scope == "character" and "character" or "account",
+    }
+    if self.nameBox then
+        self.nameBox:SetText(dest.name or "")
+    end
+    if self.noteBox then
+        self.noteBox:SetText(dest.note or "")
+    end
+    self.useCurrent = false
+    if self.useCurrentCheck then
+        self.useCurrentCheck:SetChecked(false)
+    end
+    self:UpdateLocationMode()
+    if self.zoneBox then
+        self.zoneBox:SetText(dest.zone or "")
+    end
+    if self.mapBox then
+        self.mapBox:SetText(dest.mapId and tostring(dest.mapId) or "")
+    end
+    if self.xBox then
+        self.xBox:SetText(dest.x and string.format("%.1f", dest.x * 100) or "")
+    end
+    if self.yBox then
+        self.yBox:SetText(dest.y and string.format("%.1f", dest.y * 100) or "")
+    end
+    self:SetScope(dest.scope)
+    self:ApplyTags(dest.tag)
+    self:CloseTypeMenu()
+    self:RefreshEditor()
+    if self.scroll then
+        self.scroll:SetVerticalScroll(0)
+    end
+    if GPS.Main and GPS.Main.SelectTab then
+        GPS.Main:SelectTab("add", false)
+    end
+end
+
+function Add:CancelEdit()
+    self.editing = nil
+    self:ClearForm()
+    self:SetScope("account")
+    self:RefreshEditor()
+    if GPS.Main and GPS.Main.SelectTab then
+        GPS.Main:SelectTab("saved", false)
+    end
 end
 
 function Add:BoxText(box)
@@ -343,31 +700,42 @@ function Add:Save()
             return
         end
     end
-    local saved, err = GPS.Places:Add({
+    local payload = {
         name = name,
         note = self:BoxText(self.noteBox),
         mapId = mapId,
         x = x,
         y = y,
         zone = zone,
-        tag = self.selectedType,
+        tag = self:ChosenTag(),
         scope = self.selectedScope,
-    })
+    }
+    local wasEditing = self.editing ~= nil
+    local saved, err
+    if wasEditing then
+        saved, err = GPS.Places:Update(self.editing.id, self.editing.scope, payload)
+    else
+        saved, err = GPS.Places:Add(payload)
+    end
     if not saved then
         if err == "character" then
             GPS:Print("Could not save for this character.")
+        elseif err == "missing" then
+            GPS:Print("Could not find that saved location.")
         else
             GPS:Print("Could not save that location.")
         end
         return
     end
-    if self.nameBox then
-        self.nameBox:SetText("")
+    self.editing = nil
+    self:ClearForm()
+    self:SetScope(self.selectedScope or "account")
+    self:RefreshEditor()
+    if wasEditing then
+        GPS:Print("Updated location: " .. saved.name .. ".")
+    else
+        GPS:Print("Saved location: " .. saved.name .. ".")
     end
-    if self.noteBox then
-        self.noteBox:SetText("")
-    end
-    GPS:Print("Saved location: " .. saved.name .. ".")
     if GPS.Saved and GPS.Saved.Refresh then
         GPS.Saved:Refresh()
     end

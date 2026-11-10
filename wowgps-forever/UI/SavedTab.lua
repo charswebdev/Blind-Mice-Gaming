@@ -108,14 +108,16 @@ function Saved:Row(index)
         return button
     end
 
-    row.start = MakeAction("Start", "royal", 44)
-    row.arrow = MakeAction("Arrow", nil, 48)
-    row.exportBtn = MakeAction("Export", nil, 52)
-    row.deleteBtn = MakeAction("Delete", nil, 52)
+    row.start = MakeAction("Start", "royal", 40)
+    row.arrow = MakeAction("Arrow", nil, 42)
+    row.edit = MakeAction("Edit", nil, 36)
+    row.exportBtn = MakeAction("Export", nil, 48)
+    row.deleteBtn = MakeAction("Delete", nil, 46)
 
     row.start:SetPoint("BOTTOMLEFT", bar, "BOTTOMLEFT", 0, 0)
     row.arrow:SetPoint("LEFT", row.start, "RIGHT", 4, 0)
-    row.exportBtn:SetPoint("LEFT", row.arrow, "RIGHT", 4, 0)
+    row.edit:SetPoint("LEFT", row.arrow, "RIGHT", 4, 0)
+    row.exportBtn:SetPoint("LEFT", row.edit, "RIGHT", 4, 0)
     row.deleteBtn:SetPoint("LEFT", row.exportBtn, "RIGHT", 4, 0)
 
     row.start:SetScript("OnClick", function(button)
@@ -126,6 +128,11 @@ function Saved:Row(index)
     row.arrow:SetScript("OnClick", function(button)
         if button.dest and GPS.Guide then
             GPS.Guide:Start(button.dest, false)
+        end
+    end)
+    row.edit:SetScript("OnClick", function(button)
+        if button.dest and GPS.Add and GPS.Add.Load then
+            GPS.Add:Load(button.dest)
         end
     end)
     row.exportBtn:SetScript("OnClick", function(button)
@@ -187,9 +194,11 @@ function Saved:Refresh()
         if dest.x and dest.y then
             coords = string.format("%.1f, %.1f", dest.x * 100, dest.y * 100)
         end
-        row.detail:SetText(scope .. "  " .. (dest.zone or "") .. "  " .. coords)
+        local typeText = dest.tag and string.gsub(dest.tag, ";", ", ") or ""
+        row.detail:SetText(scope .. "  " .. (dest.zone or "") .. "  " .. coords .. (typeText ~= "" and ("  " .. typeText) or ""))
         row.start.dest = dest
         row.arrow.dest = dest
+        row.edit.dest = dest
         row.exportBtn.dest = dest
         row.deleteBtn.dest = dest
         row:SetWidth(width)

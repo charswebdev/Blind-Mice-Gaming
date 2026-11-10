@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.1.3** |
+| Version | **1.1.6** |
 | Type | In-game GPS window |
 | Folder | `wowgps-forever/` |
 | Clients | `_forever_` (wowf 1.60.1.70634, Interface 16001) |
@@ -15,7 +15,7 @@
 
 Search lists vanilla zones and cities by the names this client returns, plus flight masters and dungeon entrances from the client’s own map data, plus places you saved. `/gps` opens the window. Nothing opens on login. Saved places stay in `WowGPSForeverDB` after `/reload`. The window uses the same dark layout, gold title, and WowGPS icon as retail WowGPS. The icon file is a copy in `wowgps-forever/Media/`. Do not point Forever at Retail `wowgps\Media`. Do not install Retail `wowgps/` into `_forever_`. The toc allows game type `forever` (and `camelot`).
 
-The catalog row is `wowgps-forever` **1.1.3**. It installs only into `_forever_`. Never `_classic_beta_`. The toc uses the same Forever interface list as the other Forever addons: `16002`, `16001`, `16000`, `121500`, `121000`. Saved data is `WowGPSForeverDB`, loaded with `LoadSavedVariablesFirst`. The keybind header is `WOWGPS`, the same pattern as Light Paws Loadouts.
+The catalog row is `wowgps-forever` **1.1.6**. It installs only into `_forever_`. Never `_classic_beta_`. The toc uses the same Forever interface list as the other Forever addons: `16002`, `16001`, `16000`, `121500`, `121000`. Saved data is `WowGPSForeverDB`, loaded with `LoadSavedVariablesFirst`. The keybind header is `WOWGPS`, the same pattern as Light Paws Loadouts.
 
 ## Features
 
@@ -23,13 +23,13 @@ The catalog row is `wowgps-forever` **1.1.3**. It installs only into `_forever_`
 - Search shows **where you are**, then zones, the six cities, flight masters, and dungeon and raid entrances, plus places you saved. A row marked **Flight**, **Dungeon**, **Raid**, or **City** is that kind of pin. Typing `dungeon` or `dungeons` lists the dungeon doors. **Start Route** opens the Route tab and points the arrow. **Set Arrow** points the arrow and stays on Search.
 - The arrow uses TomTom when that addon is installed. Otherwise WowGPS draws its own arrow, and it also sets the Blizzard map pin when this client allows it.
 - Route lists the steps in order. On the same continent the first step is the nearest flight master on your map, then the destination. A boat, zeppelin, or the Deeprun Tram is added when the destination is across the water or between Stormwind and Ironforge. The gold row is the step the arrow is pointing at. **End route** clears the pin and the arrow.
-- Saved lists account-wide places and places for this character. Each card has **Start**, **Arrow**, **Export**, and **Delete**. **Delete** removes that place.
-- Add saves a name plus either where you are standing or a map ID and coordinates. Scope is account-wide or this character. **Import** pastes WowGPS strings (`WGPS:Name:map:x:y:tag:scope:note`) or `/way` lines, one place per line. On Saved, each place has **Start**, **Arrow**, **Export**, and **Delete** along the bottom of the card, in that order. **Export** copies that one place. **Export all** at the bottom of the tab copies every saved place. `/gps export` does the same as Export all. `/gps import` opens the import box. A zone name in a `/way` line uses this client’s map.
+- Saved lists account-wide places and places for this character. Each card has **Start**, **Arrow**, **Edit**, **Export**, and **Delete**. **Edit** opens the Add form with that place filled in. **Delete** removes that place.
+- Add saves a name plus either where you are standing or a map ID and coordinates. **Type** is a black dropdown with a gold border. It opens the same checklist retail uses: Farm, Quest, Rare, Labyrinth, entrances, and the other personal-place types. The open list uses that same black background and border. Click a type to mark it. Click again to clear it. The list stays open so more than one type can be chosen. Click outside the list to close it. The chosen types are stored with the place and shown on the Saved card. Scope is account-wide or this character. From Saved, **Edit** opens the Add form with that place filled in and the button changes to **Update**, which replaces that same place. **Cancel** returns to Saved and leaves the place unchanged. **Import** pastes WowGPS strings (`WGPS:Name:map:x:y:tag:scope:note`) or `/way` lines, one place per line. On Saved, each place has **Start**, **Arrow**, **Edit**, **Export**, and **Delete** along the bottom of the card, in that order. **Export** copies that one place. **Export all** at the bottom of the tab copies every saved place. `/gps export` does the same as Export all. `/gps import` opens the import box. A zone name in a `/way` line uses this client’s map.
 - The window position is kept in `WowGPSForeverDB` after `/reload`. The window stays closed until `/gps`.
 
 ## Development plan
 
-Phase 1 is the window. Phase 2, in 1.0.3, is the character’s zone and coordinates. Phase 3, in 1.0.4, is one destination: a pin, an arrow, and personal places. 1.0.5 reads zone names and flight masters from the client. 1.0.6 adds dungeon and raid doors, because this client does not return them from the journal API. 1.0.7 matches a plural search such as `dungeons` to those rows. Phase 4, in 1.0.8, is the travel steps: flight master, boat, zeppelin, and the Deeprun Tram. 1.0.9 adds import of WowGPS strings and `/way` lines. 1.1.0 adds export of those same strings. 1.1.1 puts the single-place **Export** button on the saved card, before **Delete**, and leaves **Export all** at the bottom of the Saved tab. No Midnight routes, no Maw routes, and no Zygor requirement.
+Phase 1 is the window. Phase 2, in 1.0.3, is the character’s zone and coordinates. Phase 3, in 1.0.4, is one destination: a pin, an arrow, and personal places. 1.0.5 reads zone names and flight masters from the client. 1.0.6 adds dungeon and raid doors, because this client does not return them from the journal API. 1.0.7 matches a plural search such as `dungeons` to those rows. Phase 4, in 1.0.8, is the travel steps: flight master, boat, zeppelin, and the Deeprun Tram. 1.0.9 adds import of WowGPS strings and `/way` lines. 1.1.0 adds export of those same strings. 1.1.1 puts the single-place **Export** button on the saved card, before **Delete**, and leaves **Export all** at the bottom of the Saved tab. 1.1.5 adds **Edit** on each saved card. No Midnight routes, no Maw routes, and no Zygor requirement.
 
 ## Sources and data
 
@@ -41,11 +41,11 @@ The window layout and colors follow retail `wowgps/UI/`. The icon is `wowgps/Med
 
 ## What did not work
 
-1.0.0 built the window while the addon was still loading. 1.0.1 waits until `/gps` to build the window. On 2026-10-01 at 3:47 PM the client logged `Glue Fatal Error: 1016` after Battle.net connected and then disconnected. That happens on the account login screen, before addons load.
+1.0.0 built the window while the addon was still loading. 1.0.1 waits until `/gps` to build the window. On 2026-10-01 at 3:47 PM the client logged `Glue Fatal Error: 1016` after Battle.net connected and then disconnected. That happens on the account login screen, before addons load. Through 1.1.3 the Add tab did not create the Type control. The dropdown helper required a global named `UIDropDownMenuTemplate`, and that name is only a frame template, so the helper returned nothing and there was no list to click.
 
 ## Open work
 
-No further features are planned. Retail Midnight routes, Maw routes, Zygor pathfinding, and editing a saved place were not part of this addon.
+No further features are planned. Retail Midnight routes, Maw routes, and Zygor pathfinding were not part of this addon.
 
 Still to check in game:
 

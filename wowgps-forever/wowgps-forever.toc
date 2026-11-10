@@ -3,7 +3,7 @@
 ## Title: WowGPS - WoW Forever
 ## Notes: In-game GPS window for WoW Forever. |cffffcc00/gps|r to open.
 ## Author: Blind Mice Gaming
-## Version: 1.1.3
+## Version: 1.1.6
 ## Category: Blind Mice Gaming
 ## Category-enUS: Blind Mice Gaming
 ## IconTexture: Interface\AddOns\wowgps-forever\Media\WowGPS.png
