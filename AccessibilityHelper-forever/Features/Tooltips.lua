@@ -127,6 +127,38 @@ local function CompareEnabled()
     return sv.tooltipCompare ~= false
 end
 
+local function SectionsOn()
+    if not (AH.DB and AH.DB.Get) then
+        return true
+    end
+    local sv = AH.DB.Get()
+    return sv.tooltipAddonSections ~= false
+end
+
+local function OwnerBlocked(tip)
+    if not tip or not tip.GetOwner or not (AH.DB and AH.DB.Get) then
+        return false
+    end
+    local sv = AH.DB.Get()
+    if type(sv.tooltipAddons) ~= "table" then
+        return false
+    end
+    local ok, owner = pcall(tip.GetOwner, tip)
+    if not ok or not owner or not owner.GetName then
+        return false
+    end
+    local named, frameName = pcall(owner.GetName, owner)
+    if not named or type(frameName) ~= "string" or frameName == "" then
+        return false
+    end
+    for addon, enabled in pairs(sv.tooltipAddons) do
+        if enabled == false and type(addon) == "string" and string.find(frameName, addon, 1, true) == 1 then
+            return true
+        end
+    end
+    return false
+end
+
 local function TooltipIsUsable(tip)
     if not tip then
         return false
@@ -166,6 +198,17 @@ local function RightFS(tip, i)
     return nil
 end
 
+local function TalentChrome(text)
+    local lower = string.lower(text)
+    if lower == "specialization" or lower == "abilities" or lower == "traits" then
+        return true
+    end
+    if string.find(lower, "specialization", 1, true) and string.find(lower, "abilities", 1, true) and string.find(lower, "traits", 1, true) then
+        return true
+    end
+    return false
+end
+
 local function GatherFromFontStrings(tip)
     local parts = {}
     if not tip then
@@ -173,9 +216,16 @@ local function GatherFromFontStrings(tip)
     end
     local num = 0
     local okNum, n = pcall(function()
-        return tip:NumLines() or 0
+        local count = tip:NumLines()
+        if type(count) ~= "number" then
+            return 0
+        end
+        if count > 0 then
+            return count
+        end
+        return 0
     end)
-    if okNum and type(n) == "number" then
+    if okNum and type(n) == "number" and n > 0 then
         num = n
     end
     if num < 1 then
@@ -214,31 +264,72 @@ local function ExtractLineFromTooltipDataLine(line)
     if type(line) ~= "table" then
         return NonEmpty(line)
     end
-    local lt = NonEmpty(
-        line.leftText
-            or line.LeftText
-            or line.textLeft
-            or line.leftString
-            or line.text
-            or line.label
-            or line.title
-    )
-    local rt = NonEmpty(line.rightText or line.RightText or line.textRight or line.rightString)
+    local function Field(t, key)
+        if type(t) ~= "table" then
+            return nil
+        end
+        local ok, value = pcall(function()
+            return t[key]
+        end)
+        if not ok then
+            return nil
+        end
+        return NonEmpty(value)
+    end
+    local lt = Field(line, "leftText")
+    if not lt then
+        lt = Field(line, "LeftText")
+    end
+    if not lt then
+        lt = Field(line, "textLeft")
+    end
+    if not lt then
+        lt = Field(line, "leftString")
+    end
+    if not lt then
+        lt = Field(line, "text")
+    end
     if not lt and type(line.args) == "table" then
         for i = 1, #line.args do
-            local a = line.args[i]
-            if type(a) == "table" then
-                lt = NonEmpty(a.stringVal or a.leftText or a.text or a.overrideName)
-            elseif type(a) == "string" or type(a) == "number" then
-                lt = NonEmpty(a)
+            local arg = line.args[i]
+            if type(arg) == "table" then
+                lt = Field(arg, "stringVal")
+                if not lt then
+                    lt = Field(arg, "text")
+                end
+                if not lt then
+                    lt = Field(arg, "leftText")
+                end
+            elseif type(arg) == "string" then
+                lt = NonEmpty(arg)
             end
             if lt then
                 break
             end
         end
     end
+    local rt = Field(line, "rightText")
+    if not rt then
+        rt = Field(line, "RightText")
+    end
+    if not rt then
+        rt = Field(line, "textRight")
+    end
+    if not rt then
+        rt = Field(line, "rightString")
+    end
+    if lt and TalentChrome(lt) then
+        lt = nil
+    end
+    if rt and TalentChrome(rt) then
+        rt = nil
+    end
     if lt and rt then
-        return lt .. ", " .. rt
+        local both = lt .. ", " .. rt
+        if TalentChrome(both) then
+            return nil
+        end
+        return both
     end
     return lt or rt
 end
@@ -360,7 +451,7 @@ local function GatherFromRegions(frame)
         end)
         if okType and objType == "FontString" then
             local t = FsText(obj)
-            if t then
+            if t and not TalentChrome(t) then
                 parts[#parts + 1] = t
             end
             return
@@ -431,10 +522,19 @@ end
 local function GatherOneTooltip(tip)
     local dparts, dany, secretBlocked = GatherFromTooltipData(tip)
     local fparts, fany = GatherFromFontStrings(tip)
-    local qparts, qany = GatherFromLibQTip(tip)
+    local qparts, qany = {}, false
+    if SectionsOn() then
+        qparts, qany = GatherFromLibQTip(tip)
+    end
     local rparts, rany = GatherFromRegions(tip)
     local merged = MergePartLists({ dparts, fparts, qparts, rparts })
-    if #merged == 0 then
+    local kept = {}
+    for i = 1, #merged do
+        if not TalentChrome(merged[i]) then
+            kept[#kept + 1] = merged[i]
+        end
+    end
+    if #kept == 0 then
         return "", "none", secretBlocked
     end
     local src = "merged"
@@ -447,7 +547,7 @@ local function GatherOneTooltip(tip)
     elseif rany then
         src = "regions"
     end
-    return JoinParts(merged), src, secretBlocked
+    return JoinParts(kept), src, secretBlocked
 end
 
 local function GetCompareTooltips(mainTip)
@@ -766,16 +866,17 @@ local function CandidateTooltips()
             if f ~= UIParent and f ~= WorldFrame then
                 local nm = ""
                 if f.GetName then
-                    local ok, n = pcall(function()
+                    local okName, frameName = pcall(function()
                         return f:GetName()
                     end)
-                    if ok and type(n) == "string" then
-                        nm = n
+                    if okName and type(frameName) == "string" then
+                        nm = frameName
                     end
                 end
-                if nm:find("Tooltip", 1, true) or f.GetTooltipData or f.TextLeft1 or (f.NumLines and f.GetTooltipData) then
-                    add(f)
-                elseif f.NumLines then
+                local kindOk, kind = pcall(function()
+                    return f.GetObjectType and f:GetObjectType()
+                end)
+                if (kindOk and kind == "GameTooltip") or f.TextLeft1 or f.GetTooltipData or nm:find("Tooltip", 1, true) or (SectionsOn() and IsLibQTipFrame(f)) then
                     add(f)
                 end
             end
@@ -908,7 +1009,7 @@ local function ResolveTipText(tip)
         return "", "none", false
     end
     local text, source, secretBlocked = GatherOneTooltip(tip)
-    local addonText = GetAddonSpeakText(tip)
+    local addonText = SectionsOn() and GetAddonSpeakText(tip) or nil
     if (text == "" or secretBlocked) and addonText then
         text = addonText
         source = "addon"
@@ -916,6 +1017,117 @@ local function ResolveTipText(tip)
     end
     text = PrependTitle(text or "", GetTooltipTitle(tip))
     return text or "", source or "none", secretBlocked and true or false
+end
+
+-- Window switches keep their written description here. The read key hides
+-- GameTooltip before the binding runs, so the description has to be stored.
+local hoverText = nil
+local hoverOwner = nil
+local tippedWidgets = {}
+
+function Tooltips.WatchTip(widget, text)
+    if not widget or type(text) ~= "string" or text == "" then
+        return
+    end
+    widget._ahTipText = text
+    if not widget._ahTipWatch then
+        widget._ahTipWatch = true
+        tippedWidgets[#tippedWidgets + 1] = widget
+    end
+end
+
+local function WidgetVisible(widget)
+    if not widget or not widget.IsVisible then
+        return false
+    end
+    local shown = false
+    local ok = pcall(function()
+        if widget:IsVisible() then
+            shown = true
+        end
+    end)
+    return ok and shown
+end
+
+local function TipUnderMouse()
+    for i = #tippedWidgets, 1, -1 do
+        local widget = tippedWidgets[i]
+        if WidgetVisible(widget) then
+            local over = false
+            local ok = pcall(function()
+                if widget.IsMouseOver and widget:IsMouseOver() then
+                    over = true
+                elseif MouseIsOver and MouseIsOver(widget) then
+                    over = true
+                end
+            end)
+            if ok and over then
+                local text = widget._ahTipText
+                if type(text) == "string" and text ~= "" then
+                    return text
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local function MouseOverHelper()
+    local win = AccessibilityHelperWindow
+    if not win or not win.IsVisible or not win.IsMouseOver then
+        return false
+    end
+    local over = false
+    local ok = pcall(function()
+        if win:IsVisible() and win:IsMouseOver() then
+            over = true
+        end
+    end)
+    return ok and over
+end
+
+function Tooltips.ForgetWindowTip()
+    hoverOwner = nil
+    hoverText = nil
+    lastTipText = nil
+    lastTipAt = 0
+    pcall(function()
+        if not GameTooltip or not GameTooltip.GetOwner or not GameTooltip.Hide then
+            return
+        end
+        local owner = GameTooltip:GetOwner()
+        if owner and owner._ahTipText then
+            GameTooltip:Hide()
+        end
+    end)
+end
+
+function Tooltips.SetHoverText(owner, text)
+    if type(text) ~= "string" or IsSecret(text) or text == "" then
+        return
+    end
+    hoverOwner = owner
+    hoverText = text
+    CacheTipText(text)
+end
+
+function Tooltips.ClearHoverText(owner)
+    if owner == nil or hoverOwner == owner then
+        hoverOwner = nil
+        hoverText = nil
+    end
+end
+
+function Tooltips.GetHoverText()
+    if hoverOwner and not WidgetVisible(hoverOwner) then
+        hoverOwner = nil
+        hoverText = nil
+        return nil
+    end
+    if type(hoverText) ~= "string" or IsSecret(hoverText) or hoverText == "" then
+        return nil
+    end
+    return hoverText
 end
 
 local function BuildSpeakText(tip, allowCache)
@@ -949,11 +1161,76 @@ local function BuildSpeakText(tip, allowCache)
     return full, false
 end
 
+local function PlainLineText(fs)
+    if not fs or not fs.GetText then
+        return nil
+    end
+    local ok, t = pcall(fs.GetText, fs)
+    if not ok or type(t) ~= "string" then
+        return nil
+    end
+    t = Trim(t)
+    if t == "" or TalentChrome(t) then
+        return nil
+    end
+    return t
+end
+
+local function PlainTipText(tip)
+    if not tip then
+        return ""
+    end
+    local parts = {}
+    local emptyRun = 0
+    for i = 1, 30 do
+        local lt = PlainLineText(LeftFS(tip, i))
+        local rt = PlainLineText(RightFS(tip, i))
+        local line = nil
+        if lt and rt then
+            line = lt .. ", " .. rt
+        elseif lt or rt then
+            line = lt or rt
+        end
+        if line and TalentChrome(line) then
+            line = nil
+        end
+        if line then
+            parts[#parts + 1] = line
+            emptyRun = 0
+        else
+            emptyRun = emptyRun + 1
+            if emptyRun >= 2 and i >= 2 then
+                break
+            end
+        end
+    end
+    if #parts > 1 then
+        local last = parts[#parts]
+        if type(last) == "string" and string.find(last, "^%d+$") then
+            parts[#parts] = nil
+        end
+    end
+    if #parts == 0 then
+        return ""
+    end
+    return table.concat(parts, ". ")
+end
+
 local function RefreshCacheFromTip(tip)
     if not tip or not TooltipIsUsable(tip) then
         return
     end
-    local text = ResolveTipText(tip)
+    local text = ""
+    local okText, resolved = pcall(ResolveTipText, tip)
+    if okText and type(resolved) == "string" then
+        text = resolved
+    end
+    if text == "" then
+        local okPlain, plain = pcall(PlainTipText, tip)
+        if okPlain and type(plain) == "string" then
+            text = plain
+        end
+    end
     if text ~= "" then
         CacheTipText(text)
     end
@@ -1025,7 +1302,7 @@ local function InstallTipHooks()
     end
 end
 
-InstallTipHooks()
+pcall(InstallTipHooks)
 
 --- Current tooltip text under the mouse, without speaking. Empty if none is showing.
 function Tooltips.GetHoveredText()
@@ -1039,52 +1316,145 @@ function Tooltips.GetHoveredText()
 end
 
 --- Read the hovered / shown tooltip via TTS (full text).
--- Pressing again on that same tooltip, while it is still speaking, stops it.
+-- One press reads. A later press, while it is still speaking, stops it.
+-- Key-repeat while the key is held does not start the line again.
 function Tooltips.ReadHovered()
-    if not TooltipsEnabled() then
-        if AH.Speech then
-            AH.Speech.Say("Tooltip reading is disabled.", AH.Speech.PRIORITY_LOW)
+    local now = 0
+    if GetTime then
+        local okNow, t = pcall(GetTime)
+        if okNow and type(t) == "number" then
+            now = t
         end
-        return
     end
+    if type(Tooltips._lastCall) == "number" and type(now) == "number" then
+        local okGap, gap = pcall(function()
+            return now - Tooltips._lastCall
+        end)
+        if okGap and type(gap) == "number" and gap >= 0 and gap < 1.25 then
+            return
+        end
+    end
+    Tooltips._lastCall = now
 
-    InstallTipHooks()
-
-    local tip = PickPrimaryTooltip()
-    local full, secretBlocked = BuildSpeakText(tip)
-    local sameTip = full ~= "" and Tooltips._readingText == full
     local stillSpeaking = AH.Speech and AH.Speech.IsNavBusy and AH.Speech.IsNavBusy()
-    if sameTip and stillSpeaking then
+    if Tooltips._readingText and stillSpeaking then
         Tooltips._readingText = nil
-        AH.Speech.ClearNavQueue()
-        return
-    end
-
-    -- Stop any prior nav line before starting a new tooltip read (no flush lock).
-    if AH.Speech and AH.Speech.ClearNavQueue then
-        AH.Speech.ClearNavQueue()
-    end
-
-    if full == "" then
-        Tooltips._readingText = nil
-        if secretBlocked then
-            if AH.Speech then
-                AH.Speech.Say("Tooltip text is unavailable right now.", AH.Speech.PRIORITY_NAV)
-            end
-        else
-            if AH.Speech then
-                AH.Speech.Say("No tooltip is showing.", AH.Speech.PRIORITY_NAV)
-            end
+        if AH.Speech.ClearNavQueue then
+            AH.Speech.ClearNavQueue()
         end
         return
     end
 
-    CacheTipText(full)
-    Tooltips._readingText = full
+    if not TooltipsEnabled() then
+        Tooltips._readingText = nil
+        if AH.Speech and AH.Speech.Say then
+            AH.Speech.Say("Tooltip reading is disabled.", AH.Speech.PRIORITY_NAV, { noEcho = true })
+        end
+        return
+    end
 
-    if AH.Speech and AH.Speech.Say then
-        AH.Speech.Say(full, AH.Speech.PRIORITY_NAV)
+    local text = TipUnderMouse()
+    local overWindow = MouseOverHelper()
+    if overWindow then
+        if not text or text == "" then
+            text = Tooltips.GetHoverText()
+        end
+        if not text or text == "" then
+            text = "No tooltip is showing."
+        end
     else
-        print("|cff66ccff[Helper]|r " .. full)
+        if not text then
+            text = Tooltips.GetHoverText()
+        end
+        if not text or text == "" then
+            local okPlain, plain = pcall(PlainTipText, GameTooltip)
+            if okPlain and type(plain) == "string" and plain ~= "" then
+                text = plain
+            end
+        end
+        if not text or text == "" then
+            local tip = nil
+            local okTip, picked = pcall(PickPrimaryTooltip)
+            if okTip then
+                tip = picked
+            end
+            if tip and OwnerBlocked(tip) then
+                text = "That addon's tooltip is off."
+            else
+                local okRead, readText = pcall(BuildSpeakText, tip)
+                if okRead and type(readText) == "string" and readText ~= "" then
+                    text = readText
+                end
+            end
+        end
+        if not text or text == "" then
+            text = GetCachedTipText()
+        end
+        if not text or text == "" then
+            text = "No tooltip is showing."
+        end
+    end
+
+    Tooltips._readingText = text
+    if AH.Speech and AH.Speech.Say then
+        AH.Speech.Say(text, AH.Speech.PRIORITY_NAV, { noEcho = true })
+    else
+        print("|cff66ccff[Helper]|r " .. text)
     end
 end
+
+-- Bindings.xml calls this by name. A press sends key down and key up.
+-- Key up must not read again or stop the line.
+function AccessibilityHelper_ReadTooltipBinding(keystate)
+    if keystate == "up" then
+        return
+    end
+    if not (AH.Tooltips and AH.Tooltips.ReadHovered) then
+        return
+    end
+    local ok, err = pcall(AH.Tooltips.ReadHovered)
+    if not ok then
+        print("|cff66ccff[Helper]|r Read key error: " .. tostring(err))
+    end
+end
+
+-- The keybind page can show Numpad * while the binding itself never runs.
+-- Watch the saved key so a press still reaches ReadHovered.
+local readKeyDown = false
+local keyWatch = CreateFrame("Frame")
+keyWatch:SetScript("OnUpdate", function(self, elapsed)
+    self._acc = (self._acc or 0) + (elapsed or 0)
+    if self._acc > 0.2 then
+        self._acc = 0
+        if GetBindingKey then
+            local okKey, key = pcall(GetBindingKey, "ACCESSIBILITYHELPER_READTOOLTIP")
+            if okKey and type(key) == "string" and key ~= "" then
+                Tooltips._readKey = key
+            end
+        end
+    end
+    local key = Tooltips._readKey
+    if not key or not IsKeyDown then
+        return
+    end
+    local typing = false
+    pcall(function()
+        if ChatEdit_GetActiveWindow and ChatEdit_GetActiveWindow() then
+            typing = true
+        end
+    end)
+    if typing then
+        readKeyDown = false
+        return
+    end
+    local down = false
+    pcall(function()
+        if IsKeyDown(key) then
+            down = true
+        end
+    end)
+    if down and not readKeyDown then
+        Tooltips.ReadHovered()
+    end
+    readKeyDown = down
+end)

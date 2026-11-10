@@ -31,6 +31,10 @@ local defaults = {
 
     -- Chat channel TTS (all default off; master gate also off)
     chatReadEnabled = false,
+    chatSpeakMine = false,
+    chatPartChannel = true,
+    chatPartSpeaker = true,
+    chatPartMessage = true,
     -- Player
     chatSay = false,
     chatYell = false,
@@ -61,6 +65,7 @@ local defaults = {
     chatLocalDefense = false,
     chatWorldDefense = false,
     chatServices = false,
+    chatLookingForGroup = false,
     chatChannelOther = false,
     -- Creature / boss
     chatMonsterSay = false,
@@ -88,6 +93,20 @@ local defaults = {
     chatPetBattleCombat = false,
     chatPetBattleInfo = false,
     chatPing = false,
+    chatAchievementProgress = false,
+    chatQuestProgress = false,
+    chatQuestAccepted = false,
+    chatQuestDetails = false,
+    chatNpcWindow = false,
+    chatItemSold = false,
+    chatRepair = false,
+    chatItemPickup = false,
+    chatTransmog = false,
+    chatToy = false,
+    chatBattlePet = false,
+    chatCompanion = false,
+    chatMount = false,
+    chatHeirloom = false,
 
     -- Addon chat printers (Chat tab → Addons; default off)
     chatAddonZygor = false,
@@ -113,8 +132,11 @@ local defaults = {
     uiErrorCooldownSec = 1.0,
 
     -- Loot + currency (items and non-gold currencies, including quest rewards)
-    lootItemsEnabled = false,
-    lootCurrencyEnabled = false,
+    lootItemsEnabled = true,
+    lootCurrencyEnabled = true,
+    rewardGold = false,
+    rewardQuestComplete = false,
+    rewardAchievement = false,
 
     -- Player state. Off until the player turns a reader on.
     stateFollow = false,
@@ -142,7 +164,7 @@ local defaults = {
     stateGroup = false,
     stateInstance = false,
     stateQueue = false,
-    stateLevelUp = false,
+    stateLevelUp = true,
     stateQuest = false,
 
     -- Quest readers
@@ -157,10 +179,10 @@ local defaults = {
     stateBNFriends = false,
 
     -- Progress (Phase 8)
-    progressSkill = false,
-    progressXP = false,
-    progressRep = false,
-    progressRepStanding = false,
+    progressSkill = true,
+    progressXP = true,
+    progressRep = true,
+    progressRepStanding = true,
 
     -- Combat LoC / debuffs (Phase 8)
     combatLocEnabled = false,
@@ -198,6 +220,29 @@ local defaults = {
     castsEnemyEnabled = false,
     interruptAlertEnabled = false,
 
+    -- Combat page. Off until Read combat is turned on.
+    combatReadEnabled = false,
+    combatStarted = false,
+    combatEnemyTarget = false,
+    combatYourTarget = false,
+    combatHealthLow = false,
+    combatPowerLow = false,
+    combatSecondaryLow = false,
+    combatSecondaryFull = false,
+    combatCastAtYou = false,
+    combatInterrupt = false,
+    combatDispel = false,
+    combatStun = false,
+    combatRoot = false,
+    combatSilence = false,
+    combatPoisoned = false,
+    combatPossessed = false,
+    combatPolymorph = false,
+    combatCrowd = false,
+    combatLossOther = false,
+    combatBuffGain = false,
+    combatDebuffGain = false,
+
     -- Alert delivery: tts | sound | both
     alertLocMode = "tts",
     alertDebuffMode = "tts",
@@ -231,8 +276,26 @@ function DB.Merge()
             sv[k] = v
         end
     end
+    if sv.chatWindowBuilt ~= true then
+        sv.chatReadEnabled = false
+        sv.chatSpeakMine = false
+        sv.chatWindowBuilt = true
+    end
+    if sv.combatWindowBuilt ~= true then
+        sv.combatReadEnabled = false
+        sv.combatWindowBuilt = true
+    end
     if type(sv.alertItems) ~= "table" then
         sv.alertItems = {}
+    end
+    if sv.statusPlaceLines ~= true then
+        sv.stateFollow = true
+        sv.stateIndoors = true
+        sv.stateSwim = true
+        sv.stateFly = true
+        sv.stateMount = true
+        sv.stateAFK = true
+        sv.statusPlaceLines = true
     end
     sv.underMouseEnabled = sv.underMouseMode ~= "off"
     sv.underMouseHover = sv.underMouseMode == "hover"

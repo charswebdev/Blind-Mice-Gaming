@@ -3,7 +3,7 @@
 <Bindings>
     <!-- Preserved binding name= IDs must never change (user keybinds are saved by these strings). -->
     <Binding name="ACCESSIBILITYHELPER_READTOOLTIP" header="ACCESSIBILITYHELPER" description="Read the hovered tooltip. Press again on that same tooltip to stop." category="Accessibility Helper - WoW Forever">
-        AccessibilityHelper_ReadTooltipBinding();
+        AccessibilityHelper_ReadTooltipBinding(keystate);
     </Binding>
     <Binding name="ACCESSIBILITYHELPER_READUNDERMOUSE" description="Read visible UI text under the mouse. Tooltips use the other tooltip keybind." category="Accessibility Helper - WoW Forever">
         AccessibilityHelper_ReadUnderMouseBinding();

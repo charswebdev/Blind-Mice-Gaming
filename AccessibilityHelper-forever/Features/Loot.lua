@@ -1,6 +1,7 @@
 --[[
   Accessibility Helper — loot + currency announces
-  Speaks Blizzard CHAT_MSG_LOOT / CURRENCY / HONOR lines exactly as printed.
+  Loot and currency speech moved to Features/Status.lua.
+  This file stays loaded so older references to AH.Loot still resolve.
   Lua 5.1 only.
 ]]
 
@@ -93,22 +94,5 @@ frame:RegisterEvent("CHAT_MSG_LOOT")
 frame:RegisterEvent("CHAT_MSG_CURRENCY")
 frame:RegisterEvent("CHAT_MSG_COMBAT_HONOR_GAIN")
 
-frame:SetScript("OnEvent", function(self, event, ...)
-    if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
-        readyAt = (GetTime and GetTime() or 0) + 2
-        return
-    end
-    local now = GetTime and GetTime() or 0
-    if now < readyAt then
-        return
-    end
-
-    local text = ...
-    if event == "CHAT_MSG_LOOT" then
-        HandleLoot(text)
-    elseif event == "CHAT_MSG_CURRENCY" then
-        HandleCurrency(text)
-    elseif event == "CHAT_MSG_COMBAT_HONOR_GAIN" then
-        HandleHonor(text)
-    end
+frame:SetScript("OnEvent", function()
 end)

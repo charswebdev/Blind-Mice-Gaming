@@ -1234,7 +1234,7 @@ local function BuildPage(id, parent, rows)
 
     elseif id == "player_social" then
         Section("People", "Level, quests, targeting, and friends.")
-        Check("Level up", "stateLevelUp", "Congratulates you, then announces class, specialization, or hero talent points when they are gained.")
+        Check("Level up", "stateLevelUp", "Example: Level 12. Talent points still follow when you gain one.")
         Check("Quest accepted / complete / turn-in", "stateQuest", "Announces those quest status changes.")
         Check("Target acquired / cleared", "stateTarget", "Announces when you gain or clear a target.")
         Check("Target of target off you", "stateTargetOfTarget", "When a hostile target is looking at someone else, speaks that name. Speaks On you when they come back. Meant for tanks watching aggro.")
@@ -1533,7 +1533,7 @@ local function BuildFrame()
     local version = FontString(frame, 12, COL_MUTED[1], COL_MUTED[2], COL_MUTED[3])
     version:SetPoint("BOTTOMRIGHT", -20, 14)
     version:SetJustifyH("RIGHT")
-    local ver = "1.0.3"
+    local ver = "1.0.4"
     if C_AddOns and C_AddOns.GetAddOnMetadata then
         ver = C_AddOns.GetAddOnMetadata("AccessibilityHelper-forever", "Version") or ver
     elseif GetAddOnMetadata then

@@ -80,8 +80,10 @@ Chat.CHANNELS = {
         channelMatch = "worlddefense", zoneChannelID = 23, example = "[WorldDefense] Stormwind is under attack!" },
     { key = "chatServices", label = "Services", event = "CHAT_MSG_CHANNEL", kind = "channel", chatType = "CHANNEL", section = "Social",
         channelMatch = "services", zoneChannelID = 42, example = "[Services] Bob: LFW enchanting." },
+    { key = "chatLookingForGroup", label = "LookingForGroup", event = "CHAT_MSG_CHANNEL", kind = "channel", chatType = "CHANNEL", section = "Social",
+        channelMatch = "lookingforgroup", zoneChannelID = 26, example = "[LookingForGroup] Bob: Need tank." },
     { key = "chatChannelOther", label = "Other custom channels", event = "CHAT_MSG_CHANNEL", kind = "channel", chatType = "CHANNEL", section = "Social",
-        channelOther = true, example = "[LookingForGroup] Bob: Need tank." },
+        channelOther = true, example = "[MyChannel] Bob: Hello." },
 
     -- Creature / boss
     { key = "chatMonsterSay", label = "Creature Say", event = "CHAT_MSG_MONSTER_SAY", kind = "spoken", chatType = "MONSTER_SAY", section = "Creature",
@@ -393,6 +395,48 @@ local function FormatChatBody(text, author, target)
     return ForSpeech(text)
 end
 
+--- Build the same wording Blizzard prints, then keep only the parts that are on.
+local function PartWanted(key)
+    return DB()[key] ~= false
+end
+
+local function AssembleLine(channel, speaker, message, messageOnly)
+    if messageOnly then
+        if not PartWanted("chatPartMessage") then
+            return nil
+        end
+        if type(message) ~= "string" or message == "" then
+            return nil
+        end
+        return message
+    end
+    local bits = {}
+    if PartWanted("chatPartChannel") and type(channel) == "string" and channel ~= "" then
+        bits[#bits + 1] = channel
+    end
+    if PartWanted("chatPartSpeaker") and type(speaker) == "string" and speaker ~= "" then
+        bits[#bits + 1] = speaker
+    end
+    if PartWanted("chatPartMessage") and type(message) == "string" and message ~= "" then
+        bits[#bits + 1] = message
+    end
+    if #bits == 0 then
+        return nil
+    end
+    return table.concat(bits, " ")
+end
+
+local function SplitBracket(text)
+    if type(text) ~= "string" then
+        return "", ""
+    end
+    local chan, rest = text:match("^(%b[])%s*(.*)$")
+    if chan and rest then
+        return chan, rest
+    end
+    return "", text
+end
+
 --- Build the same wording Blizzard prints (CHAT_*_GET + message).
 local function FormatSpoken(row, message, author, channelName, channelBaseName, target)
     local who = StripAuthor(author)
@@ -404,7 +448,7 @@ local function FormatSpoken(row, message, author, channelName, channelBaseName, 
         if body == "" then
             return nil
         end
-        return body
+        return AssembleLine(nil, nil, body, true)
     end
 
     -- If a normal chat line still has format tokens, fill them first.
@@ -419,36 +463,37 @@ local function FormatSpoken(row, message, author, channelName, channelBaseName, 
     end
 
     if kind == "channel" then
-        local chan = ChannelBracketName(channelName, channelBaseName)
+        local chan = "[" .. ChannelBracketName(channelName, channelBaseName) .. "]"
+        local speaker = ""
         local getter = _G.CHAT_CHANNEL_GET
         if type(getter) == "string" and who ~= "" then
             local ok, prefix = pcall(string.format, getter, who)
             if ok and type(prefix) == "string" then
-                return ForSpeech(string.format("[%s] %s%s", chan, prefix, body))
+                speaker = ForSpeech(prefix)
             end
         end
-        if who ~= "" then
-            return string.format("[%s] %s: %s", chan, who, body)
+        if speaker == "" and who ~= "" then
+            speaker = who .. ":"
         end
-        return string.format("[%s] %s", chan, body)
+        return AssembleLine(chan, speaker, body, false)
     end
 
-    -- spoken: use Blizzard chat get string when present
+    local prefix = ""
     local chatType = row.chatType
     if chatType and who ~= "" then
         local getter = _G["CHAT_" .. chatType .. "_GET"]
         if type(getter) == "string" then
-            local ok, prefix = pcall(string.format, getter, who)
-            if ok and type(prefix) == "string" then
-                return ForSpeech(prefix .. body)
+            local ok, formatted = pcall(string.format, getter, who)
+            if ok and type(formatted) == "string" then
+                prefix = ForSpeech(formatted)
             end
         end
     end
-
-    if who ~= "" then
-        return string.format("%s: %s", who, body)
+    local chan, speaker = SplitBracket(prefix)
+    if speaker == "" and who ~= "" then
+        speaker = who .. ":"
     end
-    return body
+    return AssembleLine(chan, speaker, body, false)
 end
 
 local function LooksLikeMoneyChat(text)
@@ -468,8 +513,28 @@ local function LooksLikeMoneyChat(text)
         or lower:find("spent", 1, true)
 end
 
+local function RowEnabled(row)
+    if row.key == "chatWhisperOut" then
+        return DB().chatWhisper == true and DB().chatSpeakMine == true
+    end
+    if row.key == "chatBNWhisperOut" then
+        return DB().chatBNWhisper == true and DB().chatSpeakMine == true
+    end
+    return ChannelOn(row.key)
+end
+
 local function TryRow(row, event, message, author, channelName, channelBaseName, zoneChannelID, target, guid)
-    if not ChannelOn(row.key) then
+    if not RowEnabled(row) then
+        return
+    end
+    local mine = row.key == "chatWhisperOut" or row.key == "chatBNWhisperOut"
+    if not mine then
+        local okMine, isMine = pcall(IsSelfChatLine, author, guid, message)
+        if okMine and isMine then
+            mine = true
+        end
+    end
+    if mine and DB().chatSpeakMine ~= true then
         return
     end
     if row.kind == "channel" and (row.channelMatch or row.channelOther) then
@@ -496,6 +561,9 @@ local function TryRow(row, event, message, author, channelName, channelBaseName,
 end
 
 local function Handle(event, ...)
+    if event == "CHAT_MSG_TRADESKILLS" or event == "CHAT_MSG_OPENING" then
+        return
+    end
     if not MasterOn() then
         return
     end

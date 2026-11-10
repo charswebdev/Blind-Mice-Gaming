@@ -16,6 +16,7 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 
 ## Features
 
+- **2026-11-10:** Accessibility Helper - WoW Forever **1.3.3** (`AccessibilityHelper-forever`, `AccessibilityHelperForeverDB`, `client: "forever"`). Escape closes the helper window without calling the protected stop-casting function. Rewards, chat progress, and NPC windows are in this version. Do not install Retail `AccessibilityHelper/` into `_forever_`.
 - Catalog-driven list of addons (folder lists, toc interfaces, SavedVariables names) and apps (flavor, status shipped/planned, exe prefix).
 - **2026-11-09:** catalog lists **WowGPS - WoW Forever** (`wowgps-forever`, **1.1.6**, `WowGPSForeverDB`, `client: "forever"`). Add can choose a type, Saved can edit a place, and the Type dropdown has a black background and a border. Do not install Retail `wowgps/` into `_forever_`.
 - **2026-11-09:** catalog lists **BMG Alt Manager - WoW Forever** (`BMGAM-forever`, **1.0.0**, `bmgam_SavedVariables`, `client: "forever"`). Installs into `_forever_` only. Do not install Retail `BMGAM` into `_forever_`. A retail export does not load into this copy.

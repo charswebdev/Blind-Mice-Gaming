@@ -1,8 +1,8 @@
 ## Interface: 16002, 16001, 16000, 121500, 121000
 ## AllowLoadGameType: forever, camelot
 ## Title: Accessibility Helper - WoW Forever
-## Version: 1.0.3
-## Notes: TTS accessibility helper for WoW Forever. Tooltip reader is on by default. Other readers stay off until you turn them on in /ah.
+## Version: 1.3.3
+## Notes: TTS accessibility helper for WoW Forever. The tooltip reads on its key. Rewards speaks experience, reputation, currency, and loot. Chat speaks the channels you enable, plus progress and collections when those switches are on. Combat speaks the fight lines you enable. Status speaks skill, level, follow, and place.
 ## Author: Blind Mice Gaming
 ## Category-enUS: Blind Mice Gaming
 ## IconTexture: Interface\AddOns\AccessibilityHelper-forever\Media\Icon.png
@@ -14,27 +14,13 @@ Core\Compat.lua
 Core\DB.lua
 Core\ChatText.lua
 Core\Speech.lua
-Core\Sounds.lua
-Core\Alerts.lua
-Core\Help.lua
-Features\ChatChannels.lua
-Features\AddonChat.lua
-UI\Settings.lua
+UI\Window.lua
 UI\MinimapButton.lua
 Features\Tooltips.lua
-Features\UnderMouse.lua
-Features\Cursor.lua
-Features\Waypoints.lua
-Features\Distance.lua
-Features\Facing.lua
-Features\Location.lua
-Features\UIErrors.lua
-Features\PlayerState.lua
-Features\BNFriends.lua
-Features\Progress.lua
-Features\Combat.lua
-Features\Casts.lua
-Features\Loot.lua
-Features\Quests.lua
-Core\Bindings.lua
+Features\Status.lua
+Features\ChatChannels.lua
+Features\CombatAnnounce.lua
+Features\Rewards.lua
+Features\ChatProgress.lua
+Features\NpcWindows.lua
 Core\Init.lua

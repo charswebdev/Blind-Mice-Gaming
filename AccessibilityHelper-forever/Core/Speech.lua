@@ -395,7 +395,7 @@ end
 --- Enqueue plain text (will be stripped / chunked).
 -- @param text string
 -- @param priority number|nil
--- @param opts table|nil  { forceEcho = bool, noChunk = bool }
+-- @param opts table|nil  { forceEcho = bool, noEcho = bool, noChunk = bool }
 function Speech.Say(text, priority, opts)
     opts = opts or {}
     text = StripMarkup(text)

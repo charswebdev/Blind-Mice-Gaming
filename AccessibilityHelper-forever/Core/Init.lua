@@ -41,24 +41,6 @@ SlashCmdList["AHSETTINGS"] = function(msg)
     end
 end
 
--- Dedicated command list (does not conflict with /ahelp settings).
-SLASH_AHCMDS1 = "/ahcmds"
-SlashCmdList["AHCMDS"] = function()
-    if AH.Help and AH.Help.PrintCommands then
-        AH.Help.PrintCommands()
-    end
-end
-
--- Toggle TomTom / Zygor arrow facing clock announcements.
-SLASH_AHARROWFACING1 = "/aha"
-SlashCmdList["AHARROWFACING"] = function()
-    if AH.Facing and AH.Facing.ToggleArrowAnnounce then
-        AH.Facing.ToggleArrowAnnounce()
-    else
-        print("|cffff6600[Accessibility Helper]|r Facing module missing.")
-    end
-end
-
 do
     local mode = "unknown"
     local iface = "?"
@@ -70,6 +52,6 @@ do
     elseif GetBuildInfo then
         iface = tostring(select(4, GetBuildInfo()) or "?")
     end
-    print("|cff00ff00[Accessibility Helper - WoW Forever]|r v1.0.3 loaded. TTS: " .. tostring(mode) .. " · Interface: " .. iface)
-    print("|cff00ff00[Accessibility Helper - WoW Forever]|r Tooltip reader is on. |cff00ff00/ah|r settings · |cff00ff00/ahtip|r · |cff00ff00/ahcmds|r")
+    print("|cff00ff00[Accessibility Helper - WoW Forever]|r v1.3.3 loaded. TTS: " .. tostring(mode) .. " · Interface: " .. iface)
+    print("|cff00ff00[Accessibility Helper - WoW Forever]|r |cff00ff00/ah|r opens the new window.")
 end

@@ -33,20 +33,22 @@ local function SayStub(msg)
 end
 
 -- Preserved: tooltip keybind entry point.
-function AccessibilityHelper_ReadTooltipBinding()
-    if AH.Tooltips and AH.Tooltips.ReadHovered then
-        AH.Tooltips.ReadHovered()
+function AccessibilityHelper_ReadTooltipBinding(keystate)
+    if keystate == "up" then
         return
     end
-    SayStub("Tooltip reader unavailable.")
+    if not (AH.Tooltips and AH.Tooltips.ReadHovered) then
+        SayStub("Tooltip reader unavailable.")
+        return
+    end
+    local ok, err = pcall(AH.Tooltips.ReadHovered)
+    if not ok then
+        print("|cff66ccff[Helper]|r Read key error: " .. tostring(err))
+        SayStub("Read key failed.")
+    end
 end
 
 function AccessibilityHelper_ReadUnderMouseBinding()
-    if AH.UnderMouse and AH.UnderMouse.Read then
-        AH.UnderMouse.Read()
-        return
-    end
-    SayStub("Under-mouse reader unavailable.")
 end
 
 -- Settings keybind.
