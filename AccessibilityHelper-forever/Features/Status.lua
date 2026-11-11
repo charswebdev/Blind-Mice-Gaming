@@ -18,8 +18,11 @@ local live = false
 local seedGen = 0
 
 local function Num(v)
-    if AH.Compat and AH.Compat.CanUseNumber and AH.Compat.CanUseNumber(v) then
-        return v
+    if AH.Compat and AH.Compat.CanUseNumber then
+        if AH.Compat.CanUseNumber(v) then
+            return v
+        end
+        return nil
     end
     if type(v) == "number" then
         return v
@@ -721,8 +724,19 @@ local function PollYou()
                 health = healthOk and Num(healthValue) or nil
                 healthMax = maxOk and Num(maxValue) or nil
             end
-            if health ~= nil and healthMax ~= nil and healthMax > 0 then
-                local healthLow = (health / healthMax) < 0.35
+            local healthLow = nil
+            if health ~= nil and healthMax ~= nil then
+                local ratioOk, ratio = pcall(function()
+                    if healthMax > 0 then
+                        return (health / healthMax) < 0.35
+                    end
+                    return nil
+                end)
+                if ratioOk then
+                    healthLow = ratio
+                end
+            end
+            if healthLow ~= nil then
                 if place.petLow == nil or not live then
                     place.petLow = healthLow
                 elseif healthLow and not place.petLow then
@@ -975,7 +989,7 @@ frame:RegisterEvent("UNIT_PET")
 frame:RegisterEvent("PET_BAR_UPDATE")
 frame:RegisterEvent("MIRROR_TIMER_START")
 frame:RegisterEvent("MIRROR_TIMER_STOP")
-frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+frame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 if frame.RegisterEvent then
     pcall(frame.RegisterEvent, frame, "TRADE_SKILL_ITEM_CRAFTED_RESULT")
 end
@@ -1031,51 +1045,56 @@ frame:SetScript("OnEvent", function(_, event, ...)
         HandleLevelUp(...)
         return
     end
-    if event == "COMBAT_LOG_EVENT_UNFILTERED" then
-        if not live or not On("statePet") or not CombatLogGetCurrentEventInfo then
+    if event == "UNIT_SPELLCAST_SUCCEEDED" then
+        if not live or not On("statePet") then
             return
         end
-        local logOk, _, subevent, _, sourceGUID, _, _, _, destGUID, destName, _, _, _, spellName = pcall(CombatLogGetCurrentEventInfo)
-        if not logOk then
+        local unit = Text(select(1, ...))
+        if unit ~= "player" then
             return
         end
-        subevent = Text(subevent)
-        if subevent ~= "SPELL_HEAL" and subevent ~= "SPELL_PERIODIC_HEAL" then
+        local spellName = nil
+        local argCount = select("#", ...)
+        local argIndex
+        for argIndex = 2, argCount do
+            local argName = Text(select(argIndex, ...))
+            if argName and not string.match(argName, "^%d+$") then
+                spellName = argName
+                break
+            end
+        end
+        if not spellName then
+            for argIndex = 2, argCount do
+                local spellID = Num(select(argIndex, ...))
+                if spellID and spellID > 0 then
+                    if C_Spell and C_Spell.GetSpellName then
+                        local spellOk, spellValue = pcall(C_Spell.GetSpellName, spellID)
+                        spellName = spellOk and Text(spellValue) or nil
+                    end
+                    if not spellName and GetSpellInfo then
+                        local spellOk, spellValue = pcall(GetSpellInfo, spellID)
+                        spellName = spellOk and Text(spellValue) or nil
+                    end
+                    if spellName then
+                        break
+                    end
+                end
+            end
+        end
+        if not spellName then
             return
         end
-        spellName = Text(spellName)
-        if spellName and string.find(string.lower(spellName), "revive", 1, true) then
-            return
-        end
-        local playerGUID = nil
-        local petGUID = nil
-        if UnitGUID then
-            local playerOk, playerValue = pcall(UnitGUID, "player")
-            local petOk, petValue = pcall(UnitGUID, "pet")
-            playerGUID = playerOk and Text(playerValue) or nil
-            petGUID = petOk and Text(petValue) or nil
-        end
-        sourceGUID = Text(sourceGUID)
-        destGUID = Text(destGUID)
-        destName = Text(destName)
-        if not sourceGUID or not playerGUID or sourceGUID ~= playerGUID then
-            return
-        end
-        local petName = PetLabel()
-        local destIsPet = destGUID and petGUID and destGUID == petGUID
-        if not destIsPet and petName and destName and destName == petName then
-            destIsPet = true
-        end
-        if not destIsPet then
+        local lowerName = string.lower(spellName)
+        if not string.find(lowerName, "mend", 1, true) or string.find(lowerName, "revive", 1, true) then
             return
         end
         local now = Now()
-        if lastPetHealSpell == (spellName or "") and lastPetHealAt and (now - lastPetHealAt) < 12 then
+        if lastPetHealSpell == spellName and lastPetHealAt and (now - lastPetHealAt) < 12 then
             return
         end
-        lastPetHealSpell = spellName or ""
+        lastPetHealSpell = spellName
         lastPetHealAt = now
-        Say((petName or "Pet") .. " was healed.")
+        Say((PetLabel() or "Pet") .. " was healed.")
         return
     end
     if event == "TRADE_SKILL_ITEM_CRAFTED_RESULT" then

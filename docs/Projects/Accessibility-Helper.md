@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **3.6.9** |
+| Version | **3.7.1** |
 | Type | In-game addon (VI / TTS) |
 | Folder | `AccessibilityHelper/` |
 | Author tools | `Tools/AccessibilityHelper/` (release checklists; not in the addon zip) |
@@ -21,7 +21,7 @@ Version numbers stay short on purpose (3.6.2, then 3.6.3) — not 3.6.18-style p
 
 ## Features
 
-3.6.9 loads the same files and window as Accessibility Helper - WoW Forever 1.4.0.
+3.7.1 loads the same files and window as Accessibility Helper - WoW Forever 1.4.2.
 
 - `/ah` opens Tooltip, Speech, Status, Arrows, Rewards, Combat, Chat, and Commands.
 - Tooltip reads on the key. TomTom is `/ahtt`. Zygor is `/ahz`.
@@ -55,6 +55,8 @@ Work was phased in the Lua headers and later combat/cast slices:
 | 3.6.6 | Retail 12.1.5 | Interface `120105` added. Older Interface numbers stay so 12.1.0 still loads. |
 | 3.6.7 | Merchant name | `OpenMerchantAction` uses `UsableString` before comparing `UnitName("npc")`. A secret merchant name is skipped. |
 | 3.6.9 | Forever window | Retail loads the Forever window and readers. Title is Accessibility Helper - Retail. Saved variables stay `AccessibilityHelperDB`. |
+| 3.7.0 | Pet health | A secret pet health number is skipped. The same check is in Forever 1.4.1. |
+| 3.7.1 | Pet mend | The combat log is not registered. A mend still speaks when the cast succeeds. Same as Forever 1.4.2. |
 
 Settings were rewritten to the two-pane pattern so VI users get one topic at a time instead of a dense options dump.
 

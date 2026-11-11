@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.4.0** |
+| Version | **1.4.2** |
 | Type | In-game addon (VI / TTS) |
 | Folder | `AccessibilityHelper-forever/` |
 | Clients | `_forever_` (wowf 1.60.1.70634, Interface 16001) |
@@ -97,7 +97,11 @@ WoW Forever copy of Accessibility Helper. It is its own addon folder and saved-v
 
 1.3.9 adds three pet lines on that same switch. Wolf dead. Wolf health is under 35%. Feed Wolf when that pet is content or unhappy. Each speaks once until the pet recovers. Login stays quiet.
 
-1.4.0 ships that same addon. The patch was already 9, so this bump moves the minor. Retail 3.6.9 is this window under the name Accessibility Helper - Retail.
+1.4.0 ships that same addon. The patch was already 9, so this bump moves the minor. Retail is this window under the name Accessibility Helper - Retail.
+
+1.4.1 skips pet health when the game hides that number. The old check divided a secret health value and filled the error log.
+
+1.4.2 no longer registers the combat log. That call was blocked. A mend still says the pet was healed when the mend cast succeeds.
 
 ## Sources and data
 

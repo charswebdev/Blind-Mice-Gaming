@@ -16,6 +16,8 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 
 ## Features
 
+- **2026-11-10:** Accessibility Helper - WoW Forever **1.4.2** and Accessibility Helper - Retail **3.7.1**. The status reader no longer registers the combat log. A mend still speaks when that cast succeeds. Do not install Retail `AccessibilityHelper/` into `_forever_`.
+- **2026-11-10:** Accessibility Helper - WoW Forever **1.4.1** and Accessibility Helper - Retail **3.7.0**. Pet health under 35 percent skips a secret health number instead of filling the error log. Do not install Retail `AccessibilityHelper/` into `_forever_`.
 - **2026-11-10:** Accessibility Helper - Retail **3.6.9** (`AccessibilityHelper`, `AccessibilityHelperDB`). Same window and features as Accessibility Helper - WoW Forever **1.4.0**. Do not install this folder into `_forever_`.
 - **2026-11-10:** Accessibility Helper - WoW Forever **1.4.0** (`AccessibilityHelper-forever`, `AccessibilityHelperForeverDB`, `client: "forever"`). Ships the status lines, pet lines, and Commands page. Do not install Retail `AccessibilityHelper/` into `_forever_`.
 - **2026-11-10:** Accessibility Helper - WoW Forever **1.3.3** (`AccessibilityHelper-forever`, `AccessibilityHelperForeverDB`, `client: "forever"`). Escape closes the helper window without calling the protected stop-casting function. Rewards, chat progress, and NPC windows are in this version. Do not install Retail `AccessibilityHelper/` into `_forever_`.

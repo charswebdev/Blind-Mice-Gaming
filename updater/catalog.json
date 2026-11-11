@@ -108,7 +108,7 @@
       "id": "AccessibilityHelper",
       "name": "Accessibility Helper - Retail",
       "folders": ["AccessibilityHelper"],
-      "version": "3.6.9",
+      "version": "3.7.1",
       "updated": "2026-11-10",
       "interfaces": [120105, 120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508],
       "saved": ["AccessibilityHelperDB"]
@@ -117,7 +117,7 @@
       "id": "AccessibilityHelper-forever",
       "name": "Accessibility Helper - WoW Forever",
       "folders": ["AccessibilityHelper-forever"],
-      "version": "1.4.0",
+      "version": "1.4.2",
       "updated": "2026-11-10",
       "interfaces": [16002, 16001, 16000, 121500, 121000],
       "saved": ["AccessibilityHelperForeverDB"],
