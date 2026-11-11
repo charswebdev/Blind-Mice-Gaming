@@ -56,7 +56,7 @@ local STATUS_ROWS = {
     { key = "statePvP", label = "PvP", tip = "Speaks when you become flagged for PvP and when that flag drops. PVP on. PVP off. Starts off." },
     { key = "stateStealth", label = "Stealth", tip = "Speaks when you enter or leave stealth. Your in stealth. You are no longer stealthed. Starts off." },
     { key = "stateShapeshift", label = "Form", tip = "Speaks when you change form, and includes the form name. You have shifted into Bear Form. You shifted back. Starts off." },
-    { key = "statePet", label = "Pet", tip = "Speaks the pet name when you summon, dismiss, heal, revive, or lose that pet. Wolf summoned. Wolf is dismissed. Wolf was healed. Wolf Revived. Wolf dead. Wolf health is under 35%. Feed Wolf when that pet is not happy. Starts off." },
+    { key = "statePet", label = "Pet", tip = "Speaks the pet name when you summon, dismiss, heal, revive, tame, or lose that pet. Wolf summoned. Wolf is dismissed. Wolf was healed. Wolf Revived. Wolf dead. Wolf health is under 35%. Feed Wolf. Hogger is getting tamed. Hogger is tamed. Hogger can't be tamed. Hogger is not allowed to be tamed. Another pet is active. Spectral Gryphon cant be tamed needs Taming Rod to tame. Starts off." },
     { key = "stateGroup", label = "Group", tip = "Speaks when you join or leave a party or raid. Joined group. Left group. Starts off." },
 }
 
@@ -1630,7 +1630,7 @@ local function Build()
 
     local footer = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     footer:SetPoint("BOTTOMLEFT", 12, 8)
-    footer:SetText("v1.4.2")
+    footer:SetText("v1.4.4")
     footer:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
 
     frame:SetScript("OnKeyDown", function(self, key)

@@ -16,6 +16,8 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 
 ## Features
 
+- **2026-11-10:** Accessibility Helper - WoW Forever **1.4.4** and Accessibility Helper - Retail **3.7.3**. A tame that fails because a pet is already out says “Another pet is active.” Do not install Retail `AccessibilityHelper/` into `_forever_`.
+- **2026-11-10:** Accessibility Helper - WoW Forever **1.4.3** and Accessibility Helper - Retail **3.7.2**. The Pet switch speaks a tame as it starts, when the pet is tamed, and why a target cannot be tamed. Do not install Retail `AccessibilityHelper/` into `_forever_`.
 - **2026-11-10:** Accessibility Helper - WoW Forever **1.4.2** and Accessibility Helper - Retail **3.7.1**. The status reader no longer registers the combat log. A mend still speaks when that cast succeeds. Do not install Retail `AccessibilityHelper/` into `_forever_`.
 - **2026-11-10:** Accessibility Helper - WoW Forever **1.4.1** and Accessibility Helper - Retail **3.7.0**. Pet health under 35 percent skips a secret health number instead of filling the error log. Do not install Retail `AccessibilityHelper/` into `_forever_`.
 - **2026-11-10:** Accessibility Helper - Retail **3.6.9** (`AccessibilityHelper`, `AccessibilityHelperDB`). Same window and features as Accessibility Helper - WoW Forever **1.4.0**. Do not install this folder into `_forever_`.

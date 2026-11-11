@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.4.2** |
+| Version | **1.4.4** |
 | Type | In-game addon (VI / TTS) |
 | Folder | `AccessibilityHelper-forever/` |
 | Clients | `_forever_` (wowf 1.60.1.70634, Interface 16001) |
@@ -102,6 +102,10 @@ WoW Forever copy of Accessibility Helper. It is its own addon folder and saved-v
 1.4.1 skips pet health when the game hides that number. The old check divided a secret health value and filled the error log.
 
 1.4.2 no longer registers the combat log. That call was blocked. A mend still says the pet was healed when the mend cast succeeds.
+
+1.4.3 speaks taming on the Pet switch. Hogger is getting tamed. Hogger is tamed. Hogger can't be tamed. Hogger is not allowed to be tamed. Spectral Gryphon cant be tamed needs Taming Rod to tame. A tame that starts and is then interrupted stays quiet.
+
+1.4.4 says “Another pet is active.” when a tame fails because a pet is already out.
 
 ## Sources and data
 

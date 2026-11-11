@@ -944,6 +944,222 @@ local function EndFollow()
     end
 end
 
+local tame = { name = nil, sentAt = 0, channeling = false, reason = nil }
+local tameGen = 0
+
+local function IsTameSpell(name)
+    name = Text(name)
+    if not name then
+        return false
+    end
+    return string.find(string.lower(name), "tame beast", 1, true) ~= nil
+end
+
+local function SpellNameFromID(spellID)
+    if not spellID or spellID <= 0 then
+        return nil
+    end
+    local spellName = nil
+    if C_Spell and C_Spell.GetSpellName then
+        local spellOk, spellValue = pcall(C_Spell.GetSpellName, spellID)
+        spellName = spellOk and Text(spellValue) or nil
+    end
+    if not spellName and GetSpellInfo then
+        local spellOk, spellValue = pcall(GetSpellInfo, spellID)
+        spellName = spellOk and Text(spellValue) or nil
+    end
+    return spellName
+end
+
+local function SpellNameFromArgs(...)
+    local argCount = select("#", ...)
+    local argIndex
+    for argIndex = 1, argCount do
+        local spellName = SpellNameFromID(Num(select(argIndex, ...)))
+        if spellName then
+            return spellName
+        end
+    end
+    for argIndex = 2, argCount do
+        local argName = Text(select(argIndex, ...))
+        if argName then
+            local lower = string.lower(argName)
+            if string.find(lower, "tame beast", 1, true) or string.find(lower, "mend", 1, true) then
+                return argName
+            end
+        end
+    end
+    return nil
+end
+
+local function EventIsTame(...)
+    if IsTameSpell(SpellNameFromArgs(...)) then
+        return true
+    end
+    if UnitChannelInfo then
+        local ok, value = pcall(UnitChannelInfo, "player")
+        if IsTameSpell(ok and Text(value) or nil) then
+            return true
+        end
+    end
+    if UnitCastingInfo then
+        local ok, value = pcall(UnitCastingInfo, "player")
+        if IsTameSpell(ok and Text(value) or nil) then
+            return true
+        end
+    end
+    return false
+end
+
+local function CleanError(msg)
+    msg = Text(msg)
+    if not msg then
+        return nil
+    end
+    if AH.ChatText and AH.ChatText.ForChatMessage then
+        local ok, cleaned = pcall(AH.ChatText.ForChatMessage, msg)
+        cleaned = ok and Text(cleaned) or nil
+        if cleaned then
+            return cleaned
+        end
+    end
+    msg = string.gsub(msg, "|H.-|h(.-)|h", "%1")
+    msg = string.gsub(msg, "|c%x%x%x%x%x%x%x%x", "")
+    msg = string.gsub(msg, "|r", "")
+    msg = string.gsub(msg, "%s+", " ")
+    return msg
+end
+
+local function ItemFromError(msg)
+    msg = CleanError(msg)
+    if not msg then
+        return nil
+    end
+    local item = string.match(msg, "%[(.-)%]")
+    if item and item ~= "" then
+        return item
+    end
+    local needed = string.match(msg, "[Nn]eeds? ([^%.%!]+)")
+    if not needed then
+        needed = string.match(msg, "[Rr]equires? ([^%.%!]+)")
+    end
+    if not needed then
+        return nil
+    end
+    needed = string.gsub(needed, "^%s+", "")
+    needed = string.gsub(needed, "%s+$", "")
+    needed = string.gsub(needed, "%s+[Tt]o tame.*$", "")
+    needed = string.gsub(needed, "%s+[Tt]his .*$", "")
+    if needed == "" or string.len(needed) > 60 then
+        return nil
+    end
+    return needed
+end
+
+local function TameTargetFromArgs(...)
+    if UnitName then
+        local ok, name = pcall(UnitName, "target")
+        name = ok and Text(name) or nil
+        if name then
+            return name
+        end
+    end
+    local argCount = select("#", ...)
+    local argIndex
+    for argIndex = 1, argCount do
+        local text = Text(select(argIndex, ...))
+        if text and text ~= "player" and not IsTameSpell(text) and not string.find(text, "Cast-", 1, true) and not string.match(text, "^%d+$") then
+            return text
+        end
+    end
+    return tame.name
+end
+
+local function RecentTame()
+    if tame.sentAt == 0 then
+        return false
+    end
+    return (Now() - tame.sentAt) < 3
+end
+
+local function SayCantTame()
+    if not live or not On("statePet") then
+        return
+    end
+    local name = tame.name or "Target"
+    local item = ItemFromError(tame.reason)
+    Say(name .. " can't be tamed.")
+    if item then
+        Say(name .. " cant be tamed needs " .. item .. " to tame.")
+    else
+        local reason = CleanError(tame.reason)
+        local lower = reason and string.lower(reason) or ""
+        if string.find(lower, "level", 1, true) then
+            Say(name .. " is too high a level to tame.")
+        elseif string.find(lower, "already", 1, true) and string.find(lower, "pet", 1, true) then
+            Say("Another pet is active.")
+        else
+            Say(name .. " is not allowed to be tamed.")
+        end
+    end
+    tame.channeling = false
+    tame.sentAt = 0
+    tame.reason = nil
+end
+
+local function ScheduleCantTame()
+    tameGen = tameGen + 1
+    local gen = tameGen
+    local function finish()
+        if gen ~= tameGen then
+            return
+        end
+        if tame.channeling then
+            return
+        end
+        SayCantTame()
+    end
+    if C_Timer and C_Timer.After then
+        C_Timer.After(0.25, finish)
+    else
+        finish()
+    end
+end
+
+local function BeginTame()
+    if tame.channeling then
+        return
+    end
+    tame.channeling = true
+    tameGen = tameGen + 1
+    if live and On("statePet") then
+        Say((tame.name or "Target") .. " is getting tamed.")
+    end
+end
+
+local function ScheduleTamed()
+    tameGen = tameGen + 1
+    local gen = tameGen
+    local fallback = tame.name
+    local function finish()
+        if gen ~= tameGen then
+            return
+        end
+        tame.channeling = false
+        tame.sentAt = 0
+        tame.reason = nil
+        if not live or not On("statePet") then
+            return
+        end
+        Say((PetLabel() or fallback or "Pet") .. " is tamed.")
+    end
+    if C_Timer and C_Timer.After then
+        C_Timer.After(0.4, finish)
+    else
+        finish()
+    end
+end
+
 local function Seed()
     live = false
     seedGen = seedGen + 1
@@ -990,6 +1206,12 @@ frame:RegisterEvent("PET_BAR_UPDATE")
 frame:RegisterEvent("MIRROR_TIMER_START")
 frame:RegisterEvent("MIRROR_TIMER_STOP")
 frame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+frame:RegisterEvent("UNIT_SPELLCAST_SENT")
+frame:RegisterEvent("UNIT_SPELLCAST_START")
+frame:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START")
+frame:RegisterEvent("UNIT_SPELLCAST_FAILED")
+frame:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
+frame:RegisterEvent("UI_ERROR_MESSAGE")
 if frame.RegisterEvent then
     pcall(frame.RegisterEvent, frame, "TRADE_SKILL_ITEM_CRAFTED_RESULT")
 end
@@ -1045,6 +1267,63 @@ frame:SetScript("OnEvent", function(_, event, ...)
         HandleLevelUp(...)
         return
     end
+    if event == "UI_ERROR_MESSAGE" then
+        if not RecentTame() then
+            return
+        end
+        local argCount = select("#", ...)
+        local argIndex
+        for argIndex = 1, argCount do
+            local text = Text(select(argIndex, ...))
+            if text then
+                tame.reason = text
+            end
+        end
+        return
+    end
+    if event == "UNIT_SPELLCAST_SENT" then
+        local unit = Text(select(1, ...))
+        if unit ~= "player" or not EventIsTame(...) then
+            return
+        end
+        tame.name = TameTargetFromArgs(...)
+        tame.sentAt = Now()
+        tame.channeling = false
+        tame.reason = nil
+        return
+    end
+    if event == "UNIT_SPELLCAST_START" or event == "UNIT_SPELLCAST_CHANNEL_START" then
+        local unit = Text(select(1, ...))
+        if unit ~= "player" or not EventIsTame(...) then
+            return
+        end
+        if not tame.name then
+            tame.name = TameTargetFromArgs(...)
+        end
+        BeginTame()
+        return
+    end
+    if event == "UNIT_SPELLCAST_FAILED" or event == "UNIT_SPELLCAST_INTERRUPTED" then
+        local unit = Text(select(1, ...))
+        if unit ~= "player" then
+            return
+        end
+        local spellName = SpellNameFromArgs(...)
+        if spellName and not IsTameSpell(spellName) then
+            return
+        end
+        if not spellName and not RecentTame() then
+            return
+        end
+        if tame.channeling then
+            tame.channeling = false
+            tame.sentAt = 0
+            tameGen = tameGen + 1
+            return
+        end
+        ScheduleCantTame()
+        return
+    end
     if event == "UNIT_SPELLCAST_SUCCEEDED" then
         if not live or not On("statePet") then
             return
@@ -1053,35 +1332,12 @@ frame:SetScript("OnEvent", function(_, event, ...)
         if unit ~= "player" then
             return
         end
-        local spellName = nil
-        local argCount = select("#", ...)
-        local argIndex
-        for argIndex = 2, argCount do
-            local argName = Text(select(argIndex, ...))
-            if argName and not string.match(argName, "^%d+$") then
-                spellName = argName
-                break
-            end
-        end
+        local spellName = SpellNameFromArgs(...)
         if not spellName then
-            for argIndex = 2, argCount do
-                local spellID = Num(select(argIndex, ...))
-                if spellID and spellID > 0 then
-                    if C_Spell and C_Spell.GetSpellName then
-                        local spellOk, spellValue = pcall(C_Spell.GetSpellName, spellID)
-                        spellName = spellOk and Text(spellValue) or nil
-                    end
-                    if not spellName and GetSpellInfo then
-                        local spellOk, spellValue = pcall(GetSpellInfo, spellID)
-                        spellName = spellOk and Text(spellValue) or nil
-                    end
-                    if spellName then
-                        break
-                    end
-                end
-            end
+            return
         end
-        if not spellName then
+        if IsTameSpell(spellName) then
+            ScheduleTamed()
             return
         end
         local lowerName = string.lower(spellName)
