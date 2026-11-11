@@ -106,6 +106,13 @@ local function AddSkill(name, rank, maxRank)
     maxRank = Num(maxRank)
     local key = string.lower(name)
     local prev = skills[key]
+    if prev and rank < prev.rank then
+        return
+    end
+    if not maxRank and prev and prev.max then
+        maxRank = prev.max
+    end
+    local increased = prev and rank > prev.rank
     skills[key] = { rank = rank, max = maxRank }
     if not live or not On("progressSkill") or not prev then
         if live and On("progressSkill") and not prev then
@@ -113,14 +120,56 @@ local function AddSkill(name, rank, maxRank)
         end
         return
     end
-    if rank <= prev.rank then
+    if not increased then
         return
     end
-    if maxRank and prev.max and maxRank ~= prev.max then
-        Say(string.format("%s %d of %d.", name, rank, maxRank))
+    if maxRank and maxRank > 0 then
+        Say(string.format("%s %d / %d.", name, rank, maxRank))
     else
         Say(string.format("%s %d.", name, rank))
     end
+end
+
+local function SkillMax(name)
+    name = Text(name)
+    if not name then
+        return nil
+    end
+    local want = string.lower(name)
+    if GetNumSkillLines and GetSkillLineInfo then
+        local ok, count = pcall(GetNumSkillLines)
+        count = ok and Num(count) or nil
+        if count and count > 0 then
+            local i
+            for i = 1, count do
+                local lineOk, lineName, header, _, _, _, _, maxRank = pcall(GetSkillLineInfo, i)
+                if lineOk and Flag(header) == false then
+                    lineName = Text(lineName)
+                    if lineName and string.lower(lineName) == want then
+                        return Num(maxRank)
+                    end
+                end
+            end
+        end
+    end
+    if GetProfessions and GetProfessionInfo then
+        local ok, a, b, c, d, e = pcall(GetProfessions)
+        if ok then
+            local ids = { a, b, c, d, e }
+            local i
+            for i = 1, 5 do
+                local idx = Num(ids[i])
+                if idx then
+                    local infoOk, profName, _, _, maxRank = pcall(GetProfessionInfo, idx)
+                    profName = infoOk and Text(profName) or nil
+                    if profName and string.lower(profName) == want then
+                        return Num(maxRank)
+                    end
+                end
+            end
+        end
+    end
+    return nil
 end
 
 local function ScanProfessions()
@@ -177,6 +226,31 @@ local function Plain(message)
     return Text(message)
 end
 
+local function ScanSkillsSoon()
+    ScanSkills()
+    if C_Timer and C_Timer.After then
+        C_Timer.After(0.3, ScanSkills)
+    end
+end
+
+local function HandleSkillChat(message)
+    local body = Plain(message)
+    if not body then
+        return
+    end
+    local skillName, rankText = string.match(body, "[Ss]kill in (.+) has increased to (%d+)")
+    if not skillName or not rankText then
+        ScanSkillsSoon()
+        return
+    end
+    local rank = Num(tonumber(rankText))
+    if not rank then
+        ScanSkillsSoon()
+        return
+    end
+    AddSkill(skillName, rank, SkillMax(skillName))
+end
+
 local function BracketName(message)
     local body = Plain(message)
     if not body then
@@ -203,6 +277,7 @@ local function HandleLootChat(message)
     local qty = TrailingCount(body)
     if string.find(lower, "you create", 1, true) or string.find(lower, "you have created", 1, true) then
         SpeakGain(name, qty, "progressSkill")
+        ScanSkillsSoon()
     end
 end
 
@@ -242,6 +317,7 @@ local function HandleCraftResult(first)
         end
         if fromLink then
             SpeakGain(fromLink, qty, "progressSkill")
+            ScanSkillsSoon()
             return
         end
         local itemID = Num(first.itemID)
@@ -249,9 +325,11 @@ local function HandleCraftResult(first)
             itemID = Num(first.itemId)
         end
         SpeakGain(ItemNameByID(itemID), qty, "progressSkill")
+        ScanSkillsSoon()
         return
     end
     SpeakGain(ItemNameByID(first), nil, "progressSkill")
+    ScanSkillsSoon()
 end
 
 local function HandleRecipe(recipeID)
@@ -1218,6 +1296,7 @@ local frame = CreateFrame("Frame")
 frame:RegisterEvent("PLAYER_LOGIN")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("SKILL_LINES_CHANGED")
+frame:RegisterEvent("CHAT_MSG_SKILL")
 frame:RegisterEvent("NEW_RECIPE_LEARNED")
 frame:RegisterEvent("AUTOFOLLOW_BEGIN")
 frame:RegisterEvent("AUTOFOLLOW_END")
@@ -1270,6 +1349,10 @@ frame:SetScript("OnEvent", function(_, event, ...)
     end
     if event == "SKILL_LINES_CHANGED" then
         ScanSkills()
+        return
+    end
+    if event == "CHAT_MSG_SKILL" then
+        HandleSkillChat(...)
         return
     end
     if event == "NEW_RECIPE_LEARNED" then

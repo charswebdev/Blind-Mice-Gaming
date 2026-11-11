@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.4.7** |
+| Version | **1.4.8** |
 | Type | In-game addon (VI / TTS) |
 | Folder | `AccessibilityHelper-forever/` |
 | Clients | `_forever_` (wowf 1.60.1.70634, Interface 16001) |
@@ -112,6 +112,8 @@ WoW Forever copy of Accessibility Helper. It is its own addon folder and saved-v
 1.4.6 says “Another pet is active.” when a tame fails because a pet is already out, even if the game reports that error before the cast starts.
 
 1.4.7 lets the tooltip read key use Alt, Control, Shift, a mouse button, or the mouse wheel. The spoken name is the combination, such as Ctrl-Left mouse.
+
+1.4.8 speaks a skill increase as the new rank and the cap, such as Mining 8 / 75. A craft that raises a skill says that same line.
 
 ## Sources and data
 

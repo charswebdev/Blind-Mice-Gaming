@@ -31,7 +31,7 @@ local PAGES = {
 }
 
 local STATUS_ROWS = {
-    { key = "progressSkill", label = "Profession and skill", tip = "Speaks when a profession or skill rank goes up. Mining 75. If the cap also changed, Mining 75 of 150. A new profession says Mining learned. A new recipe says Recipe learned, then the recipe name. A crafted item says the item name." },
+    { key = "progressSkill", label = "Profession and skill", tip = "Speaks when a profession or skill rank goes up, including after a craft. Mining 8 / 75. A new profession says Mining learned. A new recipe says Recipe learned, then the recipe name. A crafted item says the item name." },
     { key = "stateLevelUp", label = "Level up", tip = "Speaks your new level. Level 12. If that level also gave you a talent point, it adds one more line." },
     { key = "stateFollow", label = "Following", tip = "Speaks when you start or stop following someone, and includes their name. Following Charlotte. Stopped following Charlotte." },
     { key = "stateIndoors", label = "Indoor and outdoors", tip = "Speaks when you go inside or come back outside. Indoor. Outdoors." },
@@ -1740,7 +1740,7 @@ local function Build()
 
     local footer = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     footer:SetPoint("BOTTOMLEFT", 12, 8)
-    footer:SetText("v3.7.6")
+    footer:SetText("v3.7.7")
     footer:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
 
     frame:SetScript("OnKeyDown", function(self, key)
