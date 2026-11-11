@@ -10,7 +10,7 @@ AH.Help = AH.Help or {}
 local Help = AH.Help
 
 local LINES = {
-    "|cff00ff00Accessibility Helper|r — commands and keybinds",
+    "|cff00ff00Accessibility Helper - Retail|r — commands and keybinds",
     "  |cff00ff00/ah|r or |cff00ff00/ahelp|r — open settings",
     "  |cff00ff00/ahcmds|r — print this command list",
     "  |cff00ff00/ahs|r — test text to speech",
@@ -31,8 +31,8 @@ local LINES = {
     "Cursor: Reading → UI text speaks name, title, and action, for example Toby Hill Weapons Master Repair.",
     "You and Combat turn alerts on. Sounds chooses TTS, a sound, or both for each alert. Sounds → Default sound is used when an alert still says Use default sound.",
     "Chat → Crafting is profession and gathering chat. Combat is fighting alerts only.",
-    "Key Bindings → Accessibility Helper:",
-    "  Tooltip · Under mouse · TomTom · Zygor · Settings · Distance · Read target · Stop · Repeat · Quest objectives · Quest window",
+    "Key Bindings → Accessibility Helper - Retail:",
+    "  Tooltip (press again on the same tooltip to stop) · Under mouse · TomTom · Zygor · Settings · Distance · Read target · Stop · Repeat · Quest objectives · Quest window",
     "Tip: |cff00ff00/dump select(4, GetBuildInfo())|r — verify Interface version for this client.",
 }
 

@@ -1,38 +1,28 @@
 ## Interface: 120105, 120100, 50504, 40402, 38002, 30405, 20506, 11509, 11508
-## Title: Accessibility Helper
-## Version: 3.6.7
-## Notes: TTS accessibility helper for blind and visually impaired players. Tooltips, waypoints, distance, chat channels, subzones, discoveries, loot, currencies, UI errors, player state, professions, reputation, XP, combat alerts, duration bars, and interrupt sounds.
+## Title: Accessibility Helper - Retail
+## Version: 3.6.9
+## Notes: TTS accessibility helper. The tooltip reads on its key. A keybind or slash command reads the TomTom or Zygor arrow. Status speaks skill, level, follow, place, a new location, and red error text when those switches are on. Rewards speaks experience, reputation, currency, and loot. Chat speaks the channels you enable, plus progress and collections when those switches are on. Combat speaks the fight lines you enable.
 ## Author: Blind Mice Gaming
 ## Category-enUS: Blind Mice Gaming
 ## IconTexture: Interface\AddOns\AccessibilityHelper\Media\Icon.png
 ## OptionalDeps: TomTom, ZygorGuidesViewer, MountSpy, QuestCompletist, RareScanner, SilverDragon, HandyNotes, Zugzug, ZugZug, Titan, TitanClassic, LibSharedMedia-3.0, SharedMedia
 ## SavedVariables: AccessibilityHelperDB
+## LoadSavedVariablesFirst: 1
 
 Core\Compat.lua
 Core\DB.lua
 Core\ChatText.lua
 Core\Speech.lua
-Core\Sounds.lua
-Core\Alerts.lua
-Core\Help.lua
-Features\ChatChannels.lua
-Features\AddonChat.lua
-UI\Settings.lua
+UI\Window.lua
 UI\MinimapButton.lua
 Features\Tooltips.lua
-Features\UnderMouse.lua
-Features\Cursor.lua
+Features\Status.lua
+Features\ChatChannels.lua
+Features\CombatAnnounce.lua
+Features\Rewards.lua
+Features\ChatProgress.lua
+Features\NpcWindows.lua
 Features\Waypoints.lua
-Features\Distance.lua
-Features\Facing.lua
 Features\Location.lua
 Features\UIErrors.lua
-Features\PlayerState.lua
-Features\BNFriends.lua
-Features\Progress.lua
-Features\Combat.lua
-Features\Casts.lua
-Features\Loot.lua
-Features\Quests.lua
-Core\Bindings.lua
 Core\Init.lua

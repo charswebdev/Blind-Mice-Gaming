@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.3.3** |
+| Version | **1.4.0** |
 | Type | In-game addon (VI / TTS) |
 | Folder | `AccessibilityHelper-forever/` |
 | Clients | `_forever_` (wowf 1.60.1.70634, Interface 16001) |
@@ -13,12 +13,12 @@
 
 ## Description
 
-WoW Forever copy of Accessibility Helper. It is its own addon folder and saved-variables table, so it does not share settings with Retail or Classic. This version loads the new window, the tooltip reader, the status announcer, rewards, chat, and the combat page. The older combat, cursor, and quest readers are not loaded.
+WoW Forever copy of Accessibility Helper. It is its own addon folder and saved-variables table, so it does not share settings with Retail or Classic. This version loads the new window, the tooltip reader, the status announcer, arrow reads, rewards, chat, and the combat page. The older combat, cursor, and quest readers are not loaded.
 
 ## Features
 
 - Tooltip reader (`/ahtip`) speaks only when the read key is pressed. A later press stops that read. Holding the key does not start it again.
-- `/ah` opens Tooltip, Speech, Status, Rewards, Combat, and Chat. Click Rewards, Chat, or Combat to show or hide the section names under it. The arrow points down while they are showing and up while they are hidden. Combat starts quiet until Read combat is on. Status speaks profession skill, level-up, a learned recipe, a crafted item, follow, indoor and outdoors, swimming, flying, mount, and AFK. Rewards speaks experience, reputation, currency, gold, loot, a completed quest, and an earned achievement. Chat Progress speaks achievement progress, quest progress, an accepted quest, and the open quest's description, objectives, and rewards. Chat NPC speaks the window, a merchant sale, and a repair. Chat Collections speaks item pickup and new collection items. Those lines are not printed.
+- `/ah` opens Tooltip, Speech, Status, Arrows, Rewards, Combat, and Chat. Click Rewards, Chat, or Combat to show or hide the section names under it. The arrow points down while they are showing and up while they are hidden. Combat starts quiet until Read combat is on. Status speaks profession skill, level-up, a learned recipe, a crafted item, follow, indoor and outdoors, swimming, flying, mount, AFK, a new location, red error text, and the condition lines when those switches are on. Commands lists the slash commands and key bindings. Arrows reads the TomTom arrow with `/ahtt`, `/aharrow`, `/ahtomtom`, or the TomTom keybind, and the Zygor arrow with `/ahz`, `/ahzygor`, or the Zygor keybind. Rewards speaks experience, reputation, currency, gold, loot, a completed quest, and an earned achievement. Chat Progress speaks achievement progress, quest progress, an accepted quest, and the open quest's description, objectives, and rewards. Chat NPC speaks the window, a merchant sale, and a repair. Chat Collections speaks item pickup and new collection items. Those lines are not printed.
 - The older cursor, quest, and combat readers are not loaded. Combat uses the new Combat page. Quest text uses the Chat switches.
 
 ## Development plan
@@ -84,6 +84,20 @@ WoW Forever copy of Accessibility Helper. It is its own addon folder and saved-v
 1.3.2 adds quest accepted and quest details under Chat Progress. Quest accepted says the quest name. Quest details reads the offer or the quest selected in the log: the name, the description, the objectives, and the rewards. Chat NPC reads the window that opened, a merchant sale, and a gear repair. Those switches start off.
 
 1.3.3 leaves the game menu key to the game. Escape still closes the helper window. The addon no longer calls the protected stop-casting function.
+
+1.3.4 reads the TomTom arrow and the Zygor arrow from a keybind or a slash command. Those switches start on. Status gains New location. That switch starts off and speaks the place name when you enter it. Login stays quiet for about two seconds.
+
+1.3.5 speaks a new location every time the place changes. A smaller place name is used when there is one. An area with no smaller name speaks the area name. A short wait no longer drops the next place.
+
+1.3.6 adds Error messages on the Status page. It starts off. On, the red message in the middle of the screen is spoken. Out of range. Not enough mana. Spell is not ready yet stays quiet. The same message does not repeat for one second.
+
+1.3.7 adds the rest of the status lines. Death, ghost, resurrect, taxi, resting, instance, bags, durability, money, breath, fatigue, stuck, falling, PvP, stealth, form, pet, and group. Each starts off. Commands is the last page. It lists the slash commands and the key bindings. `/ah commands` opens that page.
+
+1.3.8 changes those spoken lines. Your Dead. Ghost. Your Resurrected. On Taxi. Taxi ended. Entered rested area. Left rested area. Instance is gone. Your bags are full, and bag space stays quiet. Durability is low under 25 percent, and Durability is Restored when gear is fully repaired. You gained 6 silver. You spent 2 gold. Your breathing is low under 35 percent, and Above water when the breath bar goes away. You are getting Fatigued when the bar appears, Your fatigue is low under 35 percent, and Fatigue is cleared when it goes away. Your falling after more than a second. PVP on. PVP off. Your in stealth. You are no longer stealthed. You have shifted into Bear Form. You shifted back. Wolf summoned. Wolf is dismissed. Wolf was healed. Wolf Revived.
+
+1.3.9 adds three pet lines on that same switch. Wolf dead. Wolf health is under 35%. Feed Wolf when that pet is content or unhappy. Each speaks once until the pet recovers. Login stays quiet.
+
+1.4.0 ships that same addon. The patch was already 9, so this bump moves the minor. Retail 3.6.9 is this window under the name Accessibility Helper - Retail.
 
 ## Sources and data
 

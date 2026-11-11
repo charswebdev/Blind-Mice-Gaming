@@ -1,7 +1,8 @@
 --[[
-  Accessibility Helper — red UI error messages (Phase 6.2)
-  Reads top-middle UIErrorsFrame messages (UI_ERROR_MESSAGE).
-  Lua 5.1 only.
+  Accessibility Helper — red UI error messages
+  Speaks the message in the middle of the screen.
+  "Spell is not ready yet" stays quiet.
+  Lua 5.1 only. No goto, no continue, no //.
 ]]
 
 AccessibilityHelper = AccessibilityHelper or {}
@@ -13,16 +14,57 @@ local UIErrors = AH.UIErrors
 local lastMsg = nil
 local lastAt = 0
 
+local function DB()
+    return AH.DB and AH.DB.Get and AH.DB.Get() or {}
+end
+
 local function Enabled()
-    local sv = AH.DB and AH.DB.Get and AH.DB.Get()
-    return not sv or sv.uiErrorsEnabled ~= false
+    return DB().uiErrorsEnabled == true
+end
+
+local function Now()
+    if not GetTime then
+        return 0
+    end
+    local ok, t = pcall(GetTime)
+    if ok ~= true then
+        return 0
+    end
+    if AH.Compat and AH.Compat.CanUseNumber and AH.Compat.CanUseNumber(t) then
+        return t
+    end
+    if type(t) == "number" then
+        return t
+    end
+    return 0
+end
+
+local function Plain(v)
+    if AH.Compat and AH.Compat.UsableString then
+        return AH.Compat.UsableString(v)
+    end
+    if type(v) == "string" and v ~= "" then
+        return v
+    end
+    return nil
+end
+
+local function Same(a, b)
+    if AH.Compat and AH.Compat.CanUseValue then
+        if not AH.Compat.CanUseValue(a) or not AH.Compat.CanUseValue(b) then
+            return false
+        end
+    end
+    if a == nil or b == nil then
+        return false
+    end
+    return a == b
 end
 
 local function CooldownSec()
-    local sv = AH.DB and AH.DB.Get and AH.DB.Get()
-    local v = sv and sv.uiErrorCooldownSec
+    local v = DB().uiErrorCooldownSec
     if type(v) ~= "number" then
-        return 1.0
+        return 1
     end
     if v < 0 then
         return 0
@@ -30,64 +72,66 @@ local function CooldownSec()
     return v
 end
 
-local function Strip(s)
-    if AH.ChatText and AH.ChatText.ForChatMessage then
-        return AH.ChatText.ForChatMessage(s)
-    end
-    if AH.ChatText and AH.ChatText.ForSpeech then
-        return AH.ChatText.ForSpeech(s)
-    end
-    if type(s) ~= "string" then
+local function ForSpeech(text)
+    text = Plain(text)
+    if not text then
         return ""
     end
-    s = s:gsub("|T.-|t", " ")
-    s = s:gsub("|A.-|a", " ")
-    s = s:gsub("|c%x%x%x%x%x%x%x%x", "")
-    s = s:gsub("|r", "")
-    s = s:gsub("|H.-|h(.-)|h", "%1")
-    s = s:gsub("%s+", " ")
-    return (s:gsub("^%s+", ""):gsub("%s+$", ""))
+    if AH.ChatText and AH.ChatText.ForChatMessage then
+        return Plain(AH.ChatText.ForChatMessage(text)) or ""
+    end
+    if AH.ChatText and AH.ChatText.ForSpeech then
+        return Plain(AH.ChatText.ForSpeech(text)) or ""
+    end
+    text = text:gsub("|T.-|t", " ")
+    text = text:gsub("|A.-|a", " ")
+    text = text:gsub("|c%x%x%x%x%x%x%x%x", "")
+    text = text:gsub("|r", "")
+    text = text:gsub("|H.-|h(.-)|h", "%1")
+    text = text:gsub("%s+", " ")
+    return (text:gsub("^%s+", ""):gsub("%s+$", ""))
 end
 
 local function Say(msg)
+    msg = Plain(msg)
+    if not msg then
+        return
+    end
     if AH.Speech and AH.Speech.Say then
-        AH.Speech.Say(msg, AH.Speech.PRIORITY_CRITICAL)
-    else
-        print("|cff66ccff[Helper]|r " .. tostring(msg))
+        AH.Speech.Say(msg, AH.Speech.PRIORITY_CRITICAL, { noEcho = true })
     end
 end
 
-local function IsIgnoredNotReady(messageType, text)
-    -- Prefer messageType when available (locale-safe).
-    local spellCd = _G.LE_GAME_ERR_SPELL_COOLDOWN
-        or (Enum and Enum.LE_GAME_ERR_SPELL_COOLDOWN)
-        or (Enum and Enum.UIErrorMessages and Enum.UIErrorMessages.ERR_SPELL_COOLDOWN)
-    local abilityCd = _G.LE_GAME_ERR_ABILITY_COOLDOWN
-        or (Enum and Enum.LE_GAME_ERR_ABILITY_COOLDOWN)
-    if messageType ~= nil then
-        if spellCd ~= nil and messageType == spellCd then
-            return true
-        end
-        if abilityCd ~= nil and messageType == abilityCd then
-            return true
-        end
+local function NumberCode(globalName)
+    local v = _G[globalName]
+    if AH.Compat and AH.Compat.CanUseNumber and AH.Compat.CanUseNumber(v) then
+        return v
     end
+    if type(v) == "number" then
+        return v
+    end
+    return nil
+end
 
-    -- Locale string globals.
-    if _G.ERR_SPELL_COOLDOWN and text == Strip(_G.ERR_SPELL_COOLDOWN) then
+local function IsNotReady(messageType, text)
+    local spellCd = NumberCode("LE_GAME_ERR_SPELL_COOLDOWN")
+    local abilityCd = NumberCode("LE_GAME_ERR_ABILITY_COOLDOWN")
+    if Same(messageType, spellCd) or Same(messageType, abilityCd) then
         return true
     end
-    if _G.ERR_ABILITY_COOLDOWN and text == Strip(_G.ERR_ABILITY_COOLDOWN) then
+    local spellText = ForSpeech(_G.ERR_SPELL_COOLDOWN)
+    local abilityText = ForSpeech(_G.ERR_ABILITY_COOLDOWN)
+    if spellText ~= "" and text == spellText then
         return true
     end
-
-    -- English fallback patterns.
+    if abilityText ~= "" and text == abilityText then
+        return true
+    end
     local lower = string.lower(text)
-    if lower == "spell is not ready yet."
-        or lower == "ability is not ready yet."
-        or lower:find("spell is not ready", 1, true)
-        or lower:find("ability is not ready", 1, true)
-    then
+    if lower == "spell is not ready yet." or lower == "ability is not ready yet." then
+        return true
+    end
+    if lower:find("spell is not ready", 1, true) or lower:find("ability is not ready", 1, true) then
         return true
     end
     return false
@@ -97,17 +141,15 @@ function UIErrors.Announce(message, messageType)
     if not Enabled() then
         return
     end
-    local text = Strip(message)
+    local text = ForSpeech(message)
     if text == "" then
         return
     end
-    if IsIgnoredNotReady(messageType, text) then
+    if IsNotReady(messageType, text) then
         return
     end
-
-    local now = GetTime and GetTime() or 0
-    local cd = CooldownSec()
-    if text == lastMsg and (now - lastAt) < cd then
+    local now = Now()
+    if text == lastMsg and (now - lastAt) < CooldownSec() then
         return
     end
     lastMsg = text
@@ -118,14 +160,12 @@ end
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("UI_ERROR_MESSAGE")
 frame:SetScript("OnEvent", function(self, event, ...)
-    -- Retail: messageType, message
-    -- Some clients: message only / arg order differs — accept either.
     local a1, a2 = ...
     local messageType, message
-    if type(a2) == "string" then
+    if Plain(a2) then
         messageType = a1
         message = a2
-    elseif type(a1) == "string" then
+    elseif Plain(a1) then
         message = a1
     else
         return

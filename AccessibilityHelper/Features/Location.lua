@@ -1,8 +1,9 @@
 --[[
-  Accessibility Helper — subzone announcements
-  Subzone: bare GetSubZoneText (not a chat line).
-  Area discovery is left to chat (System Messages) so it is not spoken twice.
-  Lua 5.1 only.
+  Accessibility Helper — new location announcements
+  Speaks every time the place changes. A smaller place name is used when
+  there is one. Otherwise the area name is spoken. Login stays quiet.
+  Area discovery stays with chat System Messages.
+  Lua 5.1 only. No goto, no continue, no //.
 ]]
 
 AccessibilityHelper = AccessibilityHelper or {}
@@ -11,133 +12,170 @@ local AH = AccessibilityHelper
 AH.Location = AH.Location or {}
 local Location = AH.Location
 
-local lastSubzone = nil
-local pendingSubzone = nil
-local pendingGen = 0
+local lastZone = nil
+local lastName = nil
+local primed = false
 local readyAt = 0
-local lastSpeakAt = 0
-local DEBOUNCE_SEC = 1.25
+local waitGen = 0
+local poll = 0
 
 local function DB()
     return AH.DB and AH.DB.Get and AH.DB.Get() or {}
 end
 
 local function SubzoneEnabled()
-    return DB().locationSubzoneEnabled ~= false
+    return DB().locationSubzoneEnabled == true
+end
+
+local function Now()
+    if not GetTime then
+        return 0
+    end
+    local ok, t = pcall(GetTime)
+    if ok ~= true then
+        return 0
+    end
+    if AH.Compat and AH.Compat.CanUseNumber and AH.Compat.CanUseNumber(t) then
+        return t
+    end
+    if type(t) == "number" then
+        return t
+    end
+    return 0
+end
+
+local function Plain(v)
+    if AH.Compat and AH.Compat.UsableString then
+        return AH.Compat.UsableString(v)
+    end
+    if type(v) == "string" and v ~= "" then
+        return v
+    end
+    return nil
 end
 
 local function Say(msg)
-    if type(msg) ~= "string" or msg == "" then
+    msg = Plain(msg)
+    if not msg then
         return
     end
+    if not msg:find("%.$") then
+        msg = msg .. "."
+    end
     if AH.Speech and AH.Speech.Say then
-        AH.Speech.Say(msg, AH.Speech.PRIORITY_STATUS)
-    else
-        print("|cff66ccff[Helper]|r " .. msg)
+        AH.Speech.Say(msg, AH.Speech.PRIORITY_STATUS, { noEcho = true })
     end
 end
 
 local function ForSpeech(text)
-    if AH.ChatText and AH.ChatText.ForChatMessage then
-        return AH.ChatText.ForChatMessage(text)
-    end
-    if AH.ChatText and AH.ChatText.ForSpeech then
-        return AH.ChatText.ForSpeech(text)
-    end
-    return tostring(text or "")
-end
-
-local function GetSubzone()
-    if not GetSubZoneText then
+    text = Plain(text)
+    if not text then
         return ""
     end
-    local ok, text = pcall(GetSubZoneText)
-    if not ok or type(text) ~= "string" then
+    if AH.ChatText and AH.ChatText.ForChatMessage then
+        local spoken = AH.ChatText.ForChatMessage(text)
+        return Plain(spoken) or ""
+    end
+    if AH.ChatText and AH.ChatText.ForSpeech then
+        local spoken = AH.ChatText.ForSpeech(text)
+        return Plain(spoken) or ""
+    end
+    return text
+end
+
+local function ReadName(fn)
+    if type(fn) ~= "function" then
+        return ""
+    end
+    local ok, text = pcall(fn)
+    if ok ~= true then
         return ""
     end
     return ForSpeech(text)
 end
 
-function Location.Check(force)
-    if not SubzoneEnabled() then
-        return
+local function CurrentPlace()
+    local zone = ReadName(GetZoneText)
+    if zone == "" then
+        zone = ReadName(GetRealZoneText)
     end
-    local now = GetTime and GetTime() or 0
-    if now < readyAt and not force then
-        return
+    local name = ReadName(GetSubZoneText)
+    if name == "" then
+        name = ReadName(GetMinimapZoneText)
     end
-
-    local sub = GetSubzone()
-    if sub == "" then
-        lastSubzone = sub
-        pendingSubzone = nil
-        return
+    if name == "" then
+        name = zone
     end
-    if not force and sub == lastSubzone and not pendingSubzone then
-        return
-    end
-    if force then
-        pendingSubzone = nil
-        pendingGen = pendingGen + 1
-        lastSubzone = sub
-        lastSpeakAt = now
-        Say(sub)
-        return
-    end
-
-    -- During debounce: queue pending name; do NOT advance lastSubzone until spoken.
-    if (now - lastSpeakAt) < DEBOUNCE_SEC then
-        pendingSubzone = sub
-        pendingGen = pendingGen + 1
-        local myGen = pendingGen
-        local wait = DEBOUNCE_SEC - (now - lastSpeakAt)
-        if wait < 0.05 then
-            wait = 0.05
-        end
-        if C_Timer and C_Timer.After then
-            C_Timer.After(wait, function()
-                if myGen ~= pendingGen then
-                    return
-                end
-                local pending = pendingSubzone
-                pendingSubzone = nil
-                if not pending or pending == "" or pending == lastSubzone then
-                    return
-                end
-                lastSubzone = pending
-                lastSpeakAt = GetTime and GetTime() or 0
-                Say(pending)
-            end)
-        end
-        return
-    end
-
-    pendingSubzone = nil
-    lastSubzone = sub
-    lastSpeakAt = now
-    Say(sub)
+    return zone, name
 end
 
---- Silent: discovery TTS removed (chat covers it). Still mark XP so Progress
--- does not also say exploration XP when the discovery line already included it.
+local function Remember(zone, name)
+    if zone ~= "" then
+        lastZone = zone
+    end
+    if name ~= "" then
+        lastName = name
+    end
+end
+
+local function SameCode(a, b)
+    if AH.Compat and AH.Compat.CanUseValue then
+        if not AH.Compat.CanUseValue(a) or not AH.Compat.CanUseValue(b) then
+            return false
+        end
+    end
+    return a == b
+end
+
+function Location.Check(force)
+    if not SubzoneEnabled() then
+        primed = false
+        return
+    end
+    local zone, name = CurrentPlace()
+    if name == "" and zone == "" then
+        return
+    end
+    local now = Now()
+    if force ~= true and (now < readyAt or not primed) then
+        Remember(zone, name)
+        if now >= readyAt and name ~= "" then
+            primed = true
+        end
+        return
+    end
+    if name ~= "" and name ~= lastName then
+        Remember(zone, name)
+        Say(name)
+        return
+    end
+    if zone ~= "" and zone ~= lastZone then
+        Remember(zone, name)
+        Say(zone)
+        return
+    end
+    Remember(zone, name)
+end
+
+--- Silent. Discovery speech stays on the chat system-message switch.
 local function NoteDiscoveryXP(messageType, message)
     local text = ForSpeech(message)
     if text == "" then
         return
     end
     local explored = _G.LE_GAME_ERR_ZONE_EXPLORED
-        or (Enum and Enum.LE_GAME_ERR_ZONE_EXPLORED)
+    if type(explored) ~= "number" and type(Enum) == "table" then
+        explored = Enum.LE_GAME_ERR_ZONE_EXPLORED
+    end
     local exploredXp = _G.LE_GAME_ERR_ZONE_EXPLORED_XP
-        or (Enum and Enum.LE_GAME_ERR_ZONE_EXPLORED_XP)
+    if type(exploredXp) ~= "number" and type(Enum) == "table" then
+        exploredXp = Enum.LE_GAME_ERR_ZONE_EXPLORED_XP
+    end
     local isDiscovery = false
-    if messageType ~= nil then
-        if exploredXp ~= nil and messageType == exploredXp then
-            isDiscovery = true
-        elseif explored ~= nil and messageType == explored then
-            isDiscovery = true
-        elseif messageType == 378 or messageType == 379 or messageType == 408 or messageType == 409 then
-            isDiscovery = true
-        end
+    if SameCode(messageType, exploredXp) or SameCode(messageType, explored) then
+        isDiscovery = true
+    elseif SameCode(messageType, 378) or SameCode(messageType, 379) or SameCode(messageType, 408) or SameCode(messageType, 409) then
+        isDiscovery = true
     end
     if not isDiscovery then
         local lower = string.lower(text)
@@ -158,22 +196,49 @@ frame:RegisterEvent("ZONE_CHANGED_INDOORS")
 frame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 frame:RegisterEvent("UI_INFO_MESSAGE")
 
+local function ScheduleCheck()
+    Location.Check(false)
+    if not C_Timer or not C_Timer.After then
+        return
+    end
+    waitGen = waitGen + 1
+    local gen = waitGen
+    C_Timer.After(0.2, function()
+        if gen ~= waitGen then
+            return
+        end
+        Location.Check(false)
+    end)
+end
+
+frame:SetScript("OnUpdate", function(self, elapsed)
+    if type(elapsed) ~= "number" then
+        return
+    end
+    poll = poll + elapsed
+    if poll < 0.3 then
+        return
+    end
+    poll = 0
+    Location.Check(false)
+end)
+
 frame:SetScript("OnEvent", function(self, event, ...)
     if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
-        readyAt = (GetTime and GetTime() or 0) + 3
-        lastSubzone = GetSubzone()
-        pendingSubzone = nil
-        pendingGen = pendingGen + 1
-        lastSpeakAt = 0
+        readyAt = Now() + 2
+        primed = false
+        lastZone = nil
+        lastName = nil
+        waitGen = waitGen + 1
         return
     end
     if event == "UI_INFO_MESSAGE" then
         local a1, a2 = ...
         local messageType, message
-        if type(a2) == "string" then
+        if Plain(a2) then
             messageType = a1
             message = a2
-        elseif type(a1) == "string" then
+        elseif Plain(a1) then
             message = a1
         else
             return
@@ -181,5 +246,5 @@ frame:SetScript("OnEvent", function(self, event, ...)
         NoteDiscoveryXP(messageType, message)
         return
     end
-    Location.Check(false)
+    ScheduleCheck()
 end)

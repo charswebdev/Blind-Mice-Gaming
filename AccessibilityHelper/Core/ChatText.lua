@@ -15,8 +15,22 @@ local function Trim(s)
     return (s:gsub("^%s+", ""):gsub("%s+$", ""))
 end
 
-function ChatText.HasFormatTokens(s)
+local function UsableString(s)
+    if AH.Compat and AH.Compat.UsableString then
+        return AH.Compat.UsableString(s)
+    end
+    if AH.Compat and AH.Compat.IsSecretValue and AH.Compat.IsSecretValue(s) then
+        return nil
+    end
     if type(s) ~= "string" or s == "" then
+        return nil
+    end
+    return s
+end
+
+function ChatText.HasFormatTokens(s)
+    s = UsableString(s)
+    if not s then
         return false
     end
     if s:find("%%s", 1, true) then
@@ -36,7 +50,8 @@ end
 
 --- Strip markup but keep format tokens (%s, %d, …).
 function ChatText.StripMarkupKeepFormat(s)
-    if type(s) ~= "string" then
+    s = UsableString(s)
+    if not s then
         return ""
     end
     s = s:gsub("|T.-|t", " ")
@@ -53,14 +68,15 @@ end
 --- Convert a Blizzard printed string into TTS text without rephrasing.
 -- Hyperlink display text is kept (including [brackets] when present).
 function ChatText.ForSpeech(s)
-    if type(s) ~= "string" then
+    if not UsableString(s) then
         return ""
     end
     return ChatText.StripMarkupKeepFormat(s)
 end
 
 local function BareName(name)
-    if type(name) ~= "string" or name == "" then
+    name = UsableString(name)
+    if not name then
         return ""
     end
     name = ChatText.ForSpeech(name)
@@ -68,7 +84,7 @@ local function BareName(name)
 end
 
 local function ArgValue(a)
-    if type(a) == "string" and a ~= "" then
+    if UsableString(a) then
         local bare = BareName(a)
         if bare ~= "" then
             return bare
@@ -85,7 +101,7 @@ end
 -- Extra args are substitution values in order (player, target, item, …).
 -- Does not invent filler words for missing args — leftover tokens are stripped.
 function ChatText.FillFormat(text, ...)
-    if type(text) ~= "string" or text == "" then
+    if not UsableString(text) then
         return ""
     end
     local cleaned = ChatText.StripMarkupKeepFormat(text)

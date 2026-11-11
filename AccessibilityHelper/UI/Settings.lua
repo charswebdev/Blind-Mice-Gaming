@@ -1234,7 +1234,7 @@ local function BuildPage(id, parent, rows)
 
     elseif id == "player_social" then
         Section("People", "Level, quests, targeting, and friends.")
-        Check("Level up", "stateLevelUp", "Congratulates you, then announces class, specialization, or hero talent points when they are gained.")
+        Check("Level up", "stateLevelUp", "Example: Level 12. Talent points still follow when you gain one.")
         Check("Quest accepted / complete / turn-in", "stateQuest", "Announces those quest status changes.")
         Check("Target acquired / cleared", "stateTarget", "Announces when you gain or clear a target.")
         Check("Target of target off you", "stateTargetOfTarget", "When a hostile target is looking at someone else, speaks that name. Speaks On you when they come back. Meant for tanks watching aggro.")
@@ -1467,7 +1467,7 @@ local function BuildFrame()
 
     local title = FontString(header, 20, COL_GOLD[1], COL_GOLD[2], COL_GOLD[3])
     title:SetPoint("LEFT", logo, "RIGHT", 10, 0)
-    title:SetText("Accessibility Helper")
+    title:SetText("Accessibility Helper - Retail")
 
     local subtitle = FontString(header, 13, COL_HINT[1], COL_HINT[2], COL_HINT[3])
     subtitle:SetPoint("LEFT", title, "RIGHT", 12, 0)
@@ -1533,7 +1533,7 @@ local function BuildFrame()
     local version = FontString(frame, 12, COL_MUTED[1], COL_MUTED[2], COL_MUTED[3])
     version:SetPoint("BOTTOMRIGHT", -20, 14)
     version:SetJustifyH("RIGHT")
-    local ver = "3.6.7"
+    local ver = "1.0.4"
     if C_AddOns and C_AddOns.GetAddOnMetadata then
         ver = C_AddOns.GetAddOnMetadata("AccessibilityHelper", "Version") or ver
     elseif GetAddOnMetadata then
@@ -1566,7 +1566,7 @@ function Settings.Toggle()
         f:Hide()
     else
         f:Show()
-        SpeakNow("Accessibility Helper settings.")
+        SpeakNow("Accessibility Helper, Retail, settings.")
     end
 end
 
@@ -1574,7 +1574,7 @@ function Settings.Open()
     local f = BuildFrame()
     if not f:IsShown() then
         f:Show()
-        SpeakNow("Accessibility Helper settings.")
+        SpeakNow("Accessibility Helper, Retail, settings.")
     end
 end
 

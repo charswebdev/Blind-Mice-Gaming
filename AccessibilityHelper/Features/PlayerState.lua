@@ -1047,16 +1047,11 @@ local function OnLevelUp(level, healthDelta, powerDelta, numNewTalents, numNewPv
 
     local prevClass, prevSpec, prevHero = lastUnspentClass, lastUnspentSpec, lastUnspentHero
 
-    local congrats = ""
-    if AH.ChatText and AH.ChatText.Format and level then
-        congrats = AH.ChatText.Format("LEVEL_UP", level, level)
+    if level and AH.Speech and AH.Speech.Say then
+        AH.Speech.Say(string.format("Level %d.", level), AH.Speech.PRIORITY_INFO, { noEcho = true })
+    elseif level then
+        Announce("stateLevelUp", string.format("Level %d.", level))
     end
-    if congrats == "" and level then
-        congrats = string.format("Congratulations, you have reached Level %d!", level)
-    elseif congrats == "" then
-        congrats = "Congratulations, you have leveled up!"
-    end
-    Announce("stateLevelUp", congrats)
 
     levelUpTalentPending = true
     local function runTalentCheck()

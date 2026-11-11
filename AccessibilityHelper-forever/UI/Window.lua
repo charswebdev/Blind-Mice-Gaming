@@ -22,10 +22,12 @@ local BTN = { 0.165, 0.137, 0.110, 1 }
 local PAGES = {
     { id = "tooltip", label = "Tooltip", tip = "Set the read key and choose which tooltip lines are spoken. The key speaks only the tooltip that is open. Press it again to stop." },
     { id = "speech", label = "Speech", tip = "Choose the voice, speed, and volume used for every spoken line, including tooltips and status." },
-    { id = "status", label = "Status", tip = "Turn each status line on or off. Profession, level, follow, and place are spoken from the game when they change. They are not printed in chat." },
+    { id = "status", label = "Status", tip = "Turn each status line on or off. Profession, level, follow, place, your condition, a new location, and red error text are spoken from the game when they change. They are not printed in chat." },
+    { id = "arrows", label = "Arrows", tip = "Turn TomTom and Zygor arrow reading on or off. A keybind or a slash command reads the arrow that is showing." },
     { id = "rewards", label = "Rewards", tip = "Click Rewards to show or hide the section names. The arrow points down while those names are showing, and up while they are hidden. Experience, reputation, currency, loot, quests, and achievements are spoken here." },
     { id = "combat", label = "Combat", tip = "Click Combat to show or hide the section names. The arrow points down while those names are showing, and up while they are hidden. Read combat starts off." },
     { id = "chat", label = "Chat", tip = "Click Chat to show or hide the section names. The arrow points down while those names are showing, and up while they are hidden." },
+    { id = "commands", label = "Commands", tip = "Lists the slash commands and the key bindings. Click a line to hear it. The read key speaks it too." },
 }
 
 local STATUS_ROWS = {
@@ -37,6 +39,25 @@ local STATUS_ROWS = {
     { key = "stateFly", label = "Flying", tip = "Speaks when you start or stop flying. Flying. Stopped flying." },
     { key = "stateMount", label = "Mount", tip = "Speaks when you get on or off a mount. Mounted. Off mount." },
     { key = "stateAFK", label = "AFK", tip = "Speaks when you go away or come back. AFK on. AFK off." },
+    { key = "locationSubzoneEnabled", label = "New location", tip = "Speaks every time you enter a different place. Goldshire. If that place has no smaller name, it speaks the area name. Login stays quiet for a moment. Off, a new place stays quiet." },
+    { key = "uiErrorsEnabled", label = "Error messages", tip = "Speaks the red message in the middle of the screen. Out of range. Not enough mana. Spell is not ready yet stays quiet. The same message does not repeat for one second. Starts off." },
+    { key = "stateDead", label = "Death", tip = "Speaks when you die. Your Dead. Starts off." },
+    { key = "stateGhost", label = "Ghost", tip = "Speaks when you are a ghost. Ghost. Starts off." },
+    { key = "stateResurrected", label = "Resurrect", tip = "Speaks when you return to life. Your Resurrected. Starts off." },
+    { key = "stateTaxi", label = "Taxi", tip = "Speaks when a flight path takes off and when it ends. On Taxi. Taxi ended. Starts off." },
+    { key = "stateResting", label = "Resting", tip = "Speaks when you enter or leave an area that grants rested experience. Entered rested area. Left rested area. Starts off." },
+    { key = "stateBagFull", label = "Bags", tip = "Speaks when your bags are full. Your bags are full. It stays quiet when a space opens. Starts off." },
+    { key = "stateDurability", label = "Durability", tip = "Speaks when your gear durability drops under 25 percent, and when it is fully repaired. Durability is low. Durability is Restored. Starts off." },
+    { key = "stateMoney", label = "Money", tip = "Speaks money you gain or spend. You gained 6 silver. You spent 2 gold. Rewards gold is a separate switch. Starts off." },
+    { key = "stateBreath", label = "Breath", tip = "Speaks when your breath drops under 35 percent, and when the breath bar goes away. Your breathing is low. Above water. Starts off." },
+    { key = "stateFatigue", label = "Fatigue", tip = "Speaks when the fatigue bar appears, when it drops under 35 percent, and when it goes away. You are getting Fatigued. Your fatigue is low. Fatigue is cleared. Starts off." },
+    { key = "stateStuck", label = "Stuck", tip = "Speaks when you are moving but your place does not change for about three seconds. Stuck. Starts off." },
+    { key = "stateFalling", label = "Falling", tip = "Speaks after you have been falling for more than a second. Your falling. Starts off." },
+    { key = "statePvP", label = "PvP", tip = "Speaks when you become flagged for PvP and when that flag drops. PVP on. PVP off. Starts off." },
+    { key = "stateStealth", label = "Stealth", tip = "Speaks when you enter or leave stealth. Your in stealth. You are no longer stealthed. Starts off." },
+    { key = "stateShapeshift", label = "Form", tip = "Speaks when you change form, and includes the form name. You have shifted into Bear Form. You shifted back. Starts off." },
+    { key = "statePet", label = "Pet", tip = "Speaks the pet name when you summon, dismiss, heal, revive, or lose that pet. Wolf summoned. Wolf is dismissed. Wolf was healed. Wolf Revived. Wolf dead. Wolf health is under 35%. Feed Wolf when that pet is not happy. Starts off." },
+    { key = "stateGroup", label = "Group", tip = "Speaks when you join or leave a party or raid. Joined group. Left group. Starts off." },
 }
 
 local CHANNEL_ROWS = {
@@ -526,6 +547,9 @@ local function ShowPage(id, quiet)
     end
     if quiet then
         return
+    end
+    if id == "commands" and pages.commands and pages.commands.Refresh then
+        pages.commands.Refresh()
     end
     for i = 1, #PAGES do
         if PAGES[i].id == id then
@@ -1376,6 +1400,36 @@ local function Build()
     ApplyCombatTabs()
     ApplyRewardTabs()
 
+    local arrows = CreateFrame("Frame", nil, content)
+    arrows:SetAllPoints(content)
+    arrows:Hide()
+    pages.arrows = arrows
+    local arrowsTitle = arrows:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    arrowsTitle:SetPoint("TOPLEFT", 0, 0)
+    arrowsTitle:SetText("Arrows")
+    arrowsTitle:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
+    local arrowsNote = arrows:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    arrowsNote:SetPoint("TOPLEFT", arrowsTitle, "BOTTOMLEFT", 0, -6)
+    arrowsNote:SetPoint("RIGHT", -4, 0)
+    arrowsNote:SetJustifyH("LEFT")
+    arrowsNote:SetText("These commands read the arrow that is showing. They are not printed.")
+    arrowsNote:SetTextColor(TEXT[1], TEXT[2], TEXT[3])
+    local arrowRows = {
+        { key = "tomtomReadEnabled", label = "TomTom arrow", tip = "On, /ahtt, /aharrow, /ahtomtom, and the TomTom keybind speak the waypoint name, the distance, and the time to arrive. Off, those commands say that TomTom reading is disabled." },
+        { key = "zygorReadEnabled", label = "Zygor arrow", tip = "On, /ahz, /ahzygor, and the Zygor keybind speak the waypoint name and the distance. Off, those commands say that Zygor reading is disabled." },
+    }
+    local previousArrow = nil
+    for i = 1, #arrowRows do
+        local row = MakeToggle(arrows, arrowRows[i].key, arrowRows[i].label, arrowRows[i].tip)
+        if previousArrow then
+            row:SetPoint("TOPLEFT", previousArrow, "BOTTOMLEFT", 0, -8)
+        else
+            row:SetPoint("TOPLEFT", arrowsNote, "BOTTOMLEFT", 0, -8)
+        end
+        row:SetPoint("RIGHT", 0, 0)
+        previousArrow = row
+    end
+
     local status = CreateFrame("Frame", nil, content)
     status:SetAllPoints(content)
     status:Hide()
@@ -1439,9 +1493,144 @@ local function Build()
         previous = row
     end
 
+    local commands = CreateFrame("Frame", nil, content)
+    commands:SetAllPoints(content)
+    commands:Hide()
+    pages.commands = commands
+    local commandsTitle = commands:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    commandsTitle:SetPoint("TOPLEFT", 0, 0)
+    commandsTitle:SetText("Commands")
+    commandsTitle:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
+    local commandsNote = commands:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    commandsNote:SetPoint("TOPLEFT", commandsTitle, "BOTTOMLEFT", 0, -6)
+    commandsNote:SetPoint("RIGHT", -4, 0)
+    commandsNote:SetJustifyH("LEFT")
+    commandsNote:SetText("Click a line to hear it. The read key speaks it too.")
+    commandsNote:SetTextColor(TEXT[1], TEXT[2], TEXT[3])
+    local commandScroll = CreateFrame("ScrollFrame", nil, commands)
+    commandScroll:SetPoint("TOPLEFT", commandsNote, "BOTTOMLEFT", 0, -8)
+    commandScroll:SetPoint("BOTTOMRIGHT", 0, 0)
+    local commandList = CreateFrame("Frame", nil, commandScroll)
+    commandScroll:SetScrollChild(commandList)
+    local commandLines = {
+        { heading = "Slash commands" },
+        { label = "/ah", tip = "Opens this window. /ahelp does the same. /ah commands opens this page." },
+        { label = "/ahs", tip = "Speaks a test line." },
+        { label = "/ahtt", tip = "Reads the TomTom arrow. /aharrow and /ahtomtom do the same." },
+        { label = "/ahz", tip = "Reads the Zygor arrow. /ahzygor does the same." },
+        { label = "/ahstop", tip = "Stops the speech that is playing." },
+        { label = "/ahrepeat", tip = "Repeats the last spoken line. /ahr does the same." },
+        { label = "/ahclear", tip = "Clears the speech that is waiting." },
+        { heading = "Key bindings" },
+        { label = "Read hovered tooltip", bind = "ACCESSIBILITYHELPER_READTOOLTIP", tip = "Speaks the tooltip under the mouse. Press again to stop." },
+        { label = "Read text under mouse", bind = "ACCESSIBILITYHELPER_READUNDERMOUSE", tip = "The key exists. Text under the mouse is not read on this version yet." },
+        { label = "Read TomTom arrow", bind = "CLICK AccessibilityHelperTomTomReadBindProxy:LeftButton", tip = "Reads the TomTom arrow that is showing." },
+        { label = "Read Zygor arrow", bind = "CLICK AccessibilityHelperZygorReadBindProxy:LeftButton", tip = "Reads the Zygor arrow that is showing." },
+        { label = "Open this window", bind = "ACCESSIBILITYHELPER_OPENSETTINGS", tip = "Opens or closes this window." },
+        { label = "Read target distance", bind = "ACCESSIBILITYHELPER_TARGETDISTANCE", tip = "The key exists. Target distance is not read on this version yet." },
+        { label = "Read target", bind = "ACCESSIBILITYHELPER_READTARGET", tip = "The key exists. The target reader is not on this version yet." },
+        { label = "Stop speaking", bind = "ACCESSIBILITYHELPER_STOPSPEAK", tip = "Stops the speech that is playing." },
+        { label = "Repeat last line", bind = "ACCESSIBILITYHELPER_REPEATLAST", tip = "Repeats the last spoken line." },
+        { label = "Read quest objectives", bind = "ACCESSIBILITYHELPER_READQUESTOBJECTIVES", tip = "The key exists. This key is not reading objectives on this version yet. Quest details on the Chat page reads an open quest." },
+        { label = "Read quest window", bind = "ACCESSIBILITYHELPER_READQUESTWINDOW", tip = "The key exists. This key is not reading the quest window on this version yet. Quest details on the Chat page reads an open quest." },
+    }
+    commandList:SetHeight(#commandLines * 40)
+    local commandKeys = {}
+    local function BoundKey(bind)
+        if not GetBindingKey then
+            return "Not bound"
+        end
+        local key = GetBindingKey(bind)
+        if type(key) ~= "string" or key == "" then
+            return "Not bound"
+        end
+        return key
+    end
+    local function LayoutCommands()
+        local width = commandScroll:GetWidth()
+        if not width or width < 40 then
+            width = 460
+        end
+        commandList:SetWidth(width)
+        local maxScroll = commandList:GetHeight() - commandScroll:GetHeight()
+        if maxScroll < 0 then
+            maxScroll = 0
+        end
+        if commandScroll:GetVerticalScroll() > maxScroll then
+            commandScroll:SetVerticalScroll(maxScroll)
+        end
+    end
+    commandScroll:EnableMouseWheel(true)
+    commandScroll:SetScript("OnMouseWheel", function(self, delta)
+        LayoutCommands()
+        local maxScroll = commandList:GetHeight() - self:GetHeight()
+        if maxScroll < 0 then
+            maxScroll = 0
+        end
+        local nextScroll = self:GetVerticalScroll() - (delta * 36)
+        if nextScroll < 0 then
+            nextScroll = 0
+        end
+        if nextScroll > maxScroll then
+            nextScroll = maxScroll
+        end
+        self:SetVerticalScroll(nextScroll)
+    end)
+    commandScroll:SetScript("OnSizeChanged", LayoutCommands)
+    local previousCommand = nil
+    local lineIndex
+    for lineIndex = 1, #commandLines do
+        local info = commandLines[lineIndex]
+        local row = CreateFrame("Frame", nil, commandList, Template())
+        row:SetHeight(36)
+        if info.heading then
+            local heading = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            heading:SetPoint("LEFT", 4, 0)
+            heading:SetText(info.heading)
+            heading:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
+        else
+            Paint(row, { 0.12, 0.10, 0.08, 1 }, EDGE)
+            local name = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            name:SetPoint("LEFT", 10, 0)
+            name:SetText(info.label)
+            name:SetTextColor(TEXT[1], TEXT[2], TEXT[3])
+            if info.bind then
+                local keyName = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+                keyName:SetPoint("RIGHT", -10, 0)
+                keyName:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
+                commandKeys[#commandKeys + 1] = { text = keyName, bind = info.bind, tip = info.tip, label = info.label }
+                AttachTip(row, info.label, info.tip)
+            else
+                AttachTip(row, info.label, info.tip)
+            end
+            row:SetScript("OnMouseDown", function()
+                local line = info.tip
+                if info.bind then
+                    line = info.label .. ". " .. BoundKey(info.bind) .. ". " .. info.tip
+                end
+                Speak(line)
+            end)
+        end
+        if previousCommand then
+            row:SetPoint("TOPLEFT", previousCommand, "BOTTOMLEFT", 0, -4)
+        else
+            row:SetPoint("TOPLEFT", 0, 0)
+        end
+        row:SetPoint("RIGHT", 0, 0)
+        previousCommand = row
+    end
+    function commands.Refresh()
+        local i
+        for i = 1, #commandKeys do
+            local entry = commandKeys[i]
+            entry.text:SetText(BoundKey(entry.bind))
+        end
+        LayoutCommands()
+    end
+
     local footer = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     footer:SetPoint("BOTTOMLEFT", 12, 8)
-    footer:SetText("v1.3.3")
+    footer:SetText("v1.4.0")
     footer:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
 
     frame:SetScript("OnKeyDown", function(self, key)
@@ -1491,6 +1680,16 @@ end
 function Window.Open()
     local f = Build()
     if not f:IsShown() then
+        f:Show()
+    end
+end
+
+function Window.ShowCommands()
+    local f = Build()
+    currentPage = "commands"
+    if f:IsShown() then
+        ShowPage("commands")
+    else
         f:Show()
     end
 end

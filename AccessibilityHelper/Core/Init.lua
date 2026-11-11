@@ -29,8 +29,8 @@ SLASH_AHSETTINGS2 = "/ahelp"
 SlashCmdList["AHSETTINGS"] = function(msg)
     msg = type(msg) == "string" and msg:lower():gsub("^%s+", ""):gsub("%s+$", "") or ""
     if msg == "cmds" or msg == "commands" or msg == "help" or msg == "?" then
-        if AH.Help and AH.Help.PrintCommands then
-            AH.Help.PrintCommands()
+        if AH.Window and AH.Window.ShowCommands then
+            AH.Window.ShowCommands()
         end
         return
     end
@@ -41,22 +41,72 @@ SlashCmdList["AHSETTINGS"] = function(msg)
     end
 end
 
--- Dedicated command list (does not conflict with /ahelp settings).
-SLASH_AHCMDS1 = "/ahcmds"
-SlashCmdList["AHCMDS"] = function()
-    if AH.Help and AH.Help.PrintCommands then
-        AH.Help.PrintCommands()
+local function SayLow(msg)
+    if AH.Speech and AH.Speech.Say then
+        AH.Speech.Say(msg, AH.Speech.PRIORITY_LOW, { noEcho = true })
     end
 end
 
--- Toggle TomTom / Zygor arrow facing clock announcements.
-SLASH_AHARROWFACING1 = "/aha"
-SlashCmdList["AHARROWFACING"] = function()
-    if AH.Facing and AH.Facing.ToggleArrowAnnounce then
-        AH.Facing.ToggleArrowAnnounce()
-    else
-        print("|cffff6600[Accessibility Helper]|r Facing module missing.")
+function AccessibilityHelper_OpenSettingsBinding()
+    if AH.Settings and AH.Settings.Toggle then
+        AH.Settings.Toggle()
     end
+end
+
+function AccessibilityHelper_StopSpeakBinding()
+    if AH.Speech and AH.Speech.Stop then
+        AH.Speech.Stop()
+        return
+    end
+    if AH.Speech and AH.Speech.ClearQueue then
+        AH.Speech.ClearQueue()
+    end
+end
+
+function AccessibilityHelper_RepeatLastBinding()
+    if AH.Speech and AH.Speech.RepeatLast then
+        AH.Speech.RepeatLast()
+    end
+end
+
+function AccessibilityHelper_ReadUnderMouseBinding()
+    SayLow("Text under the mouse is not read on this version.")
+end
+
+function AccessibilityHelper_TargetDistanceBinding()
+    SayLow("Target distance is not read on this version.")
+end
+
+function AccessibilityHelper_ReadTargetBinding()
+    SayLow("The target reader is not on this version.")
+end
+
+function AccessibilityHelper_ReadQuestObjectivesBinding()
+    SayLow("This key is not reading objectives on this version.")
+end
+
+function AccessibilityHelper_ReadQuestWindowBinding()
+    SayLow("This key is not reading the quest window on this version.")
+end
+
+SLASH_AHSTOP1 = "/ahstop"
+SlashCmdList["AHSTOP"] = function()
+    AccessibilityHelper_StopSpeakBinding()
+end
+
+SLASH_AHREPEAT1 = "/ahrepeat"
+SLASH_AHREPEAT2 = "/ahr"
+SlashCmdList["AHREPEAT"] = function()
+    AccessibilityHelper_RepeatLastBinding()
+end
+
+SLASH_AHCLEAR1 = "/ahclear"
+SlashCmdList["AHCLEAR"] = function()
+    if AH.Speech and AH.Speech.ClearAnnouncementCache then
+        AH.Speech.ClearAnnouncementCache(false)
+        return
+    end
+    AccessibilityHelper_StopSpeakBinding()
 end
 
 do
@@ -70,6 +120,6 @@ do
     elseif GetBuildInfo then
         iface = tostring(select(4, GetBuildInfo()) or "?")
     end
-    print("|cff00ff00[Accessibility Helper]|r v3.6.7 loaded. TTS: " .. tostring(mode) .. " · Interface: " .. iface)
-    print("|cff00ff00[Accessibility Helper]|r |cff00ff00/ah|r settings · |cff00ff00/ahcmds|r · |cff00ff00/ahclear|r · |cff00ff00/ahstop|r · |cff00ff00/ahs|r")
+    print("|cff00ff00[Accessibility Helper - Retail]|r v3.6.9 loaded. TTS: " .. tostring(mode) .. " · Interface: " .. iface)
+    print("|cff00ff00[Accessibility Helper - Retail]|r |cff00ff00/ah|r opens the new window.")
 end

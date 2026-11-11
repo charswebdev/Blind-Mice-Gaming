@@ -722,12 +722,8 @@ local function OpenMerchantAction()
     local npc
     if UnitName then
         local ok, n = pcall(UnitName, "npc")
-        if ok then
-            -- type(secret) == "string", so n ~= "" throws. UsableString checks issecretvalue first.
-            n = UsableString(n)
-            if n ~= "" then
-                npc = StripText(n)
-            end
+        if ok and type(n) == "string" and n ~= "" then
+            npc = StripText(n)
         end
     end
     if not npc then

@@ -1,6 +1,6 @@
 --[[
   Accessibility Helper — short status lines
-  Speaks skill, level, follow, and place.
+  Speaks skill, level, follow, place, and the other status lines.
   The words come from the game state. They are not printed.
   Add the next status line in this file.
   Lua 5.1 only. No goto, no continue, no //.
@@ -338,20 +338,484 @@ local function PlaceChanged(key, now, onLine, offLine, toggle)
     end
 end
 
-local function PollPlace()
+local lastMoney = nil
+local bagsFull = nil
+local durabilityLow = nil
+local lastPetName = nil
+local lastPetHealAt = nil
+local lastPetHealSpell = nil
+local stuck = { x = nil, y = nil, since = nil, said = false }
+local fall = { since = nil, said = false }
+
+local function MoneyWords(copper)
+    copper = Num(copper)
+    if not copper then
+        return nil
+    end
+    if copper < 0 then
+        copper = -copper
+    end
+    local gold = math.floor(copper / 10000)
+    local silver = math.floor((copper - (gold * 10000)) / 100)
+    local cu = copper - (gold * 10000) - (silver * 100)
+    local parts = {}
+    if gold > 0 then
+        parts[#parts + 1] = tostring(gold) .. " gold"
+    end
+    if silver > 0 then
+        parts[#parts + 1] = tostring(silver) .. " silver"
+    end
+    if cu > 0 or #parts == 0 then
+        parts[#parts + 1] = tostring(cu) .. " copper"
+    end
+    return table.concat(parts, ", ")
+end
+
+local function DeathState()
+    if CallFlag(UnitIsGhost, "player") then
+        return "ghost"
+    end
+    if CallFlag(UnitIsDead, "player") then
+        return "dead"
+    end
+    if CallFlag(UnitIsDeadOrGhost, "player") then
+        return "dead"
+    end
+    return "alive"
+end
+
+local function FormName()
+    if not GetShapeshiftForm or not GetShapeshiftFormInfo then
+        return false
+    end
+    local ok, form = pcall(GetShapeshiftForm)
+    form = ok and Num(form) or nil
+    if not form or form <= 0 then
+        return false
+    end
+    local infoOk, a, b, c, d = pcall(GetShapeshiftFormInfo, form)
+    if not infoOk then
+        return false
+    end
+    local name = Text(b)
+    local spellID = Num(d)
+    if not name then
+        spellID = Num(c)
+    end
+    if name then
+        return name
+    end
+    if spellID and spellID > 0 then
+        if C_Spell and C_Spell.GetSpellName then
+            local spellOk, spellName = pcall(C_Spell.GetSpellName, spellID)
+            spellName = spellOk and Text(spellName) or nil
+            if spellName then
+                return spellName
+            end
+        end
+        if GetSpellInfo then
+            local spellOk, spellName = pcall(GetSpellInfo, spellID)
+            spellName = spellOk and Text(spellName) or nil
+            if spellName then
+                return spellName
+            end
+        end
+    end
+    return "Form " .. tostring(form)
+end
+
+local function InGroupNow()
+    local grouped = CallFlag(IsInGroup)
+    if grouped ~= nil and IsInGroup then
+        return grouped
+    end
+    local count = nil
+    if GetNumGroupMembers then
+        local ok, value = pcall(GetNumGroupMembers)
+        count = ok and Num(value) or nil
+    end
+    if count == nil and GetNumRaidMembers and GetNumPartyMembers then
+        local raidOk, raid = pcall(GetNumRaidMembers)
+        local partyOk, party = pcall(GetNumPartyMembers)
+        local raidCount = raidOk and Num(raid) or 0
+        local partyCount = partyOk and Num(party) or 0
+        count = raidCount + partyCount
+    end
+    if count == nil then
+        return nil
+    end
+    return count > 0
+end
+
+local function Now()
+    if not GetTime then
+        return 0
+    end
+    local ok, t = pcall(GetTime)
+    return ok and Num(t) or 0
+end
+
+local function MirrorTimer(kind)
+    local found = { present = false, low = false }
+    if not GetMirrorTimerInfo then
+        return found
+    end
+    local i
+    for i = 1, 3 do
+        local ok, timerName, value, maximum, scale = pcall(GetMirrorTimerInfo, i)
+        if ok then
+            local name = Text(timerName)
+            if name == kind then
+                found.present = true
+                value = Num(value)
+                maximum = Num(maximum)
+                scale = Num(scale)
+                if value and maximum and maximum > 0 and scale and scale < 0 and (value / maximum) < 0.35 then
+                    found.low = true
+                end
+                return found
+            end
+        end
+    end
+    return found
+end
+
+local function FatigueTimer()
+    local exhaustion = MirrorTimer("EXHAUSTION")
+    if exhaustion.present then
+        return exhaustion
+    end
+    return MirrorTimer("FATIGUE")
+end
+
+local function PetLabel()
+    if not UnitName then
+        return lastPetName
+    end
+    local ok, name = pcall(UnitName, "pet")
+    name = ok and Text(name) or nil
+    if name then
+        lastPetName = name
+    end
+    return name or lastPetName
+end
+
+local function NoteBar(key, present, low, onKey, appearLine, lowLine, clearLine)
+    local prevPresent = place[key .. "Present"]
+    local prevLow = place[key .. "Low"]
+    if prevPresent == nil then
+        place[key .. "Present"] = present
+        place[key .. "Low"] = low
+        return
+    end
+    place[key .. "Present"] = present
+    place[key .. "Low"] = low
+    if not live or not On(onKey) then
+        return
+    end
+    if appearLine and present and not prevPresent then
+        Say(appearLine)
+    end
+    if lowLine and present and low and not prevLow then
+        Say(lowLine)
+    end
+    if clearLine and prevPresent and not present then
+        Say(clearLine)
+    end
+end
+
+local function PlayerMapXY()
+    if not C_Map or not C_Map.GetBestMapForUnit or not C_Map.GetPlayerMapPosition then
+        return nil, nil
+    end
+    local mapOk, mapID = pcall(C_Map.GetBestMapForUnit, "player")
+    mapID = mapOk and Num(mapID) or nil
+    if not mapID then
+        return nil, nil
+    end
+    local posOk, pos = pcall(C_Map.GetPlayerMapPosition, mapID, "player")
+    if not posOk or not pos or not pos.GetXY then
+        return nil, nil
+    end
+    local xyOk, x, y = pcall(pos.GetXY, pos)
+    if not xyOk then
+        return nil, nil
+    end
+    return Num(x), Num(y)
+end
+
+local function CheckStuck()
+    if not On("stateStuck") then
+        stuck.since = nil
+        stuck.said = false
+        return
+    end
+    if CallFlag(_G.IsFlying) or CallFlag(_G.IsFalling) or CallFlag(_G.IsSwimming) or CallFlag(UnitOnTaxi, "player") then
+        stuck.since = nil
+        stuck.said = false
+        return
+    end
+    if DeathState() ~= "alive" then
+        stuck.since = nil
+        stuck.said = false
+        return
+    end
+    local moving = false
+    if GetUnitSpeed then
+        local ok, speed = pcall(GetUnitSpeed, "player")
+        speed = ok and Num(speed) or nil
+        moving = speed ~= nil and speed > 0
+    end
+    if not moving then
+        stuck.since = nil
+        stuck.said = false
+        return
+    end
+    local x, y = PlayerMapXY()
+    if not x or not y then
+        return
+    end
+    local now = 0
+    if GetTime then
+        local ok, t = pcall(GetTime)
+        now = ok and Num(t) or 0
+    end
+    if stuck.x and stuck.y then
+        local dx = x - stuck.x
+        local dy = y - stuck.y
+        if (dx * dx) + (dy * dy) < 0.00000004 then
+            if not stuck.since then
+                stuck.since = now
+            elseif not stuck.said and (now - stuck.since) >= 3 then
+                stuck.said = true
+                if live then
+                    Say("Stuck.")
+                end
+            end
+        else
+            stuck.since = now
+            stuck.said = false
+        end
+    else
+        stuck.since = now
+        stuck.said = false
+    end
+    stuck.x = x
+    stuck.y = y
+end
+
+local function PollYou()
     local flying = CallFlag(_G.IsFlying)
     local swimming = CallFlag(_G.IsSwimming)
     local indoors = CallFlag(_G.IsIndoors)
     local mounted = CallFlag(_G.IsMounted)
-    local afk = nil
-    if UnitIsAFK then
-        afk = CallFlag(UnitIsAFK, "player")
-    end
+    local afk = CallFlag(UnitIsAFK, "player")
     PlaceChanged("fly", flying, "Flying.", "Stopped flying.", "stateFly")
     PlaceChanged("swim", swimming, "Swimming.", "Stopped swimming.", "stateSwim")
     PlaceChanged("indoors", indoors, "Indoor.", "Outdoors.", "stateIndoors")
     PlaceChanged("mount", mounted, "Mounted.", "Off mount.", "stateMount")
     PlaceChanged("afk", afk, "AFK on.", "AFK off.", "stateAFK")
+    PlaceChanged("rest", CallFlag(IsResting), "Entered rested area.", "Left rested area.", "stateResting")
+    PlaceChanged("taxi", CallFlag(UnitOnTaxi, "player"), "On Taxi.", "Taxi ended.", "stateTaxi")
+    PlaceChanged("pvp", CallFlag(UnitIsPVP, "player"), "PVP on.", "PVP off.", "statePvP")
+    PlaceChanged("stealth", CallFlag(IsStealthed), "Your in stealth.", "You are no longer stealthed.", "stateStealth")
+    PlaceChanged("group", InGroupNow(), "Joined group.", "Left group.", "stateGroup")
+
+    local breath = MirrorTimer("BREATH")
+    NoteBar("breath", breath.present, breath.low, "stateBreath", nil, "Your breathing is low.", "Above water.")
+    local tired = FatigueTimer()
+    NoteBar("fatigue", tired.present, tired.low, "stateFatigue", "You are getting Fatigued.", "Your fatigue is low.", "Fatigue is cleared.")
+
+    local falling = CallFlag(_G.IsFalling)
+    if falling == true then
+        if not fall.since then
+            fall.since = Now()
+            fall.said = false
+        elseif not fall.said and live and On("stateFalling") and (Now() - fall.since) >= 1 then
+            fall.said = true
+            Say("Your falling.")
+        end
+    elseif falling == false then
+        fall.since = nil
+        fall.said = false
+    end
+
+    local death = DeathState()
+    local prevDeath = place.death
+    place.death = death
+    if live and prevDeath ~= nil and prevDeath ~= death then
+        if death == "dead" and On("stateDead") then
+            Say("Your Dead.")
+        elseif death == "ghost" and On("stateGhost") then
+            Say("Ghost.")
+        elseif death == "alive" and On("stateResurrected") then
+            Say("Your Resurrected.")
+        end
+    end
+
+    local form = FormName()
+    local prevForm = place.form
+    place.form = form
+    if live and prevForm ~= nil and prevForm ~= form and On("stateShapeshift") then
+        if form and form ~= false then
+            Say("You have shifted into " .. form .. ".")
+        else
+            Say("You shifted back.")
+        end
+    end
+
+    local petName = PetLabel()
+    local petExists = CallFlag(UnitExists, "pet")
+    local petState = nil
+    if petExists == nil then
+        petState = nil
+    elseif not petExists then
+        petState = "none"
+    elseif CallFlag(UnitIsDead, "pet") then
+        petState = "dead"
+    else
+        petState = "alive"
+    end
+    if petState ~= nil then
+        local prevPet = place.pet
+        place.pet = petState
+        local spoken = petName or "Pet"
+        if live and prevPet ~= nil and prevPet ~= petState and On("statePet") then
+            if prevPet == "none" and petState == "alive" then
+                Say(spoken .. " summoned.")
+            elseif petState == "none" then
+                Say(spoken .. " is dismissed.")
+            elseif prevPet == "dead" and petState == "alive" then
+                Say(spoken .. " Revived.")
+            elseif prevPet == "alive" and petState == "dead" then
+                Say(spoken .. " dead.")
+            end
+        end
+        if petState == "none" then
+            place.petFeed = nil
+            place.petLow = nil
+        elseif petState == "alive" then
+            local happy = nil
+            if GetPetHappiness then
+                local happyOk, happyValue = pcall(GetPetHappiness)
+                happy = happyOk and Num(happyValue) or nil
+            end
+            if happy ~= nil and happy > 0 then
+                local needsFeed = happy < 3
+                if place.petFeed == nil or not live then
+                    place.petFeed = needsFeed
+                elseif needsFeed and not place.petFeed then
+                    place.petFeed = true
+                    if On("statePet") then
+                        Say("Feed " .. spoken .. ".")
+                    end
+                elseif not needsFeed then
+                    place.petFeed = false
+                end
+            end
+            local health = nil
+            local healthMax = nil
+            if UnitHealth and UnitHealthMax then
+                local healthOk, healthValue = pcall(UnitHealth, "pet")
+                local maxOk, maxValue = pcall(UnitHealthMax, "pet")
+                health = healthOk and Num(healthValue) or nil
+                healthMax = maxOk and Num(maxValue) or nil
+            end
+            if health ~= nil and healthMax ~= nil and healthMax > 0 then
+                local healthLow = (health / healthMax) < 0.35
+                if place.petLow == nil or not live then
+                    place.petLow = healthLow
+                elseif healthLow and not place.petLow then
+                    place.petLow = true
+                    if On("statePet") then
+                        Say(spoken .. " health is under 35%.")
+                    end
+                elseif not healthLow then
+                    place.petLow = false
+                end
+            end
+        end
+    end
+
+    local freeSlots = nil
+    local bag
+    for bag = 0, 4 do
+        local count = nil
+        if C_Container and C_Container.GetContainerNumFreeSlots then
+            local ok, value = pcall(C_Container.GetContainerNumFreeSlots, bag)
+            count = ok and Num(value) or nil
+        elseif GetContainerNumFreeSlots then
+            local ok, value = pcall(GetContainerNumFreeSlots, bag)
+            count = ok and Num(value) or nil
+        end
+        if count then
+            freeSlots = (freeSlots or 0) + count
+        end
+    end
+    if freeSlots ~= nil then
+        local full = freeSlots == 0
+        local prevFull = bagsFull
+        bagsFull = full
+        if live and prevFull == false and full and On("stateBagFull") then
+            Say("Your bags are full.")
+        end
+    end
+
+    if GetInventoryItemDurability then
+        local current, maximum = 0, 0
+        local slot
+        for slot = 1, 18 do
+            local ok, durability, cap = pcall(GetInventoryItemDurability, slot)
+            durability = ok and Num(durability) or nil
+            cap = ok and Num(cap) or nil
+            if durability and cap and cap > 0 then
+                current = current + durability
+                maximum = maximum + cap
+            end
+        end
+        if maximum > 0 then
+            local low = (current / maximum) < 0.25
+            local full = current >= maximum
+            if durabilityLow == nil or not live then
+                durabilityLow = low
+            elseif low and not durabilityLow then
+                durabilityLow = true
+                if On("stateDurability") then
+                    Say("Durability is low.")
+                end
+            elseif full and durabilityLow then
+                durabilityLow = false
+                if On("stateDurability") then
+                    Say("Durability is Restored.")
+                end
+            end
+        end
+    end
+
+    if GetMoney then
+        local ok, money = pcall(GetMoney)
+        money = ok and Num(money) or nil
+        if money then
+            local prevMoney = lastMoney
+            lastMoney = money
+            if live and prevMoney ~= nil and prevMoney ~= money and On("stateMoney") then
+                local words = MoneyWords(money - prevMoney)
+                if words then
+                    if money > prevMoney then
+                        Say("You gained " .. words .. ".")
+                    else
+                        Say("You spent " .. words .. ".")
+                    end
+                end
+            end
+        end
+    end
+
+    CheckStuck()
+end
+
+local function PollPlace()
+    PollYou()
 end
 
 local function LooksLikeUnit(token)
@@ -497,9 +961,36 @@ frame:RegisterEvent("PLAYER_FLAGS_CHANGED")
 frame:RegisterEvent("CHAT_MSG_LOOT")
 frame:RegisterEvent("CHAT_MSG_TRADESKILLS")
 frame:RegisterEvent("PLAYER_LEVEL_UP")
+frame:RegisterEvent("PLAYER_DEAD")
+frame:RegisterEvent("PLAYER_ALIVE")
+frame:RegisterEvent("PLAYER_UNGHOST")
+frame:RegisterEvent("PLAYER_UPDATE_RESTING")
+frame:RegisterEvent("PLAYER_MONEY")
+frame:RegisterEvent("BAG_UPDATE")
+frame:RegisterEvent("UPDATE_INVENTORY_DURABILITY")
+frame:RegisterEvent("UPDATE_SHAPESHIFT_FORM")
+frame:RegisterEvent("UPDATE_STEALTH")
+frame:RegisterEvent("GROUP_ROSTER_UPDATE")
+frame:RegisterEvent("UNIT_PET")
+frame:RegisterEvent("PET_BAR_UPDATE")
+frame:RegisterEvent("MIRROR_TIMER_START")
+frame:RegisterEvent("MIRROR_TIMER_STOP")
+frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 if frame.RegisterEvent then
     pcall(frame.RegisterEvent, frame, "TRADE_SKILL_ITEM_CRAFTED_RESULT")
 end
+local bodyPoll = 0
+frame:SetScript("OnUpdate", function(_, elapsed)
+    if type(elapsed) ~= "number" then
+        return
+    end
+    bodyPoll = bodyPoll + elapsed
+    if bodyPoll < 0.4 then
+        return
+    end
+    bodyPoll = 0
+    PollPlace()
+end)
 
 frame:SetScript("OnEvent", function(_, event, ...)
     if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
@@ -522,7 +1013,13 @@ frame:SetScript("OnEvent", function(_, event, ...)
         EndFollow()
         return
     end
-    if event == "PLAYER_MOUNT_DISPLAY_CHANGED" or event == "PLAYER_FLAGS_CHANGED" then
+    if event == "PLAYER_MOUNT_DISPLAY_CHANGED" or event == "PLAYER_FLAGS_CHANGED"
+        or event == "PLAYER_DEAD" or event == "PLAYER_ALIVE" or event == "PLAYER_UNGHOST"
+        or event == "PLAYER_UPDATE_RESTING" or event == "PLAYER_MONEY" or event == "BAG_UPDATE"
+        or event == "UPDATE_INVENTORY_DURABILITY" or event == "UPDATE_SHAPESHIFT_FORM"
+        or event == "UPDATE_STEALTH" or event == "GROUP_ROSTER_UPDATE" or event == "UNIT_PET"
+        or event == "PET_BAR_UPDATE" or event == "MIRROR_TIMER_START" or event == "MIRROR_TIMER_STOP"
+    then
         PollPlace()
         return
     end
@@ -532,6 +1029,53 @@ frame:SetScript("OnEvent", function(_, event, ...)
     end
     if event == "PLAYER_LEVEL_UP" then
         HandleLevelUp(...)
+        return
+    end
+    if event == "COMBAT_LOG_EVENT_UNFILTERED" then
+        if not live or not On("statePet") or not CombatLogGetCurrentEventInfo then
+            return
+        end
+        local logOk, _, subevent, _, sourceGUID, _, _, _, destGUID, destName, _, _, _, spellName = pcall(CombatLogGetCurrentEventInfo)
+        if not logOk then
+            return
+        end
+        subevent = Text(subevent)
+        if subevent ~= "SPELL_HEAL" and subevent ~= "SPELL_PERIODIC_HEAL" then
+            return
+        end
+        spellName = Text(spellName)
+        if spellName and string.find(string.lower(spellName), "revive", 1, true) then
+            return
+        end
+        local playerGUID = nil
+        local petGUID = nil
+        if UnitGUID then
+            local playerOk, playerValue = pcall(UnitGUID, "player")
+            local petOk, petValue = pcall(UnitGUID, "pet")
+            playerGUID = playerOk and Text(playerValue) or nil
+            petGUID = petOk and Text(petValue) or nil
+        end
+        sourceGUID = Text(sourceGUID)
+        destGUID = Text(destGUID)
+        destName = Text(destName)
+        if not sourceGUID or not playerGUID or sourceGUID ~= playerGUID then
+            return
+        end
+        local petName = PetLabel()
+        local destIsPet = destGUID and petGUID and destGUID == petGUID
+        if not destIsPet and petName and destName and destName == petName then
+            destIsPet = true
+        end
+        if not destIsPet then
+            return
+        end
+        local now = Now()
+        if lastPetHealSpell == (spellName or "") and lastPetHealAt and (now - lastPetHealAt) < 12 then
+            return
+        end
+        lastPetHealSpell = spellName or ""
+        lastPetHealAt = now
+        Say((petName or "Pet") .. " was healed.")
         return
     end
     if event == "TRADE_SKILL_ITEM_CRAFTED_RESULT" then

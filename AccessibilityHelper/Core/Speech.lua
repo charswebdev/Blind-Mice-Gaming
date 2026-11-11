@@ -23,6 +23,7 @@ Speech.PRIORITY_LOW = 5      -- help, tests, load lines
 local queue = {}
 local held = {} -- lines held during flush lock (CRITICAL / STATUS / NAV)
 local speaking = false
+local activePriority = nil
 local speakGen = 0
 local lastSpoken = nil
 local activeUtteranceID = nil
@@ -142,6 +143,7 @@ local function FinishUtterance(myGen, utteranceID)
         return
     end
     speaking = false
+    activePriority = nil
     activeUtteranceID = nil
     PumpQueue()
 end
@@ -211,6 +213,7 @@ PumpQueue = function()
     end
     local item = table.remove(queue, bestIdx)
     speaking = true
+    activePriority = item.p
     activeUtteranceID = nil
     local myGen = speakGen
     activeSpeakGen = myGen
@@ -223,6 +226,7 @@ PumpQueue = function()
     end
     if not ok then
         speaking = false
+        activePriority = nil
         activeUtteranceID = nil
         if C_Timer and C_Timer.After then
             C_Timer.After(0.05, function()
@@ -265,6 +269,7 @@ local function InterruptForCritical()
     speakGen = speakGen + 1
     activeSpeakGen = speakGen
     speaking = false
+    activePriority = nil
     activeUtteranceID = nil
     StopEngineSoft()
 end
@@ -275,6 +280,7 @@ function Speech.ClearQueue()
     speakGen = speakGen + 1
     activeSpeakGen = speakGen
     speaking = false
+    activePriority = nil
     activeUtteranceID = nil
     FlushBlizzardTts()
     BeginFlushLock()
@@ -329,8 +335,27 @@ function Speech.ClearNavQueue()
     speakGen = speakGen + 1
     activeSpeakGen = speakGen
     speaking = false
+    activePriority = nil
     activeUtteranceID = nil
     StopEngineSoft()
+end
+
+--- True while a tooltip, waypoint, or other navigation line is still speaking or queued.
+function Speech.IsNavBusy()
+    if speaking and activePriority == Speech.PRIORITY_NAV then
+        return true
+    end
+    for i = 1, #queue do
+        if queue[i].p == Speech.PRIORITY_NAV then
+            return true
+        end
+    end
+    for i = 1, #held do
+        if held[i].p == Speech.PRIORITY_NAV then
+            return true
+        end
+    end
+    return false
 end
 
 --- Drop queued NAV lines without interrupting a higher-priority utterance in progress.
@@ -370,7 +395,7 @@ end
 --- Enqueue plain text (will be stripped / chunked).
 -- @param text string
 -- @param priority number|nil
--- @param opts table|nil  { forceEcho = bool, noChunk = bool }
+-- @param opts table|nil  { forceEcho = bool, noEcho = bool, noChunk = bool }
 function Speech.Say(text, priority, opts)
     opts = opts or {}
     text = StripMarkup(text)
@@ -440,6 +465,7 @@ function Speech.PreviewSample(text, rate, voiceID)
     speakGen = speakGen + 1
     activeSpeakGen = speakGen
     speaking = false
+    activePriority = nil
     activeUtteranceID = nil
     wipe(queue)
     wipe(held)
@@ -459,6 +485,7 @@ function Speech.PreviewSample(text, rate, voiceID)
     -- Instant preview: interrupt current engine speech (overlap true on Midnight).
     if AH.Compat and AH.Compat.SpeakText then
         speaking = true
+        activePriority = Speech.PRIORITY_LOW
         local myGen = speakGen
         activeSpeakGen = myGen
         local ok, utteranceID = AH.Compat.SpeakText(text, rate, volume, true, voiceID)
@@ -471,6 +498,7 @@ function Speech.PreviewSample(text, rate, voiceID)
             end)
         else
             speaking = false
+            activePriority = nil
         end
     end
 end

@@ -19,18 +19,22 @@ local defaults = {
     minimapButtonAngle = 220,
 
     tooltipsEnabled = true,
-    tooltipCompare = true,
-    tooltipTitanEnabled = true,
+    tooltipCompare = false,
+    tooltipTitanEnabled = false,
 
     -- Visible UI labels under the cursor (not tooltips; those stay on /ahtip).
     -- underMouseMode: "keybind" | "hover" | "off"
-    underMouseMode = "keybind",
-    underMouseEnabled = true,
+    underMouseMode = "off",
+    underMouseEnabled = false,
     underMouseHover = false,
-    cursorAnnounceEnabled = true,
+    cursorAnnounceEnabled = false,
 
     -- Chat channel TTS (all default off; master gate also off)
     chatReadEnabled = false,
+    chatSpeakMine = false,
+    chatPartChannel = true,
+    chatPartSpeaker = true,
+    chatPartMessage = true,
     -- Player
     chatSay = false,
     chatYell = false,
@@ -61,6 +65,7 @@ local defaults = {
     chatLocalDefense = false,
     chatWorldDefense = false,
     chatServices = false,
+    chatLookingForGroup = false,
     chatChannelOther = false,
     -- Creature / boss
     chatMonsterSay = false,
@@ -88,6 +93,20 @@ local defaults = {
     chatPetBattleCombat = false,
     chatPetBattleInfo = false,
     chatPing = false,
+    chatAchievementProgress = false,
+    chatQuestProgress = false,
+    chatQuestAccepted = false,
+    chatQuestDetails = false,
+    chatNpcWindow = false,
+    chatItemSold = false,
+    chatRepair = false,
+    chatItemPickup = false,
+    chatTransmog = false,
+    chatToy = false,
+    chatBattlePet = false,
+    chatCompanion = false,
+    chatMount = false,
+    chatHeirloom = false,
 
     -- Addon chat printers (Chat tab → Addons; default off)
     chatAddonZygor = false,
@@ -100,61 +119,64 @@ local defaults = {
 
     tomtomReadEnabled = true,
     zygorReadEnabled = true,
-    distanceEnabled = true,
+    distanceEnabled = false,
 
-    -- Clock facing (arrow auto: out of combat only; target: always in combat). Default on.
-    facingArrowEnabled = true,
-    facingTargetEnabled = true,
+    -- Clock facing (arrow auto: out of combat only; target: always in combat).
+    facingArrowEnabled = false,
+    facingTargetEnabled = false,
 
-    locationSubzoneEnabled = true,
+    locationSubzoneEnabled = false,
     -- Discovery TTS removed; chat System Messages covers "Discovered: …".
     locationDiscoveryEnabled = false,
-    uiErrorsEnabled = true,
+    uiErrorsEnabled = false,
     uiErrorCooldownSec = 1.0,
 
     -- Loot + currency (items and non-gold currencies, including quest rewards)
     lootItemsEnabled = true,
     lootCurrencyEnabled = true,
+    rewardGold = false,
+    rewardQuestComplete = false,
+    rewardAchievement = false,
 
-    -- Player state (Phase 7) — all default on per plan
-    stateFollow = true,
-    stateFly = true,
-    stateMount = true,
-    stateSwim = true,
-    stateIndoors = true,
-    stateCombat = true,
-    stateDead = true,
-    stateGhost = true,
-    stateResurrected = true,
-    stateStuck = true,
-    stateResting = true,
-    stateTaxi = true,
-    stateVehicle = true,
-    stateFalling = true,
-    stateFatigue = true,
-    stateBreath = true,
-    stateHealthLow = true,
-    stateAFK = true,
-    statePvP = true,
-    stateStealth = true,
-    stateShapeshift = true,
-    statePet = true,
-    stateGroup = true,
-    stateInstance = true,
-    stateQueue = true,
+    -- Player state. Off until the player turns a reader on.
+    stateFollow = false,
+    stateFly = false,
+    stateMount = false,
+    stateSwim = false,
+    stateIndoors = false,
+    stateCombat = false,
+    stateDead = false,
+    stateGhost = false,
+    stateResurrected = false,
+    stateStuck = false,
+    stateResting = false,
+    stateTaxi = false,
+    stateVehicle = false,
+    stateFalling = false,
+    stateFatigue = false,
+    stateBreath = false,
+    stateHealthLow = false,
+    stateAFK = false,
+    statePvP = false,
+    stateStealth = false,
+    stateShapeshift = false,
+    statePet = false,
+    stateGroup = false,
+    stateInstance = false,
+    stateQueue = false,
     stateLevelUp = true,
-    stateQuest = true,
+    stateQuest = false,
 
     -- Quest readers
-    questObjectivesEnabled = true,
-    questWindowEnabled = true,
+    questObjectivesEnabled = false,
+    questWindowEnabled = false,
     questObjectiveProgressEnabled = false, -- auto-speak on objective progress (noisy)
-    stateBagFull = true,
-    stateDurability = true,
-    stateMoney = true,
-    stateTarget = true,
-    stateTargetOfTarget = true,
-    stateBNFriends = true,
+    stateBagFull = false,
+    stateDurability = false,
+    stateMoney = false,
+    stateTarget = false,
+    stateTargetOfTarget = false,
+    stateBNFriends = false,
 
     -- Progress (Phase 8)
     progressSkill = true,
@@ -163,40 +185,63 @@ local defaults = {
     progressRepStanding = true,
 
     -- Combat LoC / debuffs (Phase 8)
-    combatLocEnabled = true,
-    combatAnnounceSpellNames = true,
-    combatLocStun = true,
-    combatLocRoot = true,
-    combatLocSilence = true,
-    combatLocFear = true,
-    combatLocHorror = true,
-    combatLocDisorient = true,
-    combatLocCyclone = true,
-    combatLocIncap = true,
-    combatLocCharm = true,
-    combatLocPacify = true,
-    combatLocDisarm = true,
-    combatLocBanish = true,
-    combatLocLockout = true,
-    combatLocOther = true,
-    combatAurasEnabled = true,
-    combatAuraPoison = true,
-    combatAuraDisease = true,
-    combatAuraCurse = true,
-    combatAuraMagic = true,
+    combatLocEnabled = false,
+    combatAnnounceSpellNames = false,
+    combatLocStun = false,
+    combatLocRoot = false,
+    combatLocSilence = false,
+    combatLocFear = false,
+    combatLocHorror = false,
+    combatLocDisorient = false,
+    combatLocCyclone = false,
+    combatLocIncap = false,
+    combatLocCharm = false,
+    combatLocPacify = false,
+    combatLocDisarm = false,
+    combatLocBanish = false,
+    combatLocLockout = false,
+    combatLocOther = false,
+    combatAurasEnabled = false,
+    combatAuraPoison = false,
+    combatAuraDisease = false,
+    combatAuraCurse = false,
+    combatAuraMagic = false,
 
     -- Combat buffs (in combat; all helpful including self)
-    combatBuffsEnabled = true,
-    combatBuffsApply = true,
-    combatBuffsFade = true,
-    combatBuffsStacks = true,
-    combatBuffsDuration = true,
+    combatBuffsEnabled = false,
+    combatBuffsApply = false,
+    combatBuffsFade = false,
+    combatBuffsStacks = false,
+    combatBuffsDuration = false,
 
     -- Cast / duration bars and interrupt cue
-    castsEnabled = true,
-    castsPlayerEnabled = true,
-    castsEnemyEnabled = true,
-    interruptAlertEnabled = true,
+    castsEnabled = false,
+    castsPlayerEnabled = false,
+    castsEnemyEnabled = false,
+    interruptAlertEnabled = false,
+
+    -- Combat page. Off until Read combat is turned on.
+    combatReadEnabled = false,
+    combatStarted = false,
+    combatEnemyTarget = false,
+    combatYourTarget = false,
+    combatHealthLow = false,
+    combatPowerLow = false,
+    combatSecondaryLow = false,
+    combatSecondaryFull = false,
+    combatCastAtYou = false,
+    combatInterrupt = false,
+    combatDispel = false,
+    combatStun = false,
+    combatRoot = false,
+    combatSilence = false,
+    combatPoisoned = false,
+    combatPossessed = false,
+    combatPolymorph = false,
+    combatCrowd = false,
+    combatLossOther = false,
+    combatBuffGain = false,
+    combatDebuffGain = false,
 
     -- Alert delivery: tts | sound | both
     alertLocMode = "tts",
@@ -231,8 +276,31 @@ function DB.Merge()
             sv[k] = v
         end
     end
+    if sv.chatWindowBuilt ~= true then
+        sv.chatReadEnabled = false
+        sv.chatSpeakMine = false
+        sv.chatWindowBuilt = true
+    end
+    if sv.combatWindowBuilt ~= true then
+        sv.combatReadEnabled = false
+        sv.combatWindowBuilt = true
+    end
     if type(sv.alertItems) ~= "table" then
         sv.alertItems = {}
+    end
+    if sv.statusPlaceLines ~= true then
+        sv.stateFollow = true
+        sv.stateIndoors = true
+        sv.stateSwim = true
+        sv.stateFly = true
+        sv.stateMount = true
+        sv.stateAFK = true
+        sv.statusPlaceLines = true
+    end
+    if sv.arrowReadsBuilt ~= true then
+        sv.tomtomReadEnabled = true
+        sv.zygorReadEnabled = true
+        sv.arrowReadsBuilt = true
     end
     sv.underMouseEnabled = sv.underMouseMode ~= "off"
     sv.underMouseHover = sv.underMouseMode == "hover"

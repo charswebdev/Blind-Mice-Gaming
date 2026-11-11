@@ -1,61 +1,36 @@
-# Accessibility Helper
+# Accessibility Helper - Retail
 
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **3.6.7** (toc, Init banner, settings footer fallback, `updater/catalog.json`) |
+| Version | **3.6.9** |
 | Type | In-game addon (VI / TTS) |
 | Folder | `AccessibilityHelper/` |
 | Author tools | `Tools/AccessibilityHelper/` (release checklists; not in the addon zip) |
 | Clients | Retail (`120105`, `120100`), MoP Classic, Cata, Wrath, TBC, Classic Era (`11509` / `11508`) |
 | SavedVariables | `AccessibilityHelperDB` (account) |
 | Install | BMG Updater folder `AccessibilityHelper` |
-| Slash | `/ah` settings · `/ahcmds` · `/ahclear` · `/ahstop` · `/ahs` TTS test · `/ahtip` tooltip · `/ahread` under mouse |
+| Slash | `/ah` window · `/ah commands` · `/ahstop` · `/ahrepeat` · `/ahclear` · `/ahs` TTS test · `/ahtt` TomTom · `/ahz` Zygor |
 | Optional deps | TomTom, Zygor, MountSpy, QuestCompletist, RareScanner, SilverDragon, HandyNotes, Zugzug, Titan, LibSharedMedia |
 
 ## Description
 
-Accessibility Helper is Blind Mice Gaming’s general **text-to-speech accessibility layer** for blind and visually impaired players. It reads tooltips, chat, movement and combat state, loot, quests, casts, and UI errors. It is **not** a quest tracker (AllQuest) and **not** a cooldown announcer (Cooldown Assist). Cooldown Assist uses its own TTS queue on purpose so the two do not steal each other’s speech.
-
-The settings UI is a two-pane AllQuest-style layout: a topic tree on the left, one spacious option row on the right, hover tooltips that also speak. Alerts can be **TTS, a sound, or both** per item.
+Accessibility Helper - Retail is the Forever addon window and readers, with Retail’s folder, saved variables, and interface numbers. `/ah` opens Tooltip, Speech, Status, Arrows, Rewards, Combat, Chat, and Commands. The older Retail settings window and the older Retail readers are not loaded. It is **not** a quest tracker (AllQuest) and **not** a cooldown announcer (Cooldown Assist). WoW Forever stays its own addon. Do not install this folder into `_forever_`.
 
 Version numbers stay short on purpose (3.6.2, then 3.6.3) — not 3.6.18-style patches. The updater compares catalog versions; jumping *down* from 3.6.17/3.6.18 to 3.6.2 can hide the update from players already on the longer number.
 
 ## Features
 
-### Speech and sounds
+3.6.9 loads the same files and window as Accessibility Helper - WoW Forever 1.4.0.
 
-- Own speech queue (`Core/Speech.lua`) with volume, rate, voice, and a critical-priority interrupt path.
-- Midnight **secret-value** safety: never concatenate, compare, or table-key secret strings/numbers (`Compat.CanUseValue` / `CanUseNumber` / `UsableString`). Creature chat (`CHAT_MSG_MONSTER_*`) is often a secret string — skip it instead of `message == ""`.
-- Per-alert delivery: TTS, sound kit, or both (`Core/Alerts.lua`). Default sound fallback.
-
-### Reading the world
-
-- Tooltip reader (`/ahtip`) and under-mouse reader (`/ahread`), including published `GameTooltip.AccessibilityHelperSpeakText` from other BMG addons (e.g. Cooldown Assist).
-- Cursor kind: mount / loot / open / collect (secret-safe on Midnight).
-- TomTom and Zygor waypoint distance and arrow reads.
-- Target distance and **clock facing** (plus target-of-target on the target keybind).
-- Subzone / discovery announcements.
-- Chat channels (town, nearby, groups, whispers, creatures, crafting, pets, PvP, system) and a filter for **other addons’** printed chat.
-
-### Player and combat state
-
-- Follow, mount, swim, taxi; combat, death, health, breath, fatigue.
-- Resting, instances, bags, durability, money.
-- AFK, PvP, stealth, form, pet, group.
-- Level-up, quest accept/complete, target acquired/cleared.
-- **Target-of-target aggro** (hostile target looking at someone else / back on you) — tanks. Midnight: `UnitIsUnit` / `UnitExists` on `targettarget` are secret booleans; event filter uses unit tokens, checks go through `Compat.SafeBool`.
-- Battle.net friends online/offline.
-- Quest windows and objectives.
-- Loot items and currencies.
-- Profession skill, XP, reputation standing.
-- Cast and channel bars for **player** and **hostile target / focus / boss / arena** only.
-- Interrupt-ready cue (skips if silenced/stunned).
-- Loss of control (stun, root, silence, lockout), harmful debuff types, combat buff apply/fade/stacks.
-
-### UI
-
-- Minimap button, key bindings header **Accessibility Helper**, high-contrast settings.
+- `/ah` opens Tooltip, Speech, Status, Arrows, Rewards, Combat, Chat, and Commands.
+- Tooltip reads on the key. TomTom is `/ahtt`. Zygor is `/ahz`.
+- Status speaks skill, level, follow, place, a new location, red error text, and the condition lines, including pet death, low health, and food.
+- Rewards speaks experience, reputation, currency, gold, loot, a completed quest, and an earned achievement.
+- Chat speaks the channels that are on, plus progress, collections, an accepted quest, quest details, the NPC window, a sale, and a repair.
+- Combat speaks the fight lines that are on. Read combat starts off.
+- Commands lists the slash commands and key bindings.
+- The older Retail readers stay in the folder and are not loaded.
 
 ## Development plan (how it was built)
 
@@ -79,6 +54,7 @@ Work was phased in the Lua headers and later combat/cast slices:
 | 3.6.5 | UnitSeen AddOns | SameUnit / follow GUID also go through `UsableString`; live AddOns copy no longer compares secret `guid ~= ""` |
 | 3.6.6 | Retail 12.1.5 | Interface `120105` added. Older Interface numbers stay so 12.1.0 still loads. |
 | 3.6.7 | Merchant name | `OpenMerchantAction` uses `UsableString` before comparing `UnitName("npc")`. A secret merchant name is skipped. |
+| 3.6.9 | Forever window | Retail loads the Forever window and readers. Title is Accessibility Helper - Retail. Saved variables stay `AccessibilityHelperDB`. |
 
 Settings were rewritten to the two-pane pattern so VI users get one topic at a time instead of a dense options dump.
 
@@ -111,6 +87,4 @@ Settings were rewritten to the two-pane pattern so VI users get one topic at a t
 
 ## Open work
 
-- Players stuck on 3.6.17/3.6.18 may need a forced updater/reinstall to see 3.6.5.
-- Chat secret-string skip is in tree (unshipped until the next AH patch). Creature Say in delves will stay silent when Blizzard marks the line secret.
-- More starter-zone or encounter-specific cues belong in other addons unless they are generic unit/combat facts.
+3.6.9 is the Forever window under the name Accessibility Helper - Retail. The old Retail window is not loaded. Do not add gathering-node detection. Do not install this folder into `_forever_`.

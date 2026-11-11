@@ -34,7 +34,7 @@ local function Say(msg)
         return
     end
     if AH.Speech and AH.Speech.Say then
-        AH.Speech.Say(msg, AH.Speech.PRIORITY_INFO)
+        AH.Speech.Say(msg, AH.Speech.PRIORITY_INFO, { noEcho = true })
     else
         print("|cff66ccff[Helper]|r " .. msg)
     end
@@ -108,7 +108,6 @@ local function HandleSkillText(text)
         return
     end
     CacheSkillFromText(text)
-    SpeakChat(text)
 end
 
 local function HandleXPText(text)
@@ -221,11 +220,8 @@ local function StandingName(id)
     return STANDING_NAMES[id] or ("Standing " .. tostring(id))
 end
 
-local function HandleRepText(text)
-    if not On("progressRep") then
-        return
-    end
-    SpeakChat(text)
+local function HandleRepText()
+    return
 end
 
 local function ScanFactionStandings(announce)
@@ -241,20 +237,7 @@ local function ScanFactionStandings(announce)
         if not key then
             return
         end
-        local prev = factionStanding[key]
         factionStanding[key] = standingID
-        if announce and prev ~= nil and prev ~= standingID and On("progressRepStanding") then
-            local fname = name or ("Faction " .. tostring(id))
-            local standing = StandingName(standingID)
-            local spoken = ""
-            if AH.ChatText and AH.ChatText.Format then
-                spoken = AH.ChatText.Format("FACTION_STANDING_CHANGED", standing, fname)
-            end
-            if spoken == "" then
-                spoken = string.format("You are now %s with %s.", standing, fname)
-            end
-            Say(spoken)
-        end
     end
 
     if C_Reputation and C_Reputation.GetNumFactions and C_Reputation.GetFactionDataByIndex then

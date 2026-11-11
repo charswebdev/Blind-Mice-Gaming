@@ -117,8 +117,8 @@ local defaults = {
     chatAddonLoremaster = false,
     chatAddonZugzug = false,
 
-    tomtomReadEnabled = false,
-    zygorReadEnabled = false,
+    tomtomReadEnabled = true,
+    zygorReadEnabled = true,
     distanceEnabled = false,
 
     -- Clock facing (arrow auto: out of combat only; target: always in combat).
@@ -296,6 +296,11 @@ function DB.Merge()
         sv.stateMount = true
         sv.stateAFK = true
         sv.statusPlaceLines = true
+    end
+    if sv.arrowReadsBuilt ~= true then
+        sv.tomtomReadEnabled = true
+        sv.zygorReadEnabled = true
+        sv.arrowReadsBuilt = true
     end
     sv.underMouseEnabled = sv.underMouseMode ~= "off"
     sv.underMouseHover = sv.underMouseMode == "hover"
