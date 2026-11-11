@@ -220,6 +220,7 @@ local currentReward = "experience"
 local toggles = {}
 local addonRows = {}
 local capturing = false
+local captureCover = nil
 local currentPage = "tooltip"
 local chatTabsOpen = true
 local combatTabsOpen = true
@@ -275,6 +276,65 @@ local function SetFlag(key, on, label)
     Speak(label .. ". " .. (on and "On." or "Off."))
 end
 
+local function Held(fn)
+    if type(fn) ~= "function" then
+        return false
+    end
+    if AH.Compat and AH.Compat.SafeBool then
+        return AH.Compat.SafeBool(fn)
+    end
+    local ok, value = pcall(fn)
+    return ok and value == true
+end
+
+local function PrettyKey(key)
+    if type(key) ~= "string" or key == "" then
+        return "Not bound"
+    end
+    key = string.gsub(key, "ALT%-", "Alt-")
+    key = string.gsub(key, "CTRL%-", "Ctrl-")
+    key = string.gsub(key, "SHIFT%-", "Shift-")
+    key = string.gsub(key, "BUTTON1", "Left mouse")
+    key = string.gsub(key, "BUTTON2", "Right mouse")
+    key = string.gsub(key, "BUTTON3", "Middle mouse")
+    key = string.gsub(key, "BUTTON4", "Mouse 4")
+    key = string.gsub(key, "BUTTON5", "Mouse 5")
+    key = string.gsub(key, "MOUSEWHEELUP", "Wheel up")
+    key = string.gsub(key, "MOUSEWHEELDOWN", "Wheel down")
+    return key
+end
+
+local function Chord(key)
+    if type(key) ~= "string" or key == "" then
+        return nil
+    end
+    while true do
+        if string.sub(key, 1, 4) == "ALT-" then
+            key = string.sub(key, 5)
+        elseif string.sub(key, 1, 5) == "CTRL-" then
+            key = string.sub(key, 6)
+        elseif string.sub(key, 1, 6) == "SHIFT-" then
+            key = string.sub(key, 7)
+        else
+            break
+        end
+    end
+    if key == "" or key == "ESCAPE" or key == "UNKNOWN" or key == "LSHIFT" or key == "RSHIFT" or key == "LCTRL" or key == "RCTRL" or key == "LALT" or key == "RALT" then
+        return nil
+    end
+    local prefix = ""
+    if Held(IsAltKeyDown) then
+        prefix = prefix .. "ALT-"
+    end
+    if Held(IsControlKeyDown) then
+        prefix = prefix .. "CTRL-"
+    end
+    if Held(IsShiftKeyDown) then
+        prefix = prefix .. "SHIFT-"
+    end
+    return prefix .. key
+end
+
 local function KeyLabel()
     if capturing then
         return "Press a key"
@@ -286,7 +346,7 @@ local function KeyLabel()
     if type(key) ~= "string" or key == "" then
         return "Not bound"
     end
-    return key
+    return PrettyKey(key)
 end
 
 local function StyleButton(button, selected)
@@ -651,10 +711,13 @@ local function BindReadKey(key)
         end
     end
     capturing = false
+    if captureCover then
+        captureCover:Hide()
+    end
     if frame and frame.EnableKeyboard then
         frame:EnableKeyboard(false)
     end
-    Speak("Read key. " .. key .. ".")
+    Speak("Read key. " .. PrettyKey(key) .. ".")
     RefreshAddons()
 end
 
@@ -762,17 +825,62 @@ local function Build()
     keyLabel:SetPoint("LEFT", 10, 0)
     keyLabel:SetText("Read key")
     keyLabel:SetTextColor(TEXT[1], TEXT[2], TEXT[3])
-    local keyButton = MakeButton(keyRow, "Not bound", 140, 26)
+    local keyButton = MakeButton(keyRow, "Not bound", 220, 26)
     keyButton:SetPoint("RIGHT", -6, 0)
     keyButton:SetScript("OnClick", function()
         capturing = true
         if frame.EnableKeyboard then
             frame:EnableKeyboard(true)
         end
+        if not captureCover then
+            captureCover = CreateFrame("Frame", nil, frame)
+            captureCover:SetAllPoints(frame)
+            captureCover:SetFrameStrata("DIALOG")
+            captureCover:EnableMouse(true)
+            captureCover:EnableMouseWheel(true)
+            captureCover:SetScript("OnMouseDown", function(_, button)
+                if not capturing then
+                    return
+                end
+                local mouseKey = nil
+                if button == "LeftButton" then
+                    mouseKey = "BUTTON1"
+                elseif button == "RightButton" then
+                    mouseKey = "BUTTON2"
+                elseif button == "MiddleButton" then
+                    mouseKey = "BUTTON3"
+                elseif button == "Button4" then
+                    mouseKey = "BUTTON4"
+                elseif button == "Button5" then
+                    mouseKey = "BUTTON5"
+                end
+                local chord = mouseKey and Chord(mouseKey) or nil
+                if chord then
+                    BindReadKey(chord)
+                end
+            end)
+            captureCover:SetScript("OnMouseWheel", function(_, delta)
+                if not capturing or type(delta) ~= "number" then
+                    return
+                end
+                local wheel = nil
+                if delta > 0 then
+                    wheel = "MOUSEWHEELUP"
+                elseif delta < 0 then
+                    wheel = "MOUSEWHEELDOWN"
+                end
+                local chord = wheel and Chord(wheel) or nil
+                if chord then
+                    BindReadKey(chord)
+                end
+            end)
+        end
+        captureCover:SetFrameLevel((frame:GetFrameLevel() or 1) + 30)
+        captureCover:Show()
         keyButton:SetText("Press a key")
-        Speak("Press a key for the read key.")
+        Speak("Press a key or mouse button. Alt, Control, and Shift can be held.")
     end)
-    local keyTip = "Click, then press the key you want. That key reads every line of the tooltip that is open. Press the same key again while it is speaking to stop. Moving the mouse does not start a read."
+    local keyTip = "Click, then press the key or mouse button you want. Hold Alt, Control, or Shift to add it. That key reads every line of the tooltip that is open. Press the same key again while it is speaking to stop. Moving the mouse does not start a read."
     AttachTip(keyRow, "Read key", keyTip)
     AttachTip(keyButton, "Read key", keyTip)
     tooltip.keyButton = keyButton
@@ -1544,7 +1652,7 @@ local function Build()
         if type(key) ~= "string" or key == "" then
             return "Not bound"
         end
-        return key
+        return PrettyKey(key)
     end
     local function LayoutCommands()
         local width = commandScroll:GetWidth()
@@ -1597,6 +1705,8 @@ local function Build()
             if info.bind then
                 local keyName = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
                 keyName:SetPoint("RIGHT", -10, 0)
+                keyName:SetWidth(190)
+                keyName:SetJustifyH("RIGHT")
                 keyName:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
                 commandKeys[#commandKeys + 1] = { text = keyName, bind = info.bind, tip = info.tip, label = info.label }
                 AttachTip(row, info.label, info.tip)
@@ -1630,7 +1740,7 @@ local function Build()
 
     local footer = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     footer:SetPoint("BOTTOMLEFT", 12, 8)
-    footer:SetText("v1.4.5")
+    footer:SetText("v1.4.7")
     footer:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
 
     frame:SetScript("OnKeyDown", function(self, key)
@@ -1651,7 +1761,10 @@ local function Build()
         if self.SetPropagateKeyboardInput then
             self:SetPropagateKeyboardInput(false)
         end
-        BindReadKey(key)
+        local chord = Chord(key)
+        if chord then
+            BindReadKey(chord)
+        end
     end)
     frame:SetScript("OnShow", function()
         Refresh()
@@ -1659,6 +1772,9 @@ local function Build()
     end)
     frame:SetScript("OnHide", function(self)
         capturing = false
+        if captureCover then
+            captureCover:Hide()
+        end
         if self.EnableKeyboard then
             self:EnableKeyboard(false)
         end

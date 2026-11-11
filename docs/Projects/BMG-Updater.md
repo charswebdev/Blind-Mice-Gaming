@@ -16,6 +16,8 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 
 ## Features
 
+- **2026-11-10:** Accessibility Helper - WoW Forever **1.4.7** and Accessibility Helper - Retail **3.7.6**. The tooltip read key can use Alt, Control, Shift, a mouse button, or the mouse wheel. Do not install Retail `AccessibilityHelper/` into `_forever_`.
+- **2026-11-10:** Accessibility Helper - WoW Forever **1.4.6** and Accessibility Helper - Retail **3.7.5**. A tame that fails because a pet is already out says “Another pet is active.” Do not install Retail `AccessibilityHelper/` into `_forever_`.
 - **2026-11-10:** Accessibility Helper - WoW Forever **1.4.5** and Accessibility Helper - Retail **3.7.4**. The tooltip reader no longer speaks a stray number after the visible lines. Do not install Retail `AccessibilityHelper/` into `_forever_`.
 - **2026-11-10:** Accessibility Helper - WoW Forever **1.4.4** and Accessibility Helper - Retail **3.7.3**. A tame that fails because a pet is already out says “Another pet is active.” Do not install Retail `AccessibilityHelper/` into `_forever_`.
 - **2026-11-10:** Accessibility Helper - WoW Forever **1.4.3** and Accessibility Helper - Retail **3.7.2**. The Pet switch speaks a tame as it starts, when the pet is tamed, and why a target cannot be tamed. Do not install Retail `AccessibilityHelper/` into `_forever_`.

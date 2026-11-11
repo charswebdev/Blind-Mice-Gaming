@@ -946,6 +946,8 @@ end
 
 local tame = { name = nil, sentAt = 0, channeling = false, reason = nil }
 local tameGen = 0
+local lastErrorText = nil
+local lastErrorAt = 0
 
 local function IsTameSpell(name)
     name = Text(name)
@@ -1082,25 +1084,58 @@ local function RecentTame()
     return (Now() - tame.sentAt) < 3
 end
 
+local function RecentError()
+    if type(lastErrorText) ~= "string" or lastErrorText == "" then
+        return nil
+    end
+    local now = Now()
+    if type(now) ~= "number" or type(lastErrorAt) ~= "number" then
+        return nil
+    end
+    if (now - lastErrorAt) > 2 then
+        return nil
+    end
+    return lastErrorText
+end
+
+local function PetIsOut()
+    if not UnitExists or not AH.Compat or not AH.Compat.SafeBool then
+        return false
+    end
+    return AH.Compat.SafeBool(UnitExists, "pet")
+end
+
+local function ActivePetReason(reason)
+    local lower = reason and string.lower(reason) or ""
+    if string.find(lower, "already", 1, true) and (string.find(lower, "pet", 1, true) or string.find(lower, "summon", 1, true)) then
+        return true
+    end
+    if string.find(lower, "dismiss", 1, true) and string.find(lower, "pet", 1, true) then
+        return true
+    end
+    return false
+end
+
 local function SayCantTame()
     if not live or not On("statePet") then
         return
     end
+    if not tame.reason then
+        tame.reason = RecentError()
+    end
     local name = tame.name or "Target"
     local item = ItemFromError(tame.reason)
+    local reason = CleanError(tame.reason)
+    local lower = reason and string.lower(reason) or ""
     Say(name .. " can't be tamed.")
     if item then
         Say(name .. " cant be tamed needs " .. item .. " to tame.")
+    elseif string.find(lower, "level", 1, true) then
+        Say(name .. " is too high a level to tame.")
+    elseif ActivePetReason(reason) or PetIsOut() then
+        Say("Another pet is active.")
     else
-        local reason = CleanError(tame.reason)
-        local lower = reason and string.lower(reason) or ""
-        if string.find(lower, "level", 1, true) then
-            Say(name .. " is too high a level to tame.")
-        elseif string.find(lower, "already", 1, true) and string.find(lower, "pet", 1, true) then
-            Say("Another pet is active.")
-        else
-            Say(name .. " is not allowed to be tamed.")
-        end
+        Say(name .. " is not allowed to be tamed.")
     end
     tame.channeling = false
     tame.sentAt = 0
@@ -1268,14 +1303,19 @@ frame:SetScript("OnEvent", function(_, event, ...)
         return
     end
     if event == "UI_ERROR_MESSAGE" then
-        if not RecentTame() then
-            return
-        end
         local argCount = select("#", ...)
         local argIndex
+        local text = nil
         for argIndex = 1, argCount do
-            local text = Text(select(argIndex, ...))
-            if text then
+            local piece = Text(select(argIndex, ...))
+            if piece then
+                text = piece
+            end
+        end
+        if text then
+            lastErrorText = text
+            lastErrorAt = Now()
+            if RecentTame() then
                 tame.reason = text
             end
         end
@@ -1289,7 +1329,7 @@ frame:SetScript("OnEvent", function(_, event, ...)
         tame.name = TameTargetFromArgs(...)
         tame.sentAt = Now()
         tame.channeling = false
-        tame.reason = nil
+        tame.reason = RecentError()
         return
     end
     if event == "UNIT_SPELLCAST_START" or event == "UNIT_SPELLCAST_CHANNEL_START" then
@@ -1312,8 +1352,14 @@ frame:SetScript("OnEvent", function(_, event, ...)
         if spellName and not IsTameSpell(spellName) then
             return
         end
-        if not spellName and not RecentTame() then
+        if not spellName and not RecentTame() and not (PetIsOut() and ActivePetReason(CleanError(RecentError()))) then
             return
+        end
+        if not tame.name then
+            tame.name = TameTargetFromArgs(...)
+        end
+        if not tame.reason then
+            tame.reason = RecentError()
         end
         if tame.channeling then
             tame.channeling = false

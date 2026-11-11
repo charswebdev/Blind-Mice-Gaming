@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.4.5** |
+| Version | **1.4.7** |
 | Type | In-game addon (VI / TTS) |
 | Folder | `AccessibilityHelper-forever/` |
 | Clients | `_forever_` (wowf 1.60.1.70634, Interface 16001) |
@@ -108,6 +108,10 @@ WoW Forever copy of Accessibility Helper. It is its own addon folder and saved-v
 1.4.4 says “Another pet is active.” when a tame fails because a pet is already out.
 
 1.4.5 stops the tooltip reader from speaking a stray number after the visible lines. Color codes and icon tags are removed first. A trailing number that is not part of the tooltip text is left out.
+
+1.4.6 says “Another pet is active.” when a tame fails because a pet is already out, even if the game reports that error before the cast starts.
+
+1.4.7 lets the tooltip read key use Alt, Control, Shift, a mouse button, or the mouse wheel. The spoken name is the combination, such as Ctrl-Left mouse.
 
 ## Sources and data
 

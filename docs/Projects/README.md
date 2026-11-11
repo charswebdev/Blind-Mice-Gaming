@@ -23,8 +23,8 @@ Commit, push, and GitHub releases happen **only when asked**.
 
 | Document | Status | Version (catalog / toc) |
 |----------|--------|-------------------------|
-| [Accessibility Helper - Retail](Accessibility-Helper.md) | Shipped | 3.7.4 |
-| [Accessibility Helper - WoW Forever](Accessibility-Helper-Forever.md) | Shipped | 1.4.5 |
+| [Accessibility Helper - Retail](Accessibility-Helper.md) | Shipped | 3.7.6 |
+| [Accessibility Helper - WoW Forever](Accessibility-Helper-Forever.md) | Shipped | 1.4.7 |
 | [AllQuest](AllQuest.md) | Shipped | 1.1.6 |
 | [AllQuest - WoW Forever](AllQuest-Forever.md) | Shipped | 1.0.0 |
 | [BMG Unit Frames](BMG-Unit-Frames.md) | Removed | — |

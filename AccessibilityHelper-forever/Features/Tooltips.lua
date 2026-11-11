@@ -1492,7 +1492,43 @@ keyWatch:SetScript("OnUpdate", function(self, elapsed)
     end
     local down = false
     pcall(function()
-        if IsKeyDown(key) then
+        local base = key
+        local needAlt, needCtrl, needShift = false, false, false
+        while true do
+            if string.sub(base, 1, 4) == "ALT-" then
+                needAlt = true
+                base = string.sub(base, 5)
+            elseif string.sub(base, 1, 5) == "CTRL-" then
+                needCtrl = true
+                base = string.sub(base, 6)
+            elseif string.sub(base, 1, 6) == "SHIFT-" then
+                needShift = true
+                base = string.sub(base, 7)
+            else
+                break
+            end
+        end
+        if base == "" then
+            return
+        end
+        local function Down(fn, ...)
+            if type(fn) ~= "function" then
+                return false
+            end
+            if AH.Compat and AH.Compat.SafeBool then
+                return AH.Compat.SafeBool(fn, ...)
+            end
+            local okCall, value = pcall(fn, ...)
+            return okCall and value == true
+        end
+        if needAlt ~= Down(IsAltKeyDown) or needCtrl ~= Down(IsControlKeyDown) or needShift ~= Down(IsShiftKeyDown) then
+            return
+        end
+        if string.sub(base, 1, 6) == "BUTTON" and Down(IsMouseButtonDown, base) then
+            down = true
+            return
+        end
+        if Down(IsKeyDown, base) then
             down = true
         end
     end)
