@@ -120,6 +120,6 @@ do
     elseif GetBuildInfo then
         iface = tostring(select(4, GetBuildInfo()) or "?")
     end
-    print("|cff00ff00[Accessibility Helper - WoW Forever]|r v1.4.4 loaded. TTS: " .. tostring(mode) .. " · Interface: " .. iface)
+    print("|cff00ff00[Accessibility Helper - WoW Forever]|r v1.4.5 loaded. TTS: " .. tostring(mode) .. " · Interface: " .. iface)
     print("|cff00ff00[Accessibility Helper - WoW Forever]|r |cff00ff00/ah|r opens the new window.")
 end

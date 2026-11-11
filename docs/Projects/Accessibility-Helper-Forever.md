@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.4.4** |
+| Version | **1.4.5** |
 | Type | In-game addon (VI / TTS) |
 | Folder | `AccessibilityHelper-forever/` |
 | Clients | `_forever_` (wowf 1.60.1.70634, Interface 16001) |
@@ -106,6 +106,8 @@ WoW Forever copy of Accessibility Helper. It is its own addon folder and saved-v
 1.4.3 speaks taming on the Pet switch. Hogger is getting tamed. Hogger is tamed. Hogger can't be tamed. Hogger is not allowed to be tamed. Spectral Gryphon cant be tamed needs Taming Rod to tame. A tame that starts and is then interrupted stays quiet.
 
 1.4.4 says “Another pet is active.” when a tame fails because a pet is already out.
+
+1.4.5 stops the tooltip reader from speaking a stray number after the visible lines. Color codes and icon tags are removed first. A trailing number that is not part of the tooltip text is left out.
 
 ## Sources and data
 

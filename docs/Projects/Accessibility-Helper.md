@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **3.7.3** |
+| Version | **3.7.4** |
 | Type | In-game addon (VI / TTS) |
 | Folder | `AccessibilityHelper/` |
 | Author tools | `Tools/AccessibilityHelper/` (release checklists; not in the addon zip) |
@@ -21,7 +21,7 @@ Version numbers stay short on purpose (3.6.2, then 3.6.3) — not 3.6.18-style p
 
 ## Features
 
-3.7.3 loads the same files and window as Accessibility Helper - WoW Forever 1.4.4.
+3.7.4 loads the same files and window as Accessibility Helper - WoW Forever 1.4.5.
 
 - `/ah` opens Tooltip, Speech, Status, Arrows, Rewards, Combat, Chat, and Commands.
 - Tooltip reads on the key. TomTom is `/ahtt`. Zygor is `/ahz`.
@@ -59,6 +59,7 @@ Work was phased in the Lua headers and later combat/cast slices:
 | 3.7.1 | Pet mend | The combat log is not registered. A mend still speaks when the cast succeeds. Same as Forever 1.4.2. |
 | 3.7.2 | Taming | The Pet switch speaks the tame, the finished pet, and why a target cannot be tamed. Same as Forever 1.4.3. |
 | 3.7.3 | Active pet | A tame that fails because a pet is already out says “Another pet is active.” Same as Forever 1.4.4. |
+| 3.7.4 | Tooltip number | A stray number after the visible tooltip lines is not spoken. Same as Forever 1.4.5. |
 
 Settings were rewritten to the two-pane pattern so VI users get one topic at a time instead of a dense options dump.
 

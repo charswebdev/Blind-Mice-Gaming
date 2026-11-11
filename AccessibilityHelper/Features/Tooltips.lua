@@ -70,8 +70,38 @@ local function Trim(s)
     return trimmed
 end
 
+local function CleanMarkup(s)
+    if type(s) ~= "string" or s == "" or IsSecret(s) then
+        return ""
+    end
+    local ok, cleaned = pcall(function()
+        if AH.ChatText and AH.ChatText.StripMarkupKeepFormat then
+            return AH.ChatText.StripMarkupKeepFormat(s)
+        end
+        s = s:gsub("|T.-|t", " ")
+        s = s:gsub("|A.-|a", " ")
+        s = s:gsub("|c%x%x%x%x%x%x%x%x", "")
+        s = s:gsub("|r", "")
+        s = s:gsub("|H.-|h(.-)|h", "%1")
+        s = s:gsub("|n", " ")
+        s = s:gsub("%s+", " ")
+        return s
+    end)
+    if not ok or type(cleaned) ~= "string" or IsSecret(cleaned) then
+        return ""
+    end
+    return Trim(cleaned)
+end
+
+local function BareNumber(s)
+    if type(s) ~= "string" or s == "" then
+        return false
+    end
+    return string.find(s, "^%d+$") ~= nil
+end
+
 local function NonEmpty(s)
-    s = Trim(SafeStr(s))
+    s = CleanMarkup(Trim(SafeStr(s)))
     if type(s) ~= "string" or IsSecret(s) then
         return nil
     end
@@ -79,6 +109,16 @@ local function NonEmpty(s)
         return nil
     end
     return s
+end
+
+local function JoinLine(lt, rt)
+    if lt and rt then
+        if BareNumber(rt) and string.find(lt, "%", 1, true) then
+            return lt
+        end
+        return lt .. ", " .. rt
+    end
+    return lt or rt
 end
 
 local function FsText(fs)
@@ -230,29 +270,20 @@ local function GatherFromFontStrings(tip)
     end
     if num < 1 then
         num = 20
-    else
-        num = math.max(num, 8)
     end
     local any = false
     local emptyRun = 0
     for i = 1, num do
         local lt = FsText(LeftFS(tip, i))
         local rt = FsText(RightFS(tip, i))
-        if lt and rt then
-            parts[#parts + 1] = lt .. ", " .. rt
-            any = true
-            emptyRun = 0
-        elseif lt then
-            parts[#parts + 1] = lt
-            any = true
-            emptyRun = 0
-        elseif rt then
-            parts[#parts + 1] = rt
+        local line = JoinLine(lt, rt)
+        if line then
+            parts[#parts + 1] = line
             any = true
             emptyRun = 0
         else
             emptyRun = emptyRun + 1
-            if num == 20 and emptyRun >= 3 and i >= 3 then
+            if emptyRun >= 3 and i >= 3 then
                 break
             end
         end
@@ -325,7 +356,7 @@ local function ExtractLineFromTooltipDataLine(line)
         rt = nil
     end
     if lt and rt then
-        local both = lt .. ", " .. rt
+        local both = JoinLine(lt, rt)
         if TalentChrome(both) then
             return nil
         end
@@ -498,7 +529,22 @@ local function JoinParts(parts)
     if not parts or #parts == 0 then
         return ""
     end
-    return table.concat(parts, ". ")
+    local kept = {}
+    for i = 1, #parts do
+        local s = CleanMarkup(parts[i])
+        if s ~= "" then
+            kept[#kept + 1] = s
+        end
+    end
+    if #kept > 1 and BareNumber(kept[#kept]) then
+        kept[#kept] = nil
+    end
+    if #kept == 0 then
+        return ""
+    end
+    local text = table.concat(kept, ". ")
+    text = string.gsub(text, "%%%)%s*%d+$", "%%)")
+    return text
 end
 
 local function MergePartLists(lists)
@@ -1169,7 +1215,7 @@ local function PlainLineText(fs)
     if not ok or type(t) ~= "string" then
         return nil
     end
-    t = Trim(t)
+    t = CleanMarkup(Trim(t))
     if t == "" or TalentChrome(t) then
         return nil
     end
@@ -1185,12 +1231,7 @@ local function PlainTipText(tip)
     for i = 1, 30 do
         local lt = PlainLineText(LeftFS(tip, i))
         local rt = PlainLineText(RightFS(tip, i))
-        local line = nil
-        if lt and rt then
-            line = lt .. ", " .. rt
-        elseif lt or rt then
-            line = lt or rt
-        end
+        local line = JoinLine(lt, rt)
         if line and TalentChrome(line) then
             line = nil
         end
@@ -1213,7 +1254,9 @@ local function PlainTipText(tip)
     if #parts == 0 then
         return ""
     end
-    return table.concat(parts, ". ")
+    local text = table.concat(parts, ". ")
+    text = string.gsub(text, "%%%)%s*%d+$", "%%)")
+    return text
 end
 
 local function RefreshCacheFromTip(tip)
