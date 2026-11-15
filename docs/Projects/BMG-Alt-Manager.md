@@ -2,11 +2,11 @@
 
 | Field | Value |
 |-------|--------|
-| Status | **Midnight 1.0.1 shipped. Forever 1.0.0 shipped.** |
-| Version | Midnight 1.0.1. WoW Forever 1.0.0 |
+| Status | **Midnight 1.0.2 shipped. Forever 1.0.1 shipped.** |
+| Version | Midnight 1.0.2. WoW Forever 1.0.1 |
 | Type | In-game alt manager for every WoW flavor except Season of Discovery |
 | Design folder | `docs/Projects/BMG-Alt-Manager/` |
-| Code folders | Midnight: `BMGAM`, plus `BMGAM_Account`, `BMGAM_Quests`, `BMGAM_Achievements`, and `BMGAM_Collections`. WoW Forever: `BMGAM-forever` at 1.0.0, in the catalog |
+| Code folders | Midnight: `BMGAM`, plus `BMGAM_Account`, `BMGAM_Quests`, `BMGAM_Achievements`, and `BMGAM_Collections`. WoW Forever: `BMGAM-forever` at 1.0.1, in the catalog |
 | Author | Blind Mice Gaming |
 | SavedVariables | `bmgam_SavedVariables` for the roster and the smaller tabs. Quests, achievements, the shared collection catalog, and character manuscripts each have their own file. The field list is in `BMG-Alt-Manager/08-character-record.md` |
 
@@ -110,6 +110,7 @@ Scan rules, once code starts: bags and worn gear on login. Currencies, reputatio
 
 ## What did not work
 
+- Clicking Forget did not take the character off the roster. The confirmation sat under the character page, so the click landed on the page, and a scan of the character who is logged in put that character straight back. Found on the 2026-11-15 playtest. The confirmation now sits above the window and takes the click. Forget removes that character from this flavor’s roster, quests, achievements, and manuscripts. A scan during this play session does not add them again. Logging that character in later records them again. The character in the game is not deleted. Shipped on 2026-11-15 as Midnight 1.0.2 and WoW Forever 1.0.1.
 - The first vault requirement line stored the client’s format sentence with `%d` still in it, and used the raid sentence for Dungeons and World. The Great Vault fills that sentence with the slot’s own threshold, and only Raids use the raid sentence. Found on the 2026-10-31 playtest.
 - The reward item level was stored (World tier 11 was 305) but the line was anchored under the tier line, so it collapsed and did not draw. Each slot line is now placed on the slot itself. Found on the 2026-10-31 playtest.
 - Export put the whole backup, about 11 MB, into the text box and selected it. That closed the game. The box now shows one page of 4000 letters. Found on the 2026-10-31 playtest.

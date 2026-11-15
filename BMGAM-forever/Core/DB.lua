@@ -5,6 +5,31 @@ local DB = BMGAM.DB
 
 local MIN_SCALE = 860 / 1120
 local MAX_SCALE = 1.25
+local forgotten = {}
+
+local function IsSecret(value)
+    if type(issecretvalue) ~= "function" then
+        return false
+    end
+    local ok, secret = pcall(issecretvalue, value)
+    return ok and secret == true
+end
+
+function DB.PlainGuid(value)
+    if IsSecret(value) then
+        if type(string.concat) == "function" then
+            local ok, text = pcall(string.concat, value)
+            if ok and type(text) == "string" and text ~= "" and text ~= "nil" then
+                return text
+            end
+        end
+        return nil
+    end
+    if type(value) ~= "string" or value == "" then
+        return nil
+    end
+    return value
+end
 
 function DB.Init()
     if type(bmgam_SavedVariables) ~= "table" then
@@ -53,32 +78,51 @@ function DB.Account()
 end
 
 function DB.Get(guid)
-    if not guid then
+    local plain = DB.PlainGuid(guid)
+    if not plain or forgotten[plain] then
         return nil
     end
     DB.Init()
-    return bmgam_SavedVariables.characters[guid]
+    return bmgam_SavedVariables.characters[plain]
 end
 
 function DB.Ensure(guid)
+    local plain = DB.PlainGuid(guid)
+    if not plain or forgotten[plain] then
+        return nil
+    end
     DB.Init()
     local characters = bmgam_SavedVariables.characters
-    local record = characters[guid]
+    local record = characters[plain]
     if not record then
-        record = { guid = guid }
-        characters[guid] = record
+        record = { guid = plain }
+        characters[plain] = record
     end
+    record.guid = plain
     return record
 end
 
 function DB.Delete(guid)
-    if not guid then
+    local plain = DB.PlainGuid(guid)
+    if not plain then
         return
     end
     DB.Init()
-    bmgam_SavedVariables.characters[guid] = nil
+    forgotten[plain] = true
+    local characters = bmgam_SavedVariables.characters
+    characters[plain] = nil
+    for key, record in pairs(characters) do
+        local keyPlain = DB.PlainGuid(key)
+        local recordPlain = nil
+        if type(record) == "table" then
+            recordPlain = DB.PlainGuid(record.guid)
+        end
+        if keyPlain == plain or recordPlain == plain then
+            characters[key] = nil
+        end
+    end
     if BMGAM.Store and BMGAM.Store.Forget then
-        BMGAM.Store.Forget(guid)
+        BMGAM.Store.Forget(plain)
     end
 end
 

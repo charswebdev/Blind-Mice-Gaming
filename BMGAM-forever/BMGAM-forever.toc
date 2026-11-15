@@ -1,7 +1,7 @@
 ## Interface: 16002, 16001, 16000, 121500, 121000
 ## AllowLoadGameType: forever, camelot
 ## Title: BMG Alt Manager
-## Version: 1.0.0
+## Version: 1.0.1
 ## Notes: Roster, Overview, Gear, Bags, Bank, Professions, Currency, Reputation, Mail, Auction, Quests, Achievements, Collections, and Settings for characters on this WoW Forever account.
 ## Notes-enUS: Roster and Overview for characters on this account. Blind Mice Gaming.
 ## Author: Blind Mice Gaming

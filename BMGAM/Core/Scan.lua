@@ -4135,6 +4135,9 @@ function Scan.Capture(create, fresh, lists)
     if not record then
         record = BMGAM.DB.Ensure(guid)
     end
+    if not record then
+        return
+    end
     local localizedClass, classFile = UnitClass("player")
     local localizedRace, raceFile = UnitRace("player")
     local side = UnitFactionGroup("player")

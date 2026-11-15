@@ -1,6 +1,6 @@
 ## Interface: 120105, 120100, 120007, 120001
 ## Title: BMG Alt Manager
-## Version: 1.0.1
+## Version: 1.0.2
 ## Notes: A graphical alt manager for this account.
 ## Notes-enUS: Roster and Overview for characters on this account. Blind Mice Gaming.
 ## Author: Blind Mice Gaming

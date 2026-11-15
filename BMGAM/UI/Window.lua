@@ -25,6 +25,8 @@ local TABS = {
 
 local frame
 local dialog
+local shade
+local forgetting = false
 
 local function MoneyText(copper)
     copper = tonumber(copper) or 0
@@ -141,9 +143,22 @@ local function PaintCard(card, record, selected)
     end
 end
 
+local function GuidText(value)
+    if BMGAM.DB and BMGAM.DB.PlainGuid then
+        return BMGAM.DB.PlainGuid(value)
+    end
+    if type(value) == "string" and value ~= "" then
+        return value
+    end
+    return nil
+end
+
 local function HideDialog()
     if dialog then
         dialog:Hide()
+    end
+    if shade then
+        shade:Hide()
     end
 end
 
@@ -281,7 +296,8 @@ local function MakeSortDropdown(parent, choices, width, readId, writeId)
 end
 
 local function ShowDialog(record)
-    if not dialog or not record then
+    local guid = GuidText(record and record.guid) or GuidText(Window.selected)
+    if not dialog or not record or not guid then
         return
     end
     dialog.record = record
@@ -289,26 +305,51 @@ local function ShowDialog(record)
     local name = record.name or "this character"
     dialog.title:SetText("Forget " .. name .. "?")
     dialog.body:SetText("Remove " .. name .. " from this roster?")
+    if shade then
+        shade:SetFrameLevel(400)
+        shade:Show()
+    end
+    dialog:SetFrameLevel(420)
+    if dialog.Raise then
+        dialog:Raise()
+    end
     dialog:Show()
 end
 
 local function ForgetRecord(record)
-    if not record or not record.guid then
+    if forgetting then
         return
     end
-    local guid = record.guid
-    BMGAM.DB.Delete(guid)
-    if Window.selected == guid then
-        local player = UnitGUID("player")
-        if player and player ~= guid and BMGAM.DB.Get(player) then
-            Window.selected = player
-        else
-            local list = BMGAM.DB.List()
-            Window.selected = list[1] and list[1].guid or nil
+    forgetting = true
+    local guid = GuidText(record and record.guid) or GuidText(Window.selected)
+    if guid then
+        BMGAM.DB.Delete(guid)
+    end
+    local list = BMGAM.DB.List()
+    local player = nil
+    if type(UnitGUID) == "function" then
+        local ok, value = pcall(UnitGUID, "player")
+        if ok then
+            player = GuidText(value)
         end
     end
+    local picked = nil
+    local index = 1
+    while list[index] do
+        local itemGuid = GuidText(list[index].guid)
+        if player and itemGuid == player then
+            picked = itemGuid
+            break
+        end
+        if not picked and itemGuid then
+            picked = itemGuid
+        end
+        index = index + 1
+    end
+    Window.selected = picked
     Window.tab = "overview"
     HideDialog()
+    forgetting = false
     Window.Refresh()
 end
 
@@ -404,7 +445,10 @@ function Window.Ensure()
         self:SetPropagateKeyboardInput(true)
     end)
 
-    frame:SetScript("OnHide", CloseSortMenu)
+    frame:SetScript("OnHide", function()
+        CloseSortMenu()
+        HideDialog()
+    end)
 
     local title = frame:CreateFontString(nil, "OVERLAY")
     title:SetPoint("TOPLEFT", 14, -10)
@@ -545,8 +589,15 @@ function Window.Ensure()
     trash:SetScript("OnLeave", function()
         GameTooltip:Hide()
     end)
+    trash:SetFrameLevel(200)
+    trash:EnableMouse(true)
+    if trash.SetMouseClickEnabled then
+        trash:SetMouseClickEnabled(true)
+    end
+    trash:RegisterForClicks("AnyUp")
     trash:SetScript("OnClick", function()
-        local record = Window.selected and BMGAM.DB.Get(Window.selected)
+        local selected = GuidText(Window.selected)
+        local record = selected and BMGAM.DB.Get(selected)
         ShowDialog(record)
     end)
     frame.trash = trash
@@ -707,8 +758,24 @@ function Window.Ensure()
             frame.settings:Hide()
         end
     end
-    dialog:SetFrameStrata("DIALOG")
-    dialog:SetFrameLevel(80)
+    shade = CreateFrame("Button", nil, frame)
+    shade:SetAllPoints(frame)
+    shade:SetFrameStrata("FULLSCREEN_DIALOG")
+    shade:SetFrameLevel(400)
+    shade:EnableMouse(true)
+    if shade.SetMouseClickEnabled then
+        shade:SetMouseClickEnabled(true)
+    end
+    shade:RegisterForClicks("AnyUp")
+    shade:SetScript("OnClick", HideDialog)
+    shade:Hide()
+    dialog:SetParent(shade)
+    dialog:SetFrameStrata("FULLSCREEN_DIALOG")
+    dialog:SetFrameLevel(420)
+    dialog:EnableMouse(true)
+    if dialog.SetToplevel then
+        dialog:SetToplevel(true)
+    end
     Theme.Paint(dialog, Theme.PANEL, Theme.GOLD)
     dialog.title = dialog:CreateFontString(nil, "OVERLAY")
     dialog.title:SetPoint("TOP", 0, -16)
@@ -720,6 +787,17 @@ function Window.Ensure()
     dialog.note:SetPoint("TOP", dialog.body, "BOTTOM", 0, -6)
     Theme.Font(dialog.note, 12, Theme.CREAM, "")
     dialog.note:SetText("The character in the game is not deleted.")
+    local function Arm(button, handler)
+        button:EnableMouse(true)
+        if button.SetMouseClickEnabled then
+            button:SetMouseClickEnabled(true)
+        end
+        button:RegisterForClicks("AnyUp")
+        button:SetFrameLevel(440)
+        button:SetScript("OnClick", function()
+            handler()
+        end)
+    end
     local forget = CreateFrame("Button", nil, dialog, "BackdropTemplate")
     forget:SetSize(110, 26)
     forget:SetPoint("BOTTOMLEFT", 70, 16)
@@ -728,7 +806,7 @@ function Window.Ensure()
     forget.label:SetPoint("CENTER")
     Theme.Font(forget.label, 13, Theme.GOLD, "OUTLINE")
     forget.label:SetText("Forget")
-    forget:SetScript("OnClick", function()
+    Arm(forget, function()
         ForgetRecord(dialog.record)
     end)
     local cancel = CreateFrame("Button", nil, dialog, "BackdropTemplate")
@@ -739,7 +817,7 @@ function Window.Ensure()
     cancel.label:SetPoint("CENTER")
     Theme.Font(cancel.label, 13, Theme.CREAM, "")
     cancel.label:SetText("Cancel")
-    cancel:SetScript("OnClick", HideDialog)
+    Arm(cancel, HideDialog)
     dialog:Hide()
 
     local grip = CreateFrame("Button", nil, frame)
@@ -805,8 +883,10 @@ function Window.Refresh()
         card:SetPoint("TOPLEFT", window.rosterChild, "TOPLEFT", 0, -y)
         card:SetPoint("TOPRIGHT", window.rosterChild, "TOPRIGHT", 0, -y)
         card:Show()
-        PaintCard(card, record, record.guid == Window.selected)
-        card:SetScript("OnClick", SelectCard(record.guid))
+        local cardGuid = GuidText(record.guid)
+        local selectedGuid = GuidText(Window.selected)
+        PaintCard(card, record, cardGuid ~= nil and cardGuid == selectedGuid)
+        card:SetScript("OnClick", SelectCard(cardGuid))
         y = y + 100
         index = index + 1
     end
@@ -817,13 +897,21 @@ function Window.Refresh()
     window.rosterChild:SetHeight(math.max(8, y))
     window.rosterScroll.UpdateScroll()
 
-    local record = Window.selected and BMGAM.DB.Get(Window.selected)
+    local record = GuidText(Window.selected)
+    record = record and BMGAM.DB.Get(record)
     if record then
         Theme.RacePortrait(window.portrait, record.raceFile, record.sex)
         window.characterName:SetText(record.name or "")
         window.trash:Show()
-        local player = UnitGUID("player")
-        if player and player == record.guid then
+        local player = nil
+        if type(UnitGUID) == "function" then
+            local ok, value = pcall(UnitGUID, "player")
+            if ok then
+                player = GuidText(value)
+            end
+        end
+        local recordGuid = GuidText(record.guid)
+        if player and recordGuid and player == recordGuid then
             window.logged:Show()
         else
             window.logged:Hide()
@@ -1488,12 +1576,19 @@ end
 
 function Window.Open()
     Window.Ensure()
-    local player = UnitGUID("player")
+    local player = nil
+    if type(UnitGUID) == "function" then
+        local ok, value = pcall(UnitGUID, "player")
+        if ok then
+            player = GuidText(value)
+        end
+    end
+    local selected = GuidText(Window.selected)
     if player and BMGAM.DB.Get(player) then
         Window.selected = player
-    elseif not Window.selected or not BMGAM.DB.Get(Window.selected) then
+    elseif not selected or not BMGAM.DB.Get(selected) then
         local list = BMGAM.DB.List()
-        Window.selected = list[1] and list[1].guid or nil
+        Window.selected = list[1] and GuidText(list[1].guid) or nil
     end
     Window.tab = "overview"
     HideDialog()
