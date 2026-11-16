@@ -772,6 +772,53 @@ local function Build()
     nav:SetPoint("BOTTOMLEFT", 1, 28)
     nav:SetWidth(176)
     Paint(nav, NAV_BG, nil)
+    local navScroll = CreateFrame("ScrollFrame", nil, nav)
+    navScroll:SetPoint("TOPLEFT", 0, 0)
+    navScroll:SetPoint("BOTTOMRIGHT", 0, 0)
+    local navChild = CreateFrame("Frame", nil, navScroll)
+    navChild:SetWidth(176)
+    navChild:SetHeight(40)
+    navScroll:SetScrollChild(navChild)
+    local function ScrollNav(delta)
+        local childHeight = navChild:GetHeight()
+        local viewHeight = navScroll:GetHeight()
+        if type(childHeight) ~= "number" or type(viewHeight) ~= "number" then
+            return
+        end
+        local maxScroll = childHeight - viewHeight
+        if maxScroll < 0 then
+            maxScroll = 0
+        end
+        local nextScroll = navScroll:GetVerticalScroll() - (delta * 36)
+        if type(nextScroll) ~= "number" then
+            return
+        end
+        if nextScroll < 0 then
+            nextScroll = 0
+        end
+        if nextScroll > maxScroll then
+            nextScroll = maxScroll
+        end
+        navScroll:SetVerticalScroll(nextScroll)
+    end
+    navScroll:EnableMouseWheel(true)
+    navScroll:SetScript("OnMouseWheel", function(_, delta)
+        ScrollNav(delta)
+    end)
+    nav:EnableMouseWheel(true)
+    nav:SetScript("OnMouseWheel", function(_, delta)
+        ScrollNav(delta)
+    end)
+    local function BindNavWheel(button)
+        button:EnableMouseWheel(true)
+        button:SetScript("OnMouseWheel", function(_, delta)
+            ScrollNav(delta)
+        end)
+    end
+    navChild:EnableMouseWheel(true)
+    navChild:SetScript("OnMouseWheel", function(_, delta)
+        ScrollNav(delta)
+    end)
 
     local content = CreateFrame("Frame", nil, frame)
     content:SetPoint("TOPLEFT", nav, "TOPRIGHT", 8, -8)
@@ -779,8 +826,9 @@ local function Build()
 
     for i = 1, #PAGES do
         local info = PAGES[i]
-        local button = MakeButton(nav, info.label, 154, 32)
+        local button = MakeButton(navChild, info.label, 154, 32)
         button:SetPoint("TOPLEFT", 10, -10 - (i - 1) * 38)
+        BindNavWheel(button)
         button._page = info.id
         button:SetScript("OnClick", function(self)
             ShowPage(self._page)
@@ -1172,7 +1220,7 @@ local function Build()
     local previousSub = nil
     for s = 1, #CHAT_SECTIONS do
         local sec = CHAT_SECTIONS[s]
-        local sub = CreateFrame("Button", nil, nav, Template())
+        local sub = CreateFrame("Button", nil, navChild, Template())
         sub:SetSize(140, 22)
         local fs = sub:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         fs:SetPoint("LEFT", 6, 0)
@@ -1182,6 +1230,7 @@ local function Build()
         fs:SetText(sec.label)
         fs:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
         sub:SetFontString(fs)
+        BindNavWheel(sub)
         sub._section = sec.id
         if previousSub then
             sub:SetPoint("TOPLEFT", previousSub, "BOTTOMLEFT", 0, -2)
@@ -1305,7 +1354,7 @@ local function Build()
     local previousCombat = nil
     for s = 1, #COMBAT_SECTIONS do
         local sec = COMBAT_SECTIONS[s]
-        local sub = CreateFrame("Button", nil, nav, Template())
+        local sub = CreateFrame("Button", nil, navChild, Template())
         sub:SetSize(140, 22)
         local fs = sub:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         fs:SetPoint("LEFT", 6, 0)
@@ -1315,6 +1364,7 @@ local function Build()
         fs:SetText(sec.label)
         fs:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
         sub:SetFontString(fs)
+        BindNavWheel(sub)
         sub._section = sec.id
         if previousCombat then
             sub:SetPoint("TOPLEFT", previousCombat, "BOTTOMLEFT", 0, -2)
@@ -1437,7 +1487,7 @@ local function Build()
     local previousReward = nil
     for s = 1, #REWARD_SECTIONS do
         local sec = REWARD_SECTIONS[s]
-        local sub = CreateFrame("Button", nil, nav, Template())
+        local sub = CreateFrame("Button", nil, navChild, Template())
         sub:SetSize(140, 22)
         local fs = sub:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         fs:SetPoint("LEFT", 6, 0)
@@ -1447,6 +1497,7 @@ local function Build()
         fs:SetText(sec.label)
         fs:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
         sub:SetFontString(fs)
+        BindNavWheel(sub)
         sub._section = sec.id
         if previousReward then
             sub:SetPoint("TOPLEFT", previousReward, "BOTTOMLEFT", 0, -2)
@@ -1471,7 +1522,7 @@ local function Build()
             local button = navButtons[page.id]
             if button then
                 button:ClearAllPoints()
-                button:SetPoint("TOPLEFT", nav, "TOPLEFT", 10, y)
+                button:SetPoint("TOPLEFT", navChild, "TOPLEFT", 10, y)
                 y = y - 38
             end
             local sections, subs, open
@@ -1494,7 +1545,7 @@ local function Build()
                     if sub then
                         if open then
                             sub:ClearAllPoints()
-                            sub:SetPoint("TOPLEFT", nav, "TOPLEFT", 28, y)
+                            sub:SetPoint("TOPLEFT", navChild, "TOPLEFT", 28, y)
                             sub:Show()
                             y = y - 24
                         else
@@ -1504,6 +1555,27 @@ local function Build()
                 end
             end
         end
+        local height = -y + 12
+        if height < 40 then
+            height = 40
+        end
+        navChild:SetHeight(height)
+        local viewHeight = navScroll:GetHeight()
+        local maxScroll = 0
+        if type(viewHeight) == "number" then
+            maxScroll = height - viewHeight
+        end
+        if maxScroll < 0 then
+            maxScroll = 0
+        end
+        local current = navScroll:GetVerticalScroll()
+        if type(current) ~= "number" or current < 0 then
+            current = 0
+        end
+        if current > maxScroll then
+            current = maxScroll
+        end
+        navScroll:SetVerticalScroll(current)
     end
     ApplyCombatTabs()
     ApplyRewardTabs()
@@ -1740,7 +1812,7 @@ local function Build()
 
     local footer = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     footer:SetPoint("BOTTOMLEFT", 12, 8)
-    footer:SetText("v3.7.8")
+    footer:SetText("v3.7.9")
     footer:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
 
     frame:SetScript("OnKeyDown", function(self, key)

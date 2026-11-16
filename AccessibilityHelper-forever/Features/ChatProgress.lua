@@ -15,6 +15,7 @@ AH.QuestTitles = AH.QuestTitles or {}
 local recent = {}
 local questCount = {}
 local criteriaCount = {}
+local criteriaCursor = {}
 local knownMounts = {}
 local knownCompanions = {}
 local knownPets = {}
@@ -24,6 +25,19 @@ local seedGen = 0
 local achDirty = false
 local achWait = 0
 local achPrimed = false
+local achQuiet = true
+local achCats = nil
+local achCatIndex = 1
+local achInCat = 1
+local achTrackedPending = false
+local questQuiet = true
+local questCursor = 1
+local questMode = nil
+local questDirty = false
+local watchDirty = false
+local achSerial = 0
+local achMark = 0
+local seeded = false
 
 local function Num(v)
     if AH.Compat and AH.Compat.CanUseNumber and AH.Compat.CanUseNumber(v) then
@@ -194,68 +208,183 @@ local function NoteQuest(questID, title, index, label, cur, need, raw)
     Say(line)
 end
 
-local function ScanQuestLog()
-    if C_QuestLog and C_QuestLog.GetNumQuestLogEntries and C_QuestLog.GetInfo and C_QuestLog.GetQuestObjectives then
-        local ok, count = pcall(C_QuestLog.GetNumQuestLogEntries)
-        count = ok and Num(count) or nil
-        if not count then
-            return
+local function NoteObjectives(questID, title, objectives)
+    if type(objectives) ~= "table" then
+        return
+    end
+    local j
+    for j = 1, #objectives do
+        local obj = objectives[j]
+        if type(obj) == "table" then
+            local label, cur, need = SplitObjective(obj.text)
+            if not cur then
+                cur = Num(obj.numFulfilled)
+            end
+            if not need then
+                need = Num(obj.numRequired)
+            end
+            NoteQuest(questID, title, j, label, cur, need, obj.text)
         end
-        local i
-        for i = 1, count do
-            local infoOk, info = pcall(C_QuestLog.GetInfo, i)
-            if infoOk and type(info) == "table" and Flag(info.isHeader) ~= true then
-                local questID = Num(info.questID)
-                local title = Text(info.title)
-                if questID then
-                    local objOk, objectives = pcall(C_QuestLog.GetQuestObjectives, questID)
-                    if objOk and type(objectives) == "table" then
-                        local j
-                        for j = 1, #objectives do
-                            local obj = objectives[j]
-                            if type(obj) == "table" then
-                                local label, cur, need = SplitObjective(obj.text)
-                                if not cur then
-                                    cur = Num(obj.numFulfilled)
-                                end
-                                if not need then
-                                    need = Num(obj.numRequired)
-                                end
-                                NoteQuest(questID, title, j, label, cur, need, obj.text)
-                            end
-                        end
-                    end
+    end
+end
+
+local function ScanModernEntry(i)
+    local infoOk, info = pcall(C_QuestLog.GetInfo, i)
+    if not infoOk or type(info) ~= "table" or Flag(info.isHeader) == true then
+        return
+    end
+    local questID = Num(info.questID)
+    local title = Text(info.title)
+    if not questID or not C_QuestLog.GetQuestObjectives then
+        return
+    end
+    local objOk, objectives = pcall(C_QuestLog.GetQuestObjectives, questID)
+    if objOk then
+        NoteObjectives(questID, title, objectives)
+    end
+end
+
+local function ScanClassicEntry(i)
+    if not GetQuestLogTitle then
+        return
+    end
+    local titleOk, title, _, _, isHeader, _, _, _, questID = pcall(GetQuestLogTitle, i)
+    if not titleOk or Flag(isHeader) == true then
+        return
+    end
+    if not GetNumQuestLeaderBoards or not GetQuestLogLeaderBoard then
+        return
+    end
+    local boardsOk, boards = pcall(GetNumQuestLeaderBoards, i)
+    boards = boardsOk and Num(boards) or nil
+    if not boards or boards < 1 then
+        return
+    end
+    local j
+    for j = 1, boards do
+        local boardOk, text = pcall(GetQuestLogLeaderBoard, j, i)
+        if boardOk then
+            local label, cur, need = SplitObjective(text)
+            NoteQuest(questID, title, j, label, cur, need, text)
+        end
+    end
+end
+
+local function BeginQuestMode()
+    if C_QuestLog and C_QuestLog.GetNumQuestLogEntries and C_QuestLog.GetInfo and C_QuestLog.GetQuestObjectives then
+        questMode = "modern"
+        return
+    end
+    if GetNumQuestLogEntries and GetQuestLogTitle then
+        questMode = "classic"
+        return
+    end
+    questMode = "none"
+end
+
+local function QuestCount()
+    if questMode == "modern" then
+        local ok, count = pcall(C_QuestLog.GetNumQuestLogEntries)
+        return ok and Num(count) or 0
+    end
+    if questMode == "classic" then
+        local ok, count = pcall(GetNumQuestLogEntries)
+        return ok and Num(count) or 0
+    end
+    return 0
+end
+
+local function ScanQuestID(questID)
+    questID = Num(questID)
+    if not questID or not C_QuestLog or not C_QuestLog.GetQuestObjectives then
+        return
+    end
+    local title
+    if C_QuestLog.GetTitleForQuestID then
+        local ok, name = pcall(C_QuestLog.GetTitleForQuestID, questID)
+        title = ok and Text(name) or nil
+    end
+    if not title then
+        title = Text(AH.QuestTitles[questID])
+    end
+    local objOk, objectives = pcall(C_QuestLog.GetQuestObjectives, questID)
+    if objOk then
+        NoteObjectives(questID, title, objectives)
+    end
+end
+
+local function ScanWatchedNow()
+    if C_QuestLog and C_QuestLog.GetNumQuestWatches and C_QuestLog.GetQuestIDForQuestWatch then
+        local ok, n = pcall(C_QuestLog.GetNumQuestWatches)
+        n = ok and Num(n) or 0
+        if n and n > 0 then
+            local i
+            for i = 1, n do
+                local idOk, questID = pcall(C_QuestLog.GetQuestIDForQuestWatch, i)
+                if idOk then
+                    ScanQuestID(questID)
                 end
             end
+            return
         end
+    end
+    if not GetNumQuestWatches or not GetQuestIndexForWatch then
         return
     end
-    if not GetNumQuestLogEntries or not GetQuestLogTitle or not GetNumQuestLeaderBoards or not GetQuestLogLeaderBoard then
-        return
-    end
-    local ok, count = pcall(GetNumQuestLogEntries)
-    count = ok and Num(count) or nil
-    if not count then
+    local ok, n = pcall(GetNumQuestWatches)
+    n = ok and Num(n) or 0
+    if not n or n < 1 then
         return
     end
     local i
-    for i = 1, count do
-        local titleOk, title, _, _, isHeader, _, _, _, questID = pcall(GetQuestLogTitle, i)
-        if titleOk and Flag(isHeader) ~= true then
-            local boardsOk, boards = pcall(GetNumQuestLeaderBoards, i)
-            boards = boardsOk and Num(boards) or nil
-            if boards and boards > 0 then
-                local j
-                for j = 1, boards do
-                    local boardOk, text = pcall(GetQuestLogLeaderBoard, j, i)
-                    if boardOk then
-                        local label, cur, need = SplitObjective(text)
-                        NoteQuest(questID, title, j, label, cur, need, text)
-                    end
-                end
+    for i = 1, n do
+        local idxOk, index = pcall(GetQuestIndexForWatch, i)
+        index = idxOk and Num(index) or nil
+        if index then
+            if questMode == "modern" and C_QuestLog and C_QuestLog.GetInfo then
+                ScanModernEntry(index)
+            else
+                ScanClassicEntry(index)
             end
         end
     end
+end
+
+local function StepQuests()
+    if questMode == "none" then
+        questMode = nil
+    end
+    if not questMode then
+        BeginQuestMode()
+    end
+    if questMode == "none" then
+        return false
+    end
+    local count = QuestCount()
+    if not count or count < 1 then
+        questCursor = 1
+        questQuiet = false
+        return true
+    end
+    if questCursor < 1 or questCursor > count then
+        questCursor = 1
+    end
+    local n = 0
+    while n < 3 and questCursor <= count do
+        if questMode == "modern" then
+            ScanModernEntry(questCursor)
+        elseif questMode == "classic" then
+            ScanClassicEntry(questCursor)
+        end
+        questCursor = questCursor + 1
+        n = n + 1
+    end
+    if questCursor > count then
+        questCursor = 1
+        questQuiet = false
+        return true
+    end
+    return false
 end
 
 local function AchievementComplete(id)
@@ -287,24 +416,32 @@ end
 
 local function ScanOneAchievement(id, name, silent)
     if not GetAchievementNumCriteria or not GetAchievementCriteriaInfo then
-        return
+        return true
     end
     id = Num(id)
     name = Text(name)
     if not id or not name then
-        return
+        return true
     end
     if AchievementComplete(id) then
-        return
+        return true
     end
     local numOk, n = pcall(GetAchievementNumCriteria, id)
     n = numOk and Num(n) or nil
     if not n or n < 1 then
-        return
+        return true
+    end
+    local startAt = criteriaCursor[id] or 1
+    if startAt < 1 or startAt > n then
+        startAt = 1
+    end
+    local last = startAt + 7
+    if last > n then
+        last = n
     end
     local finished = 0
     local i
-    for i = 1, n do
+    for i = startAt, last do
         local ok, _, _, completed, quantity, reqQuantity = pcall(GetAchievementCriteriaInfo, id, i)
         quantity = ok and Num(quantity) or nil
         reqQuantity = ok and Num(reqQuantity) or nil
@@ -319,42 +456,26 @@ local function ScanOneAchievement(id, name, silent)
         if not silent and live and prev and quantity and quantity > prev then
             if reqQuantity and quantity < reqQuantity then
                 SpeakAchievementProgress(name, quantity, reqQuantity)
-            elseif n > 1 and finished < n then
+            elseif startAt == 1 and last == n and n > 1 and finished < n then
                 SpeakAchievementProgress(name, finished, n)
             end
         end
     end
+    if last >= n then
+        criteriaCursor[id] = 1
+        return true
+    end
+    criteriaCursor[id] = last + 1
+    return false
 end
 
-local function ScanAchievements(silent)
-    if GetCategoryList and GetCategoryNumAchievements and GetAchievementInfo then
-        local ok, cats = pcall(GetCategoryList)
-        if ok and type(cats) == "table" then
-            local c
-            for c = 1, #cats do
-                local numOk, num = pcall(GetCategoryNumAchievements, cats[c])
-                num = numOk and Num(num) or nil
-                if num and num > 0 then
-                    local i
-                    for i = 1, num do
-                        local infoOk, id, name, _, completed = pcall(GetAchievementInfo, cats[c], i)
-                        id = infoOk and Num(id) or nil
-                        name = infoOk and Text(name) or nil
-                        if id and name and Flag(completed) ~= true then
-                            ScanOneAchievement(id, name, silent)
-                        end
-                    end
-                end
-            end
-            return
-        end
-    end
+local function ScanTracked(silent)
     if not GetTrackedAchievements then
-        return
+        return true
     end
     local ok, a, b, c, d, e, f, g, h, i, j = pcall(GetTrackedAchievements)
     if not ok then
-        return
+        return true
     end
     local ids = { a, b, c, d, e, f, g, h, i, j }
     local n
@@ -362,9 +483,66 @@ local function ScanAchievements(silent)
         local id = Num(ids[n])
         if id and GetAchievementInfo then
             local infoOk, _, name = pcall(GetAchievementInfo, id)
-            ScanOneAchievement(id, infoOk and name or nil, silent)
+            if not ScanOneAchievement(id, infoOk and name or nil, silent) then
+                return false
+            end
         end
     end
+    return true
+end
+
+local function StepAchievements()
+    if not GetCategoryList or not GetCategoryNumAchievements or not GetAchievementInfo then
+        ScanTracked(achQuiet)
+        achQuiet = false
+        achPrimed = true
+        return true
+    end
+    if not achCats then
+        local ok, cats = pcall(GetCategoryList)
+        if not ok or type(cats) ~= "table" then
+            ScanTracked(achQuiet)
+            achQuiet = false
+            achPrimed = true
+            return true
+        end
+        achCats = cats
+        achCatIndex = 1
+        achInCat = 1
+    end
+    local budget = 2
+    while budget > 0 and achCatIndex <= #achCats do
+        local numOk, num = pcall(GetCategoryNumAchievements, achCats[achCatIndex])
+        num = numOk and Num(num) or 0
+        if not num or num < 1 or achInCat > num then
+            achCatIndex = achCatIndex + 1
+            achInCat = 1
+            budget = budget - 1
+        else
+            local infoOk, id, name, _, completed = pcall(GetAchievementInfo, achCats[achCatIndex], achInCat)
+            id = infoOk and Num(id) or nil
+            name = infoOk and Text(name) or nil
+            achInCat = achInCat + 1
+            budget = budget - 1
+            if id and name and Flag(completed) ~= true then
+                if not ScanOneAchievement(id, name, achQuiet) then
+                    achInCat = achInCat - 1
+                end
+            end
+            if achInCat > num then
+                achCatIndex = achCatIndex + 1
+                achInCat = 1
+            end
+        end
+    end
+    if achCatIndex > #achCats then
+        achQuiet = false
+        achPrimed = true
+        achCatIndex = 1
+        achInCat = 1
+        return true
+    end
+    return false
 end
 
 local function Remember(store, name)
@@ -559,28 +737,22 @@ local function HandleTransmog(sourceID)
 end
 
 local function Seed()
+    if seeded then
+        return
+    end
+    seeded = true
     live = false
     seedGen = seedGen + 1
     local gen = seedGen
-    achPrimed = false
-    ScanQuestLog()
-    ScanAchievements(true)
-    ScanMounts()
-    ScanCompanions()
-    ScanPets()
-    ScanHeirlooms()
     local function finish()
         if gen ~= seedGen then
             return
         end
-        ScanQuestLog()
-        ScanAchievements(true)
         ScanMounts()
         ScanCompanions()
         ScanPets()
         ScanHeirlooms()
         live = true
-        achPrimed = On("chatAchievementProgress")
     end
     if C_Timer and C_Timer.After then
         C_Timer.After(2, finish)
@@ -611,11 +783,18 @@ frame:SetScript("OnEvent", function(_, event, ...)
         return
     end
     if event == "QUEST_LOG_UPDATE" or event == "QUEST_WATCH_UPDATE" then
-        ScanQuestLog()
+        if live and On("chatQuestProgress") then
+            questDirty = true
+            watchDirty = true
+        end
         return
     end
     if event == "CRITERIA_UPDATE" then
-        achDirty = true
+        if live and On("chatAchievementProgress") then
+            achDirty = true
+            achTrackedPending = true
+            achSerial = achSerial + 1
+        end
         return
     end
     if event == "NEW_MOUNT_ADDED" then
@@ -644,27 +823,69 @@ frame:SetScript("OnEvent", function(_, event, ...)
     end
 end)
 
+local pulse = 0
 frame:SetScript("OnUpdate", function(_, elapsed)
-    local switchedOn = On("chatAchievementProgress")
-    if switchedOn and not achPrimed and live then
-        ScanAchievements(true)
-        achPrimed = true
-        achDirty = false
+    if not live then
         return
     end
-    if not switchedOn then
+    pulse = pulse + (elapsed or 0)
+    if pulse < 0.5 then
+        return
+    end
+    pulse = 0
+    if On("chatQuestProgress") then
+        if questQuiet then
+            questDirty = true
+            questCursor = 1
+            questQuiet = false
+        end
+        if watchDirty then
+            ScanWatchedNow()
+            watchDirty = false
+        end
+        if questDirty then
+            if StepQuests() then
+                questDirty = false
+            end
+        end
+    else
+        questCursor = 1
+        questDirty = false
+        watchDirty = false
+        questQuiet = true
+    end
+    if not On("chatAchievementProgress") then
         achPrimed = false
-    end
-    if not achDirty then
+        achDirty = false
+        achTrackedPending = false
+        achCatIndex = 1
+        achInCat = 1
         return
     end
-    achWait = achWait + (elapsed or 0)
-    if achWait < 0.3 then
-        return
+    if not achPrimed then
+        if ScanTracked(true) then
+            achPrimed = true
+            achDirty = true
+            achCatIndex = 1
+            achInCat = 1
+            achMark = achSerial
+        end
     end
-    achWait = 0
-    achDirty = false
-    if live and switchedOn then
-        ScanAchievements(false)
+    if achTrackedPending then
+        if ScanTracked(false) then
+            achTrackedPending = false
+        end
+    end
+    if achDirty then
+        if achCatIndex == 1 and achInCat == 1 then
+            achMark = achSerial
+        end
+        if StepAchievements() then
+            if achSerial ~= achMark then
+                achDirty = true
+            else
+                achDirty = false
+            end
+        end
     end
 end)

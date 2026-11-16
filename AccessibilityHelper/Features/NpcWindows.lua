@@ -933,7 +933,9 @@ frame:SetScript("OnEvent", function(_, event, ...)
         return
     end
     if event == "QUEST_LOG_UPDATE" then
-        PollLog()
+        if On("chatQuestDetails") then
+            PollLog()
+        end
         return
     end
     if event == "GOSSIP_SHOW" then
@@ -974,7 +976,7 @@ end)
 
 frame:SetScript("OnUpdate", function(self, elapsed)
     self._log = (self._log or 0) + (elapsed or 0)
-    if self._log < 0.3 then
+    if self._log < 0.75 then
         return
     end
     self._log = 0

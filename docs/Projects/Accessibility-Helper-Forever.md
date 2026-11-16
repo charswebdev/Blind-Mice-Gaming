@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.4.9** |
+| Version | **1.5.0** |
 | Type | In-game addon (VI / TTS) |
 | Folder | `AccessibilityHelper-forever/` |
 | Clients | `_forever_` (wowf 1.60.1.70634, Interface 16001) |
@@ -18,7 +18,7 @@ WoW Forever copy of Accessibility Helper. It is its own addon folder and saved-v
 ## Features
 
 - Tooltip reader (`/ahtip`) speaks only when the read key is pressed. A later press stops that read. Holding the key does not start it again.
-- `/ah` opens Tooltip, Speech, Status, Arrows, Rewards, Combat, and Chat. Click Rewards, Chat, or Combat to show or hide the section names under it. The arrow points down while they are showing and up while they are hidden. Combat starts quiet until Read combat is on. Status speaks profession skill, level-up, a learned recipe, a crafted item, follow, indoor and outdoors, swimming, flying, mount, AFK, a new location, red error text, and the condition lines when those switches are on. Commands lists the slash commands and key bindings. Arrows reads the TomTom arrow with `/ahtt`, `/aharrow`, `/ahtomtom`, or the TomTom keybind, and the Zygor arrow with `/ahz`, `/ahzygor`, or the Zygor keybind. Rewards speaks experience, reputation, currency, gold, loot, a completed quest, and an earned achievement. Chat Progress speaks achievement progress, quest progress, an accepted quest, and the open quest's description, objectives, and rewards. Chat NPC speaks the window, a merchant sale, and a repair. Chat Collections speaks item pickup and new collection items. Those lines are not printed.
+- `/ah` opens Tooltip, Speech, Status, Arrows, Rewards, Combat, and Chat. The left list scrolls with the mouse wheel. Click Rewards, Chat, or Combat to show or hide the section names under it. The arrow points down while they are showing and up while they are hidden. Combat starts quiet until Read combat is on. Status speaks profession skill, level-up, a learned recipe, a crafted item, follow, indoor and outdoors, swimming, flying, mount, AFK, a new location, red error text, and the condition lines when those switches are on. Commands lists the slash commands and key bindings. Arrows reads the TomTom arrow with `/ahtt`, `/aharrow`, `/ahtomtom`, or the TomTom keybind, and the Zygor arrow with `/ahz`, `/ahzygor`, or the Zygor keybind. Rewards speaks experience, reputation, currency, gold, loot, a completed quest, and an earned achievement. Chat Progress speaks achievement progress, quest progress, an accepted quest, and the open quest's description, objectives, and rewards. Chat NPC speaks the window, a merchant sale, and a repair. Chat Collections speaks item pickup and new collection items. Those lines are not printed.
 - The older cursor, quest, and combat readers are not loaded. Combat uses the new Combat page. Quest text uses the Chat switches.
 
 ## Development plan
@@ -117,6 +117,8 @@ WoW Forever copy of Accessibility Helper. It is its own addon folder and saved-v
 
 1.4.9 keeps the same lines and does less work to say them. Combat lines are checked twice a second, and only while Read combat is on. The speech list keeps a few waiting lines and skips a repeat of the same line. A new place still speaks when the zone changes. A pressed read key still speaks.
 
+1.5.0 keeps the same Progress lines and does less work to say them. Quest progress and achievement progress stay off until those switches are on. While they are on, a few quests or achievements are checked at a time. A watched quest is still spoken. The left list in `/ah` scrolls with the mouse wheel, so Chat, Combat, and Rewards can all be open.
+
 ## Sources and data
 
 Copied from `AccessibilityHelper/` at 3.6.5. Game state still comes from Blizzard APIs. Saved defaults live in `Core/DB.lua` and are stored in `AccessibilityHelperForeverDB`.
@@ -128,6 +130,8 @@ On 2026-09-27 the tooltip reader spoke on Forever. The Retail and Classic addon 
 On 2026-11-10, v1.1.7, Numpad * speaks the tooltip again. The saved read key is watched directly. Clicking a page still says only the page name. Hovering stays quiet.
 
 ## What did not work
+
+Chat Progress was reading the whole quest log on every quest update, and every unfinished achievement when achievement progress changed. That stopped the game for a moment. Those reads now happen a few at a time, and only while the matching switch is on. The spoken lines are the same.
 
 Announcements were waking the game on every health tick, every power tick, every bag change, and every target change, and the speech list kept every line. That used the game’s resources while a fight or a loot window was open. The checks now run on a short timer, and extra copies of the same line are left out.
 
