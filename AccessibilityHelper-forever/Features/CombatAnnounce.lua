@@ -160,12 +160,11 @@ local function Percent(cur, maxv)
     return math.floor((cur * 100 / maxv) + 0.5)
 end
 
-local function WatchedUnits()
-    local units = { "target", "focus", "boss1", "boss2", "boss3", "boss4", "boss5" }
-    for i = 1, 30 do
-        units[#units + 1] = "nameplate" .. i
-    end
-    return units
+local WATCH_UNITS = { "target", "focus", "boss1", "boss2", "boss3", "boss4", "boss5" }
+local watchIndex = 1
+while watchIndex <= 30 do
+    WATCH_UNITS[#WATCH_UNITS + 1] = "nameplate" .. watchIndex
+    watchIndex = watchIndex + 1
 end
 
 local function EnemyTargetsYou(unit)
@@ -180,9 +179,8 @@ end
 
 local function CheckEnemyTargets()
     local seen = {}
-    local units = WatchedUnits()
-    for i = 1, #units do
-        local unit = units[i]
+    for i = 1, #WATCH_UNITS do
+        local unit = WATCH_UNITS[i]
         if EnemyTargetsYou(unit) then
             local guid = Guid(unit)
             local name = UnitNamePlain(unit)
@@ -269,16 +267,6 @@ local function PrimaryPowerType()
         value = Num(powerType)
     end)
     return value
-end
-
-local function IsPlayerUnit(unit)
-    if type(unit) ~= "string" then
-        return false
-    end
-    if AH.Compat and AH.Compat.IsSecretValue and AH.Compat.IsSecretValue(unit) then
-        return false
-    end
-    return unit == "player"
 end
 
 local function PowerPair(unit, powerId)
@@ -633,16 +621,11 @@ frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("PLAYER_REGEN_DISABLED")
 frame:RegisterEvent("PLAYER_REGEN_ENABLED")
 frame:RegisterEvent("PLAYER_TARGET_CHANGED")
-frame:RegisterEvent("UNIT_TARGET")
-frame:RegisterEvent("UNIT_HEALTH")
-frame:RegisterEvent("UNIT_AURA")
 frame:RegisterEvent("UNIT_SPELLCAST_START")
 frame:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START")
 frame:RegisterEvent("UNIT_SPELLCAST_STOP")
 frame:RegisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
 frame:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
-pcall(frame.RegisterEvent, frame, "UNIT_POWER_UPDATE")
-pcall(frame.RegisterEvent, frame, "UNIT_POWER_FREQUENT")
 pcall(frame.RegisterEvent, frame, "LOSS_OF_CONTROL_UPDATE")
 pcall(frame.RegisterEvent, frame, "LOSS_OF_CONTROL_ADDED")
 
@@ -670,27 +653,8 @@ frame:SetScript("OnEvent", function(_, event, unit)
         AnnounceYourTarget()
         return
     end
-    if event == "UNIT_TARGET" then
-        CheckEnemyTargets()
-        return
-    end
-    if event == "UNIT_HEALTH" then
-        if IsPlayerUnit(unit) then
-            CheckHealth()
-        end
-        return
-    end
-    if event == "UNIT_POWER_UPDATE" or event == "UNIT_POWER_FREQUENT" then
-        if IsPlayerUnit(unit) then
-            CheckMainPower()
-            CheckSecondary()
-        end
-        return
-    end
-    if event == "UNIT_AURA" or event == "LOSS_OF_CONTROL_UPDATE" or event == "LOSS_OF_CONTROL_ADDED" then
-        if event ~= "UNIT_AURA" or IsPlayerUnit(unit) then
-            ScanAuras()
-        end
+    if event == "LOSS_OF_CONTROL_UPDATE" or event == "LOSS_OF_CONTROL_ADDED" then
+        ScanAuras()
         return
     end
     if event == "UNIT_SPELLCAST_START" or event == "UNIT_SPELLCAST_CHANNEL_START" then
@@ -712,5 +676,13 @@ frame:SetScript("OnUpdate", function(_, delta)
         return
     end
     elapsed = 0
+    local sv = DB()
+    if sv.combatReadEnabled ~= true then
+        return
+    end
     CheckEnemyTargets()
+    CheckHealth()
+    CheckMainPower()
+    CheckSecondary()
+    ScanAuras()
 end)

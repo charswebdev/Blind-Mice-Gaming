@@ -16,6 +16,7 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 
 ## Features
 
+- **2026-11-15:** Accessibility Helper - WoW Forever **1.4.9** and Accessibility Helper - Retail **3.7.8**. Announcements do less work. Combat lines are checked twice a second, and only while Read combat is on. A repeat of the same line is skipped. Do not install Retail `AccessibilityHelper/` into `_forever_`.
 - **2026-11-15:** BMG Alt Manager **1.0.2** (`BMGAM`, retail) and BMG Alt Manager - WoW Forever **1.0.1** (`BMGAM-forever`). Forget removes the selected character from that flavor’s roster. Do not install Retail `BMGAM` into `_forever_`.
 - **2026-11-10:** Accessibility Helper - WoW Forever **1.4.8** and Accessibility Helper - Retail **3.7.7**. A skill increase says the new rank and the cap, including after a craft. Do not install Retail `AccessibilityHelper/` into `_forever_`.
 - **2026-11-10:** Accessibility Helper - WoW Forever **1.4.7** and Accessibility Helper - Retail **3.7.6**. The tooltip read key can use Alt, Control, Shift, a mouse button, or the mouse wheel. Do not install Retail `AccessibilityHelper/` into `_forever_`.

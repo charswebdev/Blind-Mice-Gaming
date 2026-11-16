@@ -33,6 +33,10 @@ local flushGen = 0
 
 local CHUNK_MAX = 220
 local GAP_SEC = 0.35
+local QUEUE_MAX = 6
+local REPEAT_GAP = 1.5
+local recentText = nil
+local recentAt = 0
 -- Long enough for StopSpeakingText pulses to drain Blizzard/SAPI mid-utterance.
 local FLUSH_LOCK_SEC = 1.0
 -- Conservative timer fallback if PLAYBACK_FINISHED is missing (avoids stacking).
@@ -433,7 +437,52 @@ function Speech.Say(text, priority, opts)
         InterruptForCritical()
     end
 
+    if priority ~= Speech.PRIORITY_CRITICAL and priority ~= Speech.PRIORITY_NAV then
+        local now = Now()
+        if text == recentText and type(now) == "number" and type(recentAt) == "number" then
+            local age = now - recentAt
+            if type(age) == "number" and age >= 0 and age < REPEAT_GAP then
+                return
+            end
+        end
+        local queued = 1
+        while queued <= #queue do
+            if queue[queued].text == text then
+                return
+            end
+            queued = queued + 1
+        end
+    end
+
     EnqueuePieces(pieces, priority)
+    recentText = text
+    recentAt = Now()
+    while #queue > QUEUE_MAX do
+        local dropAt = nil
+        local look = 1
+        while look <= #queue do
+            local rank = queue[look].p
+            if rank == Speech.PRIORITY_LOW or rank == Speech.PRIORITY_INFO then
+                dropAt = look
+                break
+            end
+            look = look + 1
+        end
+        if not dropAt then
+            look = 1
+            while look <= #queue do
+                if queue[look].p == Speech.PRIORITY_STATUS then
+                    dropAt = look
+                    break
+                end
+                look = look + 1
+            end
+        end
+        if not dropAt then
+            break
+        end
+        table.remove(queue, dropAt)
+    end
     PumpQueue()
 end
 

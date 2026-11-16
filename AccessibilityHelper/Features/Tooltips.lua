@@ -1294,7 +1294,7 @@ local function HookTipCache(tip)
         end)
         tip:HookScript("OnUpdate", function(self, elapsed)
             self._ahTipAccum = (self._ahTipAccum or 0) + (elapsed or 0)
-            if self._ahTipAccum < 0.15 then
+            if self._ahTipAccum < 0.5 then
                 return
             end
             self._ahTipAccum = 0
@@ -1329,7 +1329,7 @@ local function InstallTipHooks()
         extraCacheFrame = CreateFrame("Frame")
         extraCacheFrame:SetScript("OnUpdate", function(self, elapsed)
             self._ahTipAccum = (self._ahTipAccum or 0) + (elapsed or 0)
-            if self._ahTipAccum < 0.2 then
+            if self._ahTipAccum < 0.5 then
                 return
             end
             self._ahTipAccum = 0

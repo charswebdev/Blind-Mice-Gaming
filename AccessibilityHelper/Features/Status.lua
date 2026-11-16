@@ -1300,25 +1300,9 @@ frame:RegisterEvent("CHAT_MSG_SKILL")
 frame:RegisterEvent("NEW_RECIPE_LEARNED")
 frame:RegisterEvent("AUTOFOLLOW_BEGIN")
 frame:RegisterEvent("AUTOFOLLOW_END")
-frame:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
-frame:RegisterEvent("PLAYER_FLAGS_CHANGED")
 frame:RegisterEvent("CHAT_MSG_LOOT")
 frame:RegisterEvent("CHAT_MSG_TRADESKILLS")
 frame:RegisterEvent("PLAYER_LEVEL_UP")
-frame:RegisterEvent("PLAYER_DEAD")
-frame:RegisterEvent("PLAYER_ALIVE")
-frame:RegisterEvent("PLAYER_UNGHOST")
-frame:RegisterEvent("PLAYER_UPDATE_RESTING")
-frame:RegisterEvent("PLAYER_MONEY")
-frame:RegisterEvent("BAG_UPDATE")
-frame:RegisterEvent("UPDATE_INVENTORY_DURABILITY")
-frame:RegisterEvent("UPDATE_SHAPESHIFT_FORM")
-frame:RegisterEvent("UPDATE_STEALTH")
-frame:RegisterEvent("GROUP_ROSTER_UPDATE")
-frame:RegisterEvent("UNIT_PET")
-frame:RegisterEvent("PET_BAR_UPDATE")
-frame:RegisterEvent("MIRROR_TIMER_START")
-frame:RegisterEvent("MIRROR_TIMER_STOP")
 frame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 frame:RegisterEvent("UNIT_SPELLCAST_SENT")
 frame:RegisterEvent("UNIT_SPELLCAST_START")
@@ -1335,7 +1319,7 @@ frame:SetScript("OnUpdate", function(_, elapsed)
         return
     end
     bodyPoll = bodyPoll + elapsed
-    if bodyPoll < 0.4 then
+    if bodyPoll < 0.75 then
         return
     end
     bodyPoll = 0
@@ -1365,16 +1349,6 @@ frame:SetScript("OnEvent", function(_, event, ...)
     end
     if event == "AUTOFOLLOW_END" then
         EndFollow()
-        return
-    end
-    if event == "PLAYER_MOUNT_DISPLAY_CHANGED" or event == "PLAYER_FLAGS_CHANGED"
-        or event == "PLAYER_DEAD" or event == "PLAYER_ALIVE" or event == "PLAYER_UNGHOST"
-        or event == "PLAYER_UPDATE_RESTING" or event == "PLAYER_MONEY" or event == "BAG_UPDATE"
-        or event == "UPDATE_INVENTORY_DURABILITY" or event == "UPDATE_SHAPESHIFT_FORM"
-        or event == "UPDATE_STEALTH" or event == "GROUP_ROSTER_UPDATE" or event == "UNIT_PET"
-        or event == "PET_BAR_UPDATE" or event == "MIRROR_TIMER_START" or event == "MIRROR_TIMER_STOP"
-    then
-        PollPlace()
         return
     end
     if event == "CHAT_MSG_LOOT" or event == "CHAT_MSG_TRADESKILLS" then

@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.4.8** |
+| Version | **1.4.9** |
 | Type | In-game addon (VI / TTS) |
 | Folder | `AccessibilityHelper-forever/` |
 | Clients | `_forever_` (wowf 1.60.1.70634, Interface 16001) |
@@ -115,6 +115,8 @@ WoW Forever copy of Accessibility Helper. It is its own addon folder and saved-v
 
 1.4.8 speaks a skill increase as the new rank and the cap, such as Mining 8 / 75. A craft that raises a skill says that same line.
 
+1.4.9 keeps the same lines and does less work to say them. Combat lines are checked twice a second, and only while Read combat is on. The speech list keeps a few waiting lines and skips a repeat of the same line. A new place still speaks when the zone changes. A pressed read key still speaks.
+
 ## Sources and data
 
 Copied from `AccessibilityHelper/` at 3.6.5. Game state still comes from Blizzard APIs. Saved defaults live in `Core/DB.lua` and are stored in `AccessibilityHelperForeverDB`.
@@ -126,6 +128,8 @@ On 2026-09-27 the tooltip reader spoke on Forever. The Retail and Classic addon 
 On 2026-11-10, v1.1.7, Numpad * speaks the tooltip again. The saved read key is watched directly. Clicking a page still says only the page name. Hovering stays quiet.
 
 ## What did not work
+
+Announcements were waking the game on every health tick, every power tick, every bag change, and every target change, and the speech list kept every line. That used the game’s resources while a fight or a loot window was open. The checks now run on a short timer, and extra copies of the same line are left out.
 
 The read key spoke a switch from a page that was not open, because hidden switches still sat under the mouse. 1.1.9 speaks only a switch on the open page. The window switch descriptions were drawn on screen, and the read key did not speak them. 1.1.4 keeps that description with the switch and speaks it on the read key. A second tooltip key press could start the read again while the first one was still speaking. 1.0.2 stops speech when that same tooltip is still under the mouse. Holding the read key then started and stopped that line in a loop, and moving the mouse over a window button spoke that button again and again. 1.0.6 reads once per press. The older player-state reader was still loaded, so a saved Following switch kept saying “Following” and “Stopped following.” 1.0.7 does not load that reader.
 

@@ -216,7 +216,7 @@ frame:SetScript("OnUpdate", function(self, elapsed)
         return
     end
     poll = poll + elapsed
-    if poll < 0.3 then
+    if poll < 1 then
         return
     end
     poll = 0

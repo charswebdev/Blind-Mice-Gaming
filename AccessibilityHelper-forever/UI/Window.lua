@@ -1740,7 +1740,7 @@ local function Build()
 
     local footer = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     footer:SetPoint("BOTTOMLEFT", 12, 8)
-    footer:SetText("v1.4.8")
+    footer:SetText("v1.4.9")
     footer:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
 
     frame:SetScript("OnKeyDown", function(self, key)
