@@ -730,6 +730,9 @@ local function Build()
     frame:SetPoint("CENTER")
     frame:SetFrameStrata("DIALOG")
     frame:SetClampedToScreen(true)
+    if frame.SetClipsChildren then
+        frame:SetClipsChildren(true)
+    end
     frame:SetMovable(true)
     frame:EnableMouse(true)
     frame:Hide()
@@ -769,30 +772,90 @@ local function Build()
 
     local nav = CreateFrame("Frame", nil, frame, Template())
     nav:SetPoint("TOPLEFT", 1, -46)
-    nav:SetPoint("BOTTOMLEFT", 1, 28)
+    nav:SetPoint("BOTTOMLEFT", 1, 26)
     nav:SetWidth(176)
     Paint(nav, NAV_BG, nil)
+    if nav.SetClipsChildren then
+        nav:SetClipsChildren(true)
+    end
     local navScroll = CreateFrame("ScrollFrame", nil, nav)
-    navScroll:SetPoint("TOPLEFT", 0, 0)
-    navScroll:SetPoint("BOTTOMRIGHT", 0, 0)
+    navScroll:SetPoint("TOPLEFT", 4, -4)
+    navScroll:SetPoint("BOTTOMRIGHT", -16, 4)
+    if navScroll.SetClipsChildren then
+        navScroll:SetClipsChildren(true)
+    end
     local navChild = CreateFrame("Frame", nil, navScroll)
-    navChild:SetWidth(176)
+    navChild:SetWidth(156)
     navChild:SetHeight(40)
     navScroll:SetScrollChild(navChild)
-    local function ScrollNav(delta)
+    local navBar = CreateFrame("Frame", nil, nav, Template())
+    navBar:SetWidth(10)
+    navBar:SetPoint("TOPRIGHT", -3, -6)
+    navBar:SetPoint("BOTTOMRIGHT", -3, 6)
+    navBar:SetFrameLevel(nav:GetFrameLevel() + 5)
+    Paint(navBar, { 0.08, 0.07, 0.06, 1 }, EDGE)
+    local navThumb = CreateFrame("Button", nil, navBar, Template())
+    navThumb:SetWidth(10)
+    navThumb:SetHeight(36)
+    navThumb:SetPoint("TOP", navBar, "TOP", 0, 0)
+    Paint(navThumb, GOLD, nil)
+    local function NavMax()
         local childHeight = navChild:GetHeight()
         local viewHeight = navScroll:GetHeight()
-        if type(childHeight) ~= "number" or type(viewHeight) ~= "number" then
-            return
+        if type(childHeight) ~= "number" then
+            childHeight = 0
+        end
+        if type(viewHeight) ~= "number" then
+            viewHeight = 0
         end
         local maxScroll = childHeight - viewHeight
         if maxScroll < 0 then
             maxScroll = 0
         end
-        local nextScroll = navScroll:GetVerticalScroll() - (delta * 36)
-        if type(nextScroll) ~= "number" then
+        return viewHeight, maxScroll
+    end
+    local function UpdateNavBar()
+        local viewHeight, maxScroll = NavMax()
+        local current = navScroll:GetVerticalScroll()
+        if type(current) ~= "number" or current < 0 then
+            current = 0
+        end
+        if current > maxScroll then
+            current = maxScroll
+            navScroll:SetVerticalScroll(current)
+        end
+        if maxScroll <= 1 or viewHeight < 20 then
+            navBar:Hide()
             return
         end
+        navBar:Show()
+        local track = navBar:GetHeight()
+        if type(track) ~= "number" or track < 20 then
+            return
+        end
+        local thumbH = (viewHeight / (viewHeight + maxScroll)) * track
+        if thumbH < 28 then
+            thumbH = 28
+        end
+        if thumbH > track then
+            thumbH = track
+        end
+        navThumb:SetHeight(thumbH)
+        local travel = track - thumbH
+        local offset = 0
+        if maxScroll > 0 and travel > 0 then
+            offset = (current / maxScroll) * travel
+        end
+        navThumb:ClearAllPoints()
+        navThumb:SetPoint("TOP", navBar, "TOP", 0, -offset)
+    end
+    local function ScrollNav(delta)
+        local _, maxScroll = NavMax()
+        local current = navScroll:GetVerticalScroll()
+        if type(current) ~= "number" then
+            current = 0
+        end
+        local nextScroll = current - (delta * 36)
         if nextScroll < 0 then
             nextScroll = 0
         end
@@ -800,6 +863,7 @@ local function Build()
             nextScroll = maxScroll
         end
         navScroll:SetVerticalScroll(nextScroll)
+        UpdateNavBar()
     end
     navScroll:EnableMouseWheel(true)
     navScroll:SetScript("OnMouseWheel", function(_, delta)
@@ -819,14 +883,101 @@ local function Build()
     navChild:SetScript("OnMouseWheel", function(_, delta)
         ScrollNav(delta)
     end)
+    navBar:EnableMouse(true)
+    navBar:EnableMouseWheel(true)
+    navBar:SetScript("OnMouseWheel", function(_, delta)
+        ScrollNav(delta)
+    end)
+    navBar:SetScript("OnMouseDown", function(_, button)
+        if button ~= "LeftButton" then
+            return
+        end
+        local _, cursorY = GetCursorPosition()
+        local scale = navBar:GetEffectiveScale()
+        if type(scale) ~= "number" or scale <= 0 then
+            scale = 1
+        end
+        if type(cursorY) == "number" then
+            cursorY = cursorY / scale
+        end
+        local thumbTop = navThumb:GetTop()
+        if type(cursorY) ~= "number" or type(thumbTop) ~= "number" then
+            return
+        end
+        if cursorY > thumbTop then
+            ScrollNav(4)
+        else
+            ScrollNav(-4)
+        end
+    end)
+    navThumb:EnableMouseWheel(true)
+    navThumb:SetScript("OnMouseWheel", function(_, delta)
+        ScrollNav(delta)
+    end)
+    navThumb:SetScript("OnMouseDown", function(self, button)
+        if button ~= "LeftButton" then
+            return
+        end
+        local _, startY = GetCursorPosition()
+        local scale = self:GetEffectiveScale()
+        if type(scale) ~= "number" or scale <= 0 then
+            scale = 1
+        end
+        if type(startY) == "number" then
+            startY = startY / scale
+        end
+        local thumbTop = self:GetTop()
+        local grab = 0
+        if type(thumbTop) == "number" and type(startY) == "number" then
+            grab = thumbTop - startY
+        end
+        self:SetScript("OnUpdate", function(btn)
+            if not IsMouseButtonDown or not IsMouseButtonDown("LeftButton") then
+                btn:SetScript("OnUpdate", nil)
+                return
+            end
+            local _, cursorY = GetCursorPosition()
+            local btnScale = btn:GetEffectiveScale()
+            if type(btnScale) ~= "number" or btnScale <= 0 then
+                btnScale = 1
+            end
+            if type(cursorY) == "number" then
+                cursorY = cursorY / btnScale
+            end
+            local barTop = navBar:GetTop()
+            local track = navBar:GetHeight()
+            local thumbH = btn:GetHeight()
+            if type(cursorY) ~= "number" or type(barTop) ~= "number" or type(track) ~= "number" or type(thumbH) ~= "number" then
+                return
+            end
+            local travel = track - thumbH
+            if travel < 1 then
+                return
+            end
+            local offset = barTop - (cursorY + grab)
+            if offset < 0 then
+                offset = 0
+            end
+            if offset > travel then
+                offset = travel
+            end
+            local _, maxScroll = NavMax()
+            local nextScroll = 0
+            if maxScroll > 0 then
+                nextScroll = (offset / travel) * maxScroll
+            end
+            navScroll:SetVerticalScroll(nextScroll)
+            UpdateNavBar()
+        end)
+    end)
 
     local content = CreateFrame("Frame", nil, frame)
     content:SetPoint("TOPLEFT", nav, "TOPRIGHT", 8, -8)
-    content:SetPoint("BOTTOMRIGHT", -10, 36)
+    content:SetPoint("BOTTOMRIGHT", -10, 32)
 
     for i = 1, #PAGES do
         local info = PAGES[i]
-        local button = MakeButton(navChild, info.label, 154, 32)
+        local button = MakeButton(navChild, info.label, 146, 32)
         button:SetPoint("TOPLEFT", 10, -10 - (i - 1) * 38)
         BindNavWheel(button)
         button._page = info.id
@@ -1221,7 +1372,7 @@ local function Build()
     for s = 1, #CHAT_SECTIONS do
         local sec = CHAT_SECTIONS[s]
         local sub = CreateFrame("Button", nil, navChild, Template())
-        sub:SetSize(140, 22)
+        sub:SetSize(128, 22)
         local fs = sub:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         fs:SetPoint("LEFT", 6, 0)
         fs:SetPoint("RIGHT", -2, 0)
@@ -1355,7 +1506,7 @@ local function Build()
     for s = 1, #COMBAT_SECTIONS do
         local sec = COMBAT_SECTIONS[s]
         local sub = CreateFrame("Button", nil, navChild, Template())
-        sub:SetSize(140, 22)
+        sub:SetSize(128, 22)
         local fs = sub:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         fs:SetPoint("LEFT", 6, 0)
         fs:SetPoint("RIGHT", -2, 0)
@@ -1488,7 +1639,7 @@ local function Build()
     for s = 1, #REWARD_SECTIONS do
         local sec = REWARD_SECTIONS[s]
         local sub = CreateFrame("Button", nil, navChild, Template())
-        sub:SetSize(140, 22)
+        sub:SetSize(128, 22)
         local fs = sub:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         fs:SetPoint("LEFT", 6, 0)
         fs:SetPoint("RIGHT", -2, 0)
@@ -1522,7 +1673,7 @@ local function Build()
             local button = navButtons[page.id]
             if button then
                 button:ClearAllPoints()
-                button:SetPoint("TOPLEFT", navChild, "TOPLEFT", 10, y)
+                button:SetPoint("TOPLEFT", navChild, "TOPLEFT", 4, y)
                 y = y - 38
             end
             local sections, subs, open
@@ -1545,7 +1696,7 @@ local function Build()
                     if sub then
                         if open then
                             sub:ClearAllPoints()
-                            sub:SetPoint("TOPLEFT", navChild, "TOPLEFT", 28, y)
+                            sub:SetPoint("TOPLEFT", navChild, "TOPLEFT", 16, y)
                             sub:Show()
                             y = y - 24
                         else
@@ -1560,22 +1711,7 @@ local function Build()
             height = 40
         end
         navChild:SetHeight(height)
-        local viewHeight = navScroll:GetHeight()
-        local maxScroll = 0
-        if type(viewHeight) == "number" then
-            maxScroll = height - viewHeight
-        end
-        if maxScroll < 0 then
-            maxScroll = 0
-        end
-        local current = navScroll:GetVerticalScroll()
-        if type(current) ~= "number" or current < 0 then
-            current = 0
-        end
-        if current > maxScroll then
-            current = maxScroll
-        end
-        navScroll:SetVerticalScroll(current)
+        UpdateNavBar()
     end
     ApplyCombatTabs()
     ApplyRewardTabs()
@@ -1810,9 +1946,15 @@ local function Build()
         LayoutCommands()
     end
 
-    local footer = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    footer:SetPoint("BOTTOMLEFT", 12, 8)
-    footer:SetText("v3.7.9")
+    local footerBar = CreateFrame("Frame", nil, frame, Template())
+    footerBar:SetPoint("BOTTOMLEFT", 1, 1)
+    footerBar:SetPoint("BOTTOMRIGHT", -1, 1)
+    footerBar:SetHeight(24)
+    footerBar:SetFrameLevel(frame:GetFrameLevel() + 30)
+    Paint(footerBar, BG, nil)
+    local footer = footerBar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    footer:SetPoint("LEFT", 12, 0)
+    footer:SetText("v3.8.0")
     footer:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
 
     frame:SetScript("OnKeyDown", function(self, key)
@@ -1841,6 +1983,7 @@ local function Build()
     frame:SetScript("OnShow", function()
         Refresh()
         ShowPage(currentPage or "tooltip")
+        LayoutNav()
     end)
     frame:SetScript("OnHide", function(self)
         capturing = false

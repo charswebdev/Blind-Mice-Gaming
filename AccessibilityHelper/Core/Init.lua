@@ -120,6 +120,6 @@ do
     elseif GetBuildInfo then
         iface = tostring(select(4, GetBuildInfo()) or "?")
     end
-    print("|cff00ff00[Accessibility Helper - Retail]|r v3.7.9 loaded. TTS: " .. tostring(mode) .. " · Interface: " .. iface)
+    print("|cff00ff00[Accessibility Helper - Retail]|r v3.8.0 loaded. TTS: " .. tostring(mode) .. " · Interface: " .. iface)
     print("|cff00ff00[Accessibility Helper - Retail]|r |cff00ff00/ah|r opens the new window.")
 end

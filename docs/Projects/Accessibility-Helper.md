@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **3.7.9** |
+| Version | **3.8.0** |
 | Type | In-game addon (VI / TTS) |
 | Folder | `AccessibilityHelper/` |
 | Author tools | `Tools/AccessibilityHelper/` (release checklists; not in the addon zip) |
@@ -21,7 +21,7 @@ Version numbers stay short on purpose (3.6.2, then 3.6.3) — not 3.6.18-style p
 
 ## Features
 
-3.7.9 loads the same files and window as Accessibility Helper - WoW Forever 1.5.0. Chat Progress checks a few quests and achievements at a time, and only while those switches are on. The left list in `/ah` scrolls with the mouse wheel.
+3.8.0 loads the same files and window as Accessibility Helper - WoW Forever 1.5.1. The left list stays inside the window. A gold bar on that list scrolls with the mouse wheel or by dragging.
 
 - `/ah` opens Tooltip, Speech, Status, Arrows, Rewards, Combat, Chat, and Commands.
 - Tooltip reads on the key. TomTom is `/ahtt`. Zygor is `/ahz`.
@@ -65,6 +65,7 @@ Work was phased in the Lua headers and later combat/cast slices:
 | 3.7.7 | Skill rank | A skill increase says the new rank and the cap, including after a craft. Same as Forever 1.4.8. |
 | 3.7.8 | Lighter announcements | Combat lines are checked twice a second, and only while Read combat is on. The speech list keeps a few waiting lines and skips a repeat of the same line. Same as Forever 1.4.9. |
 | 3.7.9 | Progress and left list | Chat Progress checks a few quests and achievements at a time, and only while those switches are on. The left list scrolls with the mouse wheel. Same as Forever 1.5.0. |
+| 3.8.0 | Left list bar | The left list stays inside the window. A gold bar on that list scrolls with the mouse wheel or by dragging. Same as Forever 1.5.1. |
 
 Settings were rewritten to the two-pane pattern so VI users get one topic at a time instead of a dense options dump.
 

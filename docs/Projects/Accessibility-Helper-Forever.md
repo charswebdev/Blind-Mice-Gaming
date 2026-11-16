@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.5.0** |
+| Version | **1.5.1** |
 | Type | In-game addon (VI / TTS) |
 | Folder | `AccessibilityHelper-forever/` |
 | Clients | `_forever_` (wowf 1.60.1.70634, Interface 16001) |
@@ -118,6 +118,8 @@ WoW Forever copy of Accessibility Helper. It is its own addon folder and saved-v
 1.4.9 keeps the same lines and does less work to say them. Combat lines are checked twice a second, and only while Read combat is on. The speech list keeps a few waiting lines and skips a repeat of the same line. A new place still speaks when the zone changes. A pressed read key still speaks.
 
 1.5.0 keeps the same Progress lines and does less work to say them. Quest progress and achievement progress stay off until those switches are on. While they are on, a few quests or achievements are checked at a time. A watched quest is still spoken. The left list in `/ah` scrolls with the mouse wheel, so Chat, Combat, and Rewards can all be open.
+
+1.5.1 keeps the left list inside the window. A gold bar on that list scrolls with the mouse wheel or by dragging. The version line sits on its own strip at the bottom.
 
 ## Sources and data
 
