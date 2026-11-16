@@ -32,11 +32,21 @@ local function GetRaceOptions()
     return LPL.SetRestrictions:GetRaceFilterOptions()
 end
 
+-- Dropdown buttons default to GameFontHighlightSmall. Use the normal label font
+-- so hero talent names match Class, Specialization, Race, and Covenant.
+local MENU_LABEL_FONT = GameFontHighlightLeft
+
 local function AddMenuTitle(text, level)
     local info = UIDropDownMenu_CreateInfo()
     info.text = text
     info.isTitle = true
     info.notCheckable = true
+    info.fontObject = MENU_LABEL_FONT
+    UIDropDownMenu_AddButton(info, level)
+end
+
+local function AddMenuButton(info, level)
+    info.fontObject = MENU_LABEL_FONT
     UIDropDownMenu_AddButton(info, level)
 end
 
@@ -76,7 +86,7 @@ local function AddHeroTalentRestrictionMenu(record, onChanged, level)
                             onChanged(record)
                         end
                     end
-                    UIDropDownMenu_AddButton(info, level)
+                    AddMenuButton(info, level)
                 end
             end
         end
@@ -107,7 +117,7 @@ function LPL.RestrictionsMenu:Attach(button, getRecord, onChanged, supportedType
             info.text = "Restrictions limit where a set can be activated."
             info.isTitle = true
             info.notCheckable = true
-            UIDropDownMenu_AddButton(info, level)
+            AddMenuButton(info, level)
 
             if supported.character then
                 info = UIDropDownMenu_CreateInfo()
@@ -127,7 +137,7 @@ function LPL.RestrictionsMenu:Attach(button, getRecord, onChanged, supportedType
                         onChanged(record)
                     end
                 end
-                UIDropDownMenu_AddButton(info, level)
+                AddMenuButton(info, level)
             end
 
             if supported.class and LPL.TalentTree then
@@ -136,7 +146,7 @@ function LPL.RestrictionsMenu:Attach(button, getRecord, onChanged, supportedType
                 info.notCheckable = true
                 info.hasArrow = true
                 info.menuList = "class"
-                UIDropDownMenu_AddButton(info, level)
+                AddMenuButton(info, level)
             end
 
             if supported.spec and LPL.TalentTree then
@@ -145,7 +155,7 @@ function LPL.RestrictionsMenu:Attach(button, getRecord, onChanged, supportedType
                 info.notCheckable = true
                 info.hasArrow = true
                 info.menuList = "spec"
-                UIDropDownMenu_AddButton(info, level)
+                AddMenuButton(info, level)
             end
 
             if supported.herotalents and LPL.TalentTree then
@@ -154,7 +164,7 @@ function LPL.RestrictionsMenu:Attach(button, getRecord, onChanged, supportedType
                 info.notCheckable = true
                 info.hasArrow = true
                 info.menuList = "herotalents"
-                UIDropDownMenu_AddButton(info, level)
+                AddMenuButton(info, level)
             end
 
             if supported.race then
@@ -163,7 +173,7 @@ function LPL.RestrictionsMenu:Attach(button, getRecord, onChanged, supportedType
                 info.notCheckable = true
                 info.hasArrow = true
                 info.menuList = "race"
-                UIDropDownMenu_AddButton(info, level)
+                AddMenuButton(info, level)
             end
 
             if supported.covenant then
@@ -172,7 +182,7 @@ function LPL.RestrictionsMenu:Attach(button, getRecord, onChanged, supportedType
                 info.notCheckable = true
                 info.hasArrow = true
                 info.menuList = "covenant"
-                UIDropDownMenu_AddButton(info, level)
+                AddMenuButton(info, level)
             end
 
             info = UIDropDownMenu_CreateInfo()
@@ -184,7 +194,7 @@ function LPL.RestrictionsMenu:Attach(button, getRecord, onChanged, supportedType
                     onChanged(record)
                 end
             end
-            UIDropDownMenu_AddButton(info, level)
+            AddMenuButton(info, level)
         elseif level == 2 then
             menuList = menuList or UIDROPDOWNMENU_MENU_VALUE
 
@@ -202,7 +212,7 @@ function LPL.RestrictionsMenu:Attach(button, getRecord, onChanged, supportedType
                             onChanged(record)
                         end
                     end
-                    UIDropDownMenu_AddButton(info, level)
+                    AddMenuButton(info, level)
                 end
             elseif menuList == "class" then
                 for _, class in ipairs(GetClassOptions()) do
@@ -218,7 +228,7 @@ function LPL.RestrictionsMenu:Attach(button, getRecord, onChanged, supportedType
                             onChanged(record)
                         end
                     end
-                    UIDropDownMenu_AddButton(info, level)
+                    AddMenuButton(info, level)
                 end
             elseif menuList == "race" then
                 for _, race in ipairs(GetRaceOptions()) do
@@ -234,7 +244,7 @@ function LPL.RestrictionsMenu:Attach(button, getRecord, onChanged, supportedType
                             onChanged(record)
                         end
                     end
-                    UIDropDownMenu_AddButton(info, level)
+                    AddMenuButton(info, level)
                 end
             elseif menuList == "covenant" then
                 for _, covenant in ipairs(GetCovenantOptions()) do
@@ -250,7 +260,7 @@ function LPL.RestrictionsMenu:Attach(button, getRecord, onChanged, supportedType
                             onChanged(record)
                         end
                     end
-                    UIDropDownMenu_AddButton(info, level)
+                    AddMenuButton(info, level)
                 end
             elseif menuList == "herotalents" then
                 AddHeroTalentRestrictionMenu(record, onChanged, level)

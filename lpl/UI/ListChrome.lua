@@ -62,11 +62,19 @@ local function HeroTalentExists(heroTalentID, classFile, specID)
     return false
 end
 
+local MENU_LABEL_FONT = GameFontHighlightLeft
+
 local function AddMenuTitle(text, level)
     local info = UIDropDownMenu_CreateInfo()
     info.text = text
     info.isTitle = true
     info.notCheckable = true
+    info.fontObject = MENU_LABEL_FONT
+    UIDropDownMenu_AddButton(info, level)
+end
+
+local function AddMenuButton(info, level)
+    info.fontObject = MENU_LABEL_FONT
     UIDropDownMenu_AddButton(info, level)
 end
 
@@ -207,7 +215,7 @@ function LPL.ListChrome:Create(parent, config)
                     frame.onChanged()
                 end
             end
-            UIDropDownMenu_AddButton(info, level)
+            AddMenuButton(info, level)
         end
     end
 
@@ -237,7 +245,7 @@ function LPL.ListChrome:Create(parent, config)
                     frame.onChanged()
                 end
             end
-            UIDropDownMenu_AddButton(info, level)
+            AddMenuButton(info, level)
         end
     end
 
@@ -287,7 +295,7 @@ function LPL.ListChrome:Create(parent, config)
                                         frame.onChanged()
                                     end
                                 end
-                                UIDropDownMenu_AddButton(info, level)
+                                AddMenuButton(info, level)
                             end
                         end
                     end
@@ -330,7 +338,7 @@ function LPL.ListChrome:Create(parent, config)
                         frame.onChanged()
                     end
                 end
-                UIDropDownMenu_AddButton(info, level)
+                AddMenuButton(info, level)
             end
 
             if ListContains(frame.supportedFilters, "class") then
@@ -339,7 +347,7 @@ function LPL.ListChrome:Create(parent, config)
                 info.notCheckable = true
                 info.hasArrow = true
                 info.menuList = "class"
-                UIDropDownMenu_AddButton(info, level)
+                AddMenuButton(info, level)
             end
 
             if ListContains(frame.supportedFilters, "spec") then
@@ -348,7 +356,7 @@ function LPL.ListChrome:Create(parent, config)
                 info.notCheckable = true
                 info.hasArrow = true
                 info.menuList = "spec"
-                UIDropDownMenu_AddButton(info, level)
+                AddMenuButton(info, level)
             end
 
             if ListContains(frame.supportedFilters, "herotalents") then
@@ -357,7 +365,7 @@ function LPL.ListChrome:Create(parent, config)
                 info.notCheckable = true
                 info.hasArrow = true
                 info.menuList = "herotalents"
-                UIDropDownMenu_AddButton(info, level)
+                AddMenuButton(info, level)
             end
 
             if ListContains(frame.supportedFilters, "role") then
@@ -366,7 +374,7 @@ function LPL.ListChrome:Create(parent, config)
                 info.notCheckable = true
                 info.hasArrow = true
                 info.menuList = "role"
-                UIDropDownMenu_AddButton(info, level)
+                AddMenuButton(info, level)
             end
 
             if ListContains(frame.supportedFilters, "race") then
@@ -375,7 +383,7 @@ function LPL.ListChrome:Create(parent, config)
                 info.notCheckable = true
                 info.hasArrow = true
                 info.menuList = "race"
-                UIDropDownMenu_AddButton(info, level)
+                AddMenuButton(info, level)
             end
 
             if ListContains(frame.supportedFilters, "covenant") then
@@ -384,7 +392,7 @@ function LPL.ListChrome:Create(parent, config)
                 info.notCheckable = true
                 info.hasArrow = true
                 info.menuList = "covenant"
-                UIDropDownMenu_AddButton(info, level)
+                AddMenuButton(info, level)
             end
 
             info = UIDropDownMenu_CreateInfo()
@@ -393,7 +401,7 @@ function LPL.ListChrome:Create(parent, config)
             info.func = function()
                 frame:ClearFilters()
             end
-            UIDropDownMenu_AddButton(info, level)
+            AddMenuButton(info, level)
         elseif level == 2 then
             if menuList == "class" then
                 AddClassFilterMenu(level)
@@ -421,7 +429,7 @@ function LPL.ListChrome:Create(parent, config)
                             frame.onChanged()
                         end
                     end
-                    UIDropDownMenu_AddButton(info, level)
+                    AddMenuButton(info, level)
                 end
             elseif menuList == "race" then
                 for _, race in ipairs(GetRaceOptions()) do
@@ -444,7 +452,7 @@ function LPL.ListChrome:Create(parent, config)
                             frame.onChanged()
                         end
                     end
-                    UIDropDownMenu_AddButton(info, level)
+                    AddMenuButton(info, level)
                 end
             elseif menuList == "covenant" then
                 for _, covenant in ipairs(GetCovenantOptions()) do
@@ -467,7 +475,7 @@ function LPL.ListChrome:Create(parent, config)
                             frame.onChanged()
                         end
                     end
-                    UIDropDownMenu_AddButton(info, level)
+                    AddMenuButton(info, level)
                 end
             end
         end

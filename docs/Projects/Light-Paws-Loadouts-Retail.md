@@ -79,10 +79,11 @@ Desktop siblings: **LPTM** (talent planner) and **LPLM** (loadout catalog + comm
 - `RequiredFrameHeight` above `local function CollectTabs` — Lua treated `CollectTabs` as a missing global (`Sidebar.lua:18`). Helper now sits after `CollectTabs`.
 - Hero talent Limits keyed only by subtree id. Pack Leader is the same id on Beast Mastery and Survival, so one checkbox locked both specs.
 - Importing a Blizzard talent string without checking `C_Traits.GetTreeHash`. After a tree edit, those bits line up with the new node order and the wrong talents get points. Import now stops when the hash does not match the live tree.
+- Local talent-tree builds 1.2.7 through 1.3.3 were reverted on 2026-11-16. New Build could open and a tree could draw, but the nodes, columns, and icons did not match 1.2.6. Retail LPL is 1.2.6 again.
 
 ## Open work
 
-- **1.2.6** is on the updater. Profiles store the whole vault and import only into Retail. Retail Interface is `120105` for patch 12.1.5. Housing, Macros, and Addons Manager have no drag button. A bar press applies the build with the window closed. Addon sets still ask before they replace the addon list. A condition applies the first linked build that fits this character. If the client rejects the card file, the cursor can show the question mark and the bar button still draws the card.
+- **1.2.7** is on the updater. Hero talent names in the Limits and Filter menus use the same font size as Class, Specialization, Race, and Covenant. Profiles store the whole vault and import only into Retail. Retail Interface is `120105` for patch 12.1.5. Housing, Macros, and Addons Manager have no drag button. A bar press applies the build with the window closed. Addon sets still ask before they replace the addon list. A condition applies the first linked build that fits this character. If the client rejects the card file, the cursor can show the question mark and the bar button still draws the card.
 - Uncommitted Module dirty files may exist locally (`ActionBars`, `Loadouts`, `Keybinds`, …). Do not mix into unrelated commits.
 - Further Midnight patch talent layout changes track Blizzard, not a BMG DB2 extract. The 2026-09-22 class tuning is damage and effect numbers on existing nodes (no new, moved, or removed talents). LPL reads the live tree, so that pass needs no talent-data update.
 - Blizzard import strings are positional. A tree-hash mismatch now fails the import instead of spending the old bits on the current node list.

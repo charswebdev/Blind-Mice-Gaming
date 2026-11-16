@@ -16,6 +16,7 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 
 ## Features
 
+- **2026-11-16:** Light Paws Loadouts (Retail) **1.2.7**. Hero talent names in the Limits and Filter menus use the same font size as the other entries.
 - **2026-11-16:** Accessibility Helper - WoW Forever **1.5.1** and Accessibility Helper - Retail **3.8.0**. The left list stays inside the window. A gold bar on that list scrolls with the mouse wheel or by dragging.
 - **2026-11-16:** Accessibility Helper - WoW Forever **1.5.0** and Accessibility Helper - Retail **3.7.9**. Chat Progress checks a few quests and achievements at a time, and only while those switches are on. The left list in `/ah` scrolls with the mouse wheel.
 - **2026-11-15:** Accessibility Helper - WoW Forever **1.4.9** and Accessibility Helper - Retail **3.7.8**. Announcements do less work. Combat lines are checked twice a second, and only while Read combat is on. A repeat of the same line is skipped. Do not install Retail `AccessibilityHelper/` into `_forever_`.
