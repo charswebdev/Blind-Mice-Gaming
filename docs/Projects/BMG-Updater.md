@@ -16,6 +16,8 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 
 ## Features
 
+- **2026-11-17:** BMG Sparkle Guide - WoW Forever **1.0.0** (`BMGSparkleGuide-forever`, `BMGSparkleGuideForeverDB`, `client: "forever"`). The same sparkle guide for `_forever_` only. Do not install Retail `BMGSparkleGuide/` into `_forever_`.
+- **2026-11-17:** BMG Sparkle Guide **1.0.0** (`BMGSparkleGuide`, `BMGSparkleGuideDB`, `client: "retail"`). A light beam and a spoken distance for the herb, ore, chest, quest object, or fishing bobber the Interact Key is pointing at. Do not install this folder into `_forever_`.
 - **2026-11-16:** Light Paws Loadouts (Retail) **1.2.7**. Hero talent names in the Limits and Filter menus use the same font size as the other entries.
 - **2026-11-16:** Accessibility Helper - WoW Forever **1.5.1** and Accessibility Helper - Retail **3.8.0**. The left list stays inside the window. A gold bar on that list scrolls with the mouse wheel or by dragging.
 - **2026-11-16:** Accessibility Helper - WoW Forever **1.5.0** and Accessibility Helper - Retail **3.7.9**. Chat Progress checks a few quests and achievements at a time, and only while those switches are on. The left list in `/ah` scrolls with the mouse wheel.

@@ -1,0 +1,17 @@
+## Interface: 16002, 16001, 16000, 121500, 121000
+## AllowLoadGameType: forever, camelot
+## Title: BMG Sparkle Guide
+## Notes: A beacon and a spoken distance for the herb, ore, chest, quest object, or fishing bobber in front of you. WoW Forever only.
+## Author: Blind Mice Gaming
+## Version: 1.0.0
+## SavedVariables: BMGSparkleGuideForeverDB
+## IconTexture: Interface\AddOns\BMGSparkleGuide-forever\icon.tga
+
+Init.lua
+NameList.lua
+Sparkles.lua
+Audio.lua
+TrackList.lua
+Detect.lua
+Profile.lua
+Window.lua

@@ -1,0 +1,16 @@
+## Interface: 120105, 120100, 120007, 120001
+## Title: BMG Sparkle Guide
+## Notes: A beacon and a spoken distance for the herb, ore, chest, quest object, or fishing bobber in front of you.
+## Author: Blind Mice Gaming
+## Version: 1.0.0
+## SavedVariables: BMGSparkleGuideDB
+## IconTexture: Interface\AddOns\BMGSparkleGuide\icon.tga
+
+Init.lua
+NameList.lua
+Sparkles.lua
+Audio.lua
+TrackList.lua
+Detect.lua
+Profile.lua
+Window.lua
