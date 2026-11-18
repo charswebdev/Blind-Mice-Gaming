@@ -155,7 +155,7 @@ function G.ImportProfile(text)
         looks[info.key] = {
             style = style,
             color = color,
-            size = Clamp(size, 60, 160),
+            size = Clamp(size, 60, 240),
             height = Clamp(height, -80, 40),
             brightness = Clamp(bright, 20, 100),
             count = Clamp(count, 3, 12),

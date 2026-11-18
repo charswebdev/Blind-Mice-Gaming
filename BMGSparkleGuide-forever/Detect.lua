@@ -6,6 +6,7 @@ local CVARS = {
     { "SoftTargetInteractArc", "2" },
     { "SoftTargetInteractRange", "30" },
 }
+local CORPSE_PLATE = "SoftTargetNameplateInteract"
 
 local HERB_END = {
     "silverleaf", "peacebloom", "earthroot", "mageroyal", "briarthorn", "swiftthistle", "bruiseweed",
@@ -28,8 +29,11 @@ local function GetC(name)
         return nil
     end
     local ok, value = pcall(C_CVar.GetCVar, name)
-    if not ok then
+    if not ok or G.Secret(value) then
         return nil
+    end
+    if type(value) == "number" then
+        return tostring(value)
     end
     return G.PlainString(value)
 end
@@ -41,6 +45,9 @@ local function SetC(name, value)
 end
 
 local function SameC(a, b)
+    if a == nil or b == nil then
+        return false
+    end
     if a == b then
         return true
     end
@@ -66,12 +73,41 @@ function G.ApplyInteract()
     for _, entry in ipairs(CVARS) do
         local name, wanted = entry[1], entry[2]
         local current = GetC(name)
-        if current and not SameC(current, wanted) then
-            if G.db.cvarSaved[name] == nil then
+        if not SameC(current, wanted) then
+            if current and G.db.cvarSaved[name] == nil then
                 G.db.cvarSaved[name] = current
             end
             SetC(name, wanted)
         end
+    end
+end
+
+local function CorpseUnit(unit)
+    if G.IsTrue(UnitIsPlayer, unit) or G.IsTrue(UnitIsGameObject, unit) then
+        return false
+    end
+    return G.IsTrue(UnitIsDead, unit)
+end
+
+function G.ApplyCorpsePlate()
+    if not G.db or InCombatLockdown() then
+        if InCombatLockdown() then
+            G.interactPending = true
+        end
+        return
+    end
+    local want = (G.db.enabled.skinning or G.db.enabled.loot) and CorpseUnit("softinteract")
+    if want then
+        local current = GetC(CORPSE_PLATE)
+        if not SameC(current, "1") then
+            if current and G.db.cvarSaved[CORPSE_PLATE] == nil then
+                G.db.cvarSaved[CORPSE_PLATE] = current
+            end
+            SetC(CORPSE_PLATE, "1")
+        end
+    elseif G.db.cvarSaved[CORPSE_PLATE] ~= nil then
+        SetC(CORPSE_PLATE, G.db.cvarSaved[CORPSE_PLATE])
+        G.db.cvarSaved[CORPSE_PLATE] = nil
     end
 end
 
@@ -135,7 +171,7 @@ local function NameKind(name)
     if not text then
         return nil
     end
-    text = text:lower()
+    text = text:lower():gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
     if text:find("bobber", 1, true) then
         return "bobber"
     end
@@ -157,24 +193,46 @@ local function NameKind(name)
     return nil
 end
 
-local function IconText(texture)
+local function TextureWords(texture)
+    if not texture or not texture.GetAtlas then
+        return nil, nil
+    end
+    local atlas = G.PlainString(texture:GetAtlas())
+    local image = texture:GetTexture()
+    local path = G.PlainString(image)
+    if not path then
+        local id = G.PlainNumber(image)
+        if id then
+            path = tostring(id)
+        end
+    end
+    return atlas, path
+end
+
+local function IconText(texture, unit)
     if not probe then
         probe = UIParent:CreateTexture(nil, "OVERLAY")
         probe:Hide()
     end
-    local shown = texture and texture.IsShown and texture:IsShown()
     local atlas, path
+    local shown = texture and texture.IsShown and texture:IsShown()
     if shown then
-        atlas = G.PlainString(texture:GetAtlas())
-        local image = texture:GetTexture()
-        path = G.PlainString(image) or (G.PlainNumber(image) and tostring(G.PlainNumber(image)))
+        atlas, path = TextureWords(texture)
     end
-    if (not atlas and not path) and SetUnitCursorTexture then
-        local unit = texture and texture.unit
-        if unit and SetUnitCursorTexture(probe, unit, nil, true, true) then
-            atlas = G.PlainString(probe:GetAtlas())
-            local image = probe:GetTexture()
-            path = G.PlainString(image) or (G.PlainNumber(image) and tostring(G.PlainNumber(image)))
+    if (not atlas and not path) and unit and SetUnitCursorTexture then
+        local ok, hit = pcall(SetUnitCursorTexture, probe, unit, nil, true, true)
+        local accepted = false
+        if ok then
+            if G.Secret(hit) then
+                if hit then
+                    accepted = true
+                end
+            elseif hit == true or hit == 1 then
+                accepted = true
+            end
+        end
+        if accepted then
+            atlas, path = TextureWords(probe)
         end
     end
     return ((atlas or "") .. " " .. (path or "")):lower()
@@ -236,27 +294,26 @@ local function Classify(unit, icon)
             name = G.PlainString(value)
         end
     end
-    if icon then
-        icon.unit = unit
-    end
-    local iconKind = KindFromIcon(IconText(icon))
+    local iconKind = KindFromIcon(IconText(icon, unit))
     local named = NameKind(name)
     if named == "bobber" or ObjectID(unit) == 35591 or (object and Fishing() and iconKind == nil) then
         return "bobber", name
     end
+    if named == "herbs" or named == "ore" or named == "treasure" then
+        return named, name
+    end
+    if iconKind == "herbs" or iconKind == "ore" then
+        return iconKind, name
+    end
+    if iconKind == "quests" or (object and HasWord(name)) then
+        return "quests", name
+    end
+    if iconKind == "loot" and (object or named == nil) then
+        if object or not dead then
+            return "treasure", name
+        end
+    end
     if object then
-        if named == "herbs" or named == "ore" or named == "treasure" then
-            return named, name
-        end
-        if iconKind == "quests" or HasWord(name) then
-            return "quests", name
-        end
-        if iconKind == "herbs" or iconKind == "ore" or iconKind == "loot" then
-            if iconKind == "loot" and named == nil then
-                return "treasure", name
-            end
-            return iconKind == "loot" and "treasure" or iconKind, name
-        end
         if iconKind == nil then
             return "others", name
         end
@@ -273,7 +330,26 @@ local function Classify(unit, icon)
     return nil, name
 end
 
-local function Yards(unit)
+local function FromSquared(unit)
+    if not UnitDistanceSquared then
+        return nil
+    end
+    local ok, squared = pcall(UnitDistanceSquared, unit)
+    if not ok then
+        return nil
+    end
+    local n = G.PlainNumber(squared)
+    if not n or n <= 0 then
+        return nil
+    end
+    local dist = math.sqrt(n)
+    if dist < 80 then
+        return dist
+    end
+    return nil
+end
+
+local function FromPositions(unit)
     if not UnitPosition then
         return nil
     end
@@ -290,6 +366,17 @@ local function Yards(unit)
     local dist = math.sqrt((x2 - x1) ^ 2 + (y2 - y1) ^ 2)
     if dist > 0 and dist < 80 then
         return dist
+    end
+    return nil
+end
+
+local function Yards(unit)
+    local dist = FromSquared(unit) or FromPositions(unit)
+    if dist then
+        return dist
+    end
+    if unit ~= "softinteract" then
+        return FromSquared("softinteract") or FromPositions("softinteract")
     end
     return nil
 end
@@ -311,6 +398,121 @@ local function Band(dist)
         return "5"
     end
     return "at"
+end
+
+local SQUARED_STEPS = {
+    { 306.25, "20" },
+    { 156.25, "15" },
+    { 56.25, "10" },
+    { 9, "5" },
+}
+
+local function SecretYes(value)
+    if G.Secret(value) then
+        if value then
+            return true
+        end
+        return false
+    end
+    return value == true
+end
+
+local function StepFromSquared(raw)
+    local n = G.PlainNumber(raw)
+    if n and n > 0 then
+        local dist = math.sqrt(n)
+        if dist > 0 and dist < 80 then
+            return Band(dist)
+        end
+        return nil
+    end
+    if not G.Secret(raw) then
+        return nil
+    end
+    local okZero, aboveZero = pcall(function()
+        return raw > 0
+    end)
+    if not okZero or not SecretYes(aboveZero) then
+        return nil
+    end
+    for i = 1, #SQUARED_STEPS do
+        local limit, step = SQUARED_STEPS[i][1], SQUARED_STEPS[i][2]
+        local ok, result = pcall(function()
+            return raw >= limit
+        end)
+        if not ok then
+            return nil
+        end
+        if SecretYes(result) then
+            return step
+        end
+    end
+    return "at"
+end
+
+local function InteractRange(unit, index)
+    if not CheckInteractDistance or not unit then
+        return nil
+    end
+    local ok, value = pcall(CheckInteractDistance, unit, index)
+    if not ok then
+        return nil
+    end
+    if G.Secret(value) then
+        if value then
+            return true
+        end
+        return false
+    end
+    if value == nil then
+        return nil
+    end
+    return value == true or value == 1
+end
+
+local function Bracket(unit)
+    local close = InteractRange(unit, 2)
+    if close == nil and unit ~= "softinteract" then
+        close = InteractRange("softinteract", 2)
+    end
+    if close == nil then
+        return nil
+    end
+    if close then
+        return "10"
+    end
+    return "20"
+end
+
+local function StepFromUnit(unit)
+    if UnitDistanceSquared then
+        local ok, squared = pcall(UnitDistanceSquared, unit)
+        if ok and (G.Secret(squared) or G.PlainNumber(squared)) then
+            local step = StepFromSquared(squared)
+            if step then
+                return step
+            end
+        end
+    end
+    local yards = FromPositions(unit)
+    if yards then
+        return Band(yards)
+    end
+    return nil
+end
+
+local function SpokenStep(unit, forceAt)
+    if forceAt then
+        return "at"
+    end
+    local step = StepFromUnit(unit)
+    if not step and unit ~= "softinteract" then
+        step = StepFromUnit("softinteract")
+    end
+    if step then
+        return step
+    end
+    return Bracket(unit) or "near"
 end
 
 local function PlateFor(unit)
@@ -342,7 +544,7 @@ local function IdentityOf(unit, name, kind)
 end
 
 local function Announce(unit, kind, name, forceAt)
-    local step = forceAt and "at" or Band(Yards(unit))
+    local step = SpokenStep(unit, forceAt)
     local identity = IdentityOf(unit, name, kind)
     missingSince = nil
     if identity == lastIdentity and step == lastStep then
@@ -374,45 +576,113 @@ local function ClearLive()
     end
 end
 
-function G.Refresh()
-    if not G.db then
-        return
+local function NameplateUnit(unit)
+    if G.Secret(unit) or type(unit) ~= "string" then
+        return false
     end
-    if G.Paused() or not G.AnySparkleOn() then
+    return unit:find("^nameplate%d+$") ~= nil
+end
+
+local function SameUnit(a, b)
+    if G.Secret(a) or G.Secret(b) then
+        return false
+    end
+    return a == b
+end
+
+local function UpdateUnit(unit, plate)
+    if not NameplateUnit(unit) then
+        return false
+    end
+    if not G.db or G.Paused() or not G.AnySparkleOn() then
+        return false
+    end
+    if not plate then
+        plate = PlateFor(unit)
+    end
+    if not plate then
+        return false
+    end
+    local object = G.IsTrue(UnitIsGameObject, unit)
+    local corpse = (not object) and G.IsTrue(UnitIsDead, unit) and not G.IsTrue(UnitIsPlayer, unit)
+    local icon
+    local okIcon, iconValue = pcall(IconFor, plate)
+    if okIcon then
+        icon = iconValue
+    end
+    local kind, name = Classify(unit, icon)
+    if corpse then
+        if kind == "loot" and not G.db.enabled.loot and G.db.enabled.skinning then
+            kind = "skinning"
+        elseif kind == "skinning" and not G.db.enabled.skinning and G.db.enabled.loot then
+            kind = "loot"
+        elseif kind ~= "loot" and kind ~= "skinning" then
+            if G.db.enabled.loot then
+                kind = "loot"
+            elseif G.db.enabled.skinning then
+                kind = "skinning"
+            end
+        end
+    end
+    if object and (not kind or kind == "others") and not G.db.enabled.others then
+        if G.db.enabled.herbs then
+            kind = "herbs"
+        elseif G.db.enabled.ore then
+            kind = "ore"
+        elseif G.db.enabled.treasure then
+            kind = "treasure"
+        end
+    end
+    if not object and not corpse and kind ~= "herbs" and kind ~= "ore" and kind ~= "treasure" and kind ~= "quests" and kind ~= "bobber" then
+        return false
+    end
+    if not kind or not G.db.enabled[kind] or not G.NodeAllowed(kind, name) then
+        if SameUnit(G.liveUnit, unit) then
+            ClearLive()
+        end
+        return false
+    end
+    G.liveKind, G.liveName, G.liveUnit = kind, name, unit
+    Announce(unit, kind, name, false)
+    local look = G.db.look[kind]
+    G.PlaceOnPlate(G.WorldHost(), look, plate, look.height or -24)
+    return true
+end
+
+local function UpdateAll()
+    if not G.db or G.Paused() or not G.AnySparkleOn() then
         ClearLive()
         return
     end
-    if not G.IsTrue(UnitExists, "softinteract") then
-        ClearLive()
-        return
-    end
-    local plate = PlateFor("softinteract")
-    if not plate and C_NamePlate and C_NamePlate.GetNamePlates then
+    local shown = false
+    local readable = 0
+    if C_NamePlate and C_NamePlate.GetNamePlates then
         local ok, plates = pcall(C_NamePlate.GetNamePlates)
         if ok and type(plates) == "table" then
             for _, candidate in ipairs(plates) do
-                local frame = candidate and candidate.UnitFrame
-                local unit = frame and frame.unit
-                if unit and G.IsTrue(UnitIsUnit, unit, "softinteract") then
-                    plate = candidate
-                    break
+                local okUnit, unit = pcall(function()
+                    local frame = candidate and candidate.UnitFrame
+                    return frame and frame.unit
+                end)
+                if okUnit and NameplateUnit(unit) then
+                    readable = readable + 1
+                    if UpdateUnit(unit, candidate) then
+                        shown = true
+                    end
                 end
             end
         end
     end
-    local unit = "softinteract"
-    local kind, name = Classify(unit, IconFor(plate))
-    if not kind or not G.db.enabled[kind] or not G.NodeAllowed(kind, name) then
+    if readable > 0 and not shown then
         ClearLive()
-        return
     end
-    G.liveKind, G.liveName, G.liveUnit = kind, name, unit
-    if plate then
-        local host = G.WorldHost()
-        local look = G.db.look[kind]
-        G.ApplySpark(host, look, plate, "CENTER", "BOTTOM", 0, look.height or -24)
+end
+
+function G.Refresh()
+    if G.ApplyCorpsePlate then
+        G.ApplyCorpsePlate()
     end
-    Announce(unit, kind, name, false)
+    UpdateAll()
 end
 
 local function ArmWatch()
@@ -421,17 +691,15 @@ local function ArmWatch()
         watch.left = 0
         watch:SetScript("OnUpdate", function(self, elapsed)
             self.left = self.left - elapsed
-            if self.left <= 0 then
-                self.left = 0.25
+            if self.left > 0 then
+                return
+            end
+            self.left = 0.25
+            if G.db and G.AnySparkleOn() and not G.Paused() then
                 G.Refresh()
-                self.ticks = (self.ticks or 0) + 1
-                if self.ticks >= 8 then
-                    self:Hide()
-                end
             end
         end)
     end
-    watch.ticks = 0
     watch.left = 0
     watch:Show()
 end
@@ -446,9 +714,14 @@ function G.StartDetect()
     events:RegisterEvent("PLAYER_ENTERING_WORLD")
     events:RegisterEvent("QUEST_LOG_UPDATE")
     events:RegisterEvent("UNIT_SPELLCAST_SENT")
+    events:RegisterEvent("LOOT_OPENED")
     events:SetScript("OnEvent", function(_, event, arg1, arg2)
         if event == "QUEST_LOG_UPDATE" then
             questWords = nil
+            return
+        end
+        if event == "LOOT_OPENED" and G.liveKind and lastStep ~= "at" then
+            Announce(G.liveUnit or "softinteract", G.liveKind, G.liveName, true)
             return
         end
         if event == "UNIT_SPELLCAST_SENT" and arg1 == "player" then
@@ -458,11 +731,25 @@ function G.StartDetect()
         if event == "PLAYER_REGEN_ENABLED" and G.interactPending then
             G.ApplyInteract()
         end
-        G.Refresh()
-        if event == "PLAYER_SOFT_INTERACT_CHANGED" or event == "NAME_PLATE_UNIT_ADDED" then
-            ArmWatch()
+        if event == "NAME_PLATE_UNIT_ADDED" then
+            UpdateUnit(arg1)
+            return
         end
+        if event == "NAME_PLATE_UNIT_REMOVED" and SameUnit(arg1, G.liveUnit) then
+            ClearLive()
+            return
+        end
+        G.Refresh()
     end)
+    if hooksecurefunc and NamePlateDriverFrame then
+        pcall(hooksecurefunc, NamePlateDriverFrame, "OnNamePlateAdded", function(_, unit)
+            UpdateUnit(unit)
+        end)
+        pcall(hooksecurefunc, NamePlateDriverFrame, "OnSoftTargetUpdate", function()
+            UpdateAll()
+        end)
+    end
+    ArmWatch()
     G.ApplyInteract()
     G.Refresh()
 end

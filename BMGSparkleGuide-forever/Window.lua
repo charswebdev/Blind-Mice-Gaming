@@ -155,17 +155,52 @@ end
 local PREVIEW_FOV = 0.6
 local PREVIEW_PITCH = 0.35
 
+local function MovePreviewPlate(scene)
+    local plate = scene.plate
+    if not plate then
+        return
+    end
+    local height = scene:GetHeight()
+    if not height or height < 40 then
+        height = 300
+    end
+    local tall = scene.tall or 1
+    local distance = (scene.distance or 4) * (scene.zoom or 1.5)
+    local focal = height / 2 / math.tan(PREVIEW_FOV / 2)
+    local up = tall / 2
+    local depth = distance - up * math.sin(PREVIEW_PITCH)
+    if depth < 0.2 then
+        depth = 0.2
+    end
+    local pixels = up * math.cos(PREVIEW_PITCH) * focal / depth
+    if pixels < 20 then
+        pixels = 20
+    end
+    if pixels > height * 0.28 then
+        pixels = height * 0.28
+    end
+    plate:ClearAllPoints()
+    plate:SetPoint("BOTTOM", scene, "CENTER", 0, pixels)
+end
+
 local function PlacePreviewCamera(scene)
     local distance = (scene.distance or 4) * (scene.zoom or 1.5)
     local ok, fx, fy, fz = pcall(scene.GetCameraForward, scene)
     if not ok or G.Secret(fx) or not fx then
         pcall(scene.SetCameraPosition, scene, 0, -distance, distance * 0.4)
-        return
+    else
+        pcall(scene.SetCameraPosition, scene, -fx * distance, -fy * distance, -fz * distance)
     end
-    pcall(scene.SetCameraPosition, scene, -fx * distance, -fy * distance, -fz * distance)
+    MovePreviewPlate(scene)
 end
 
 local function FramePreview(scene, actor)
+    if actor.IsLoaded then
+        local ready, loaded = pcall(actor.IsLoaded, actor)
+        if ready and not loaded then
+            return false
+        end
+    end
     local ok, x1, y1, z1, x2, y2, z2 = pcall(actor.GetActiveBoundingBox, actor)
     if not ok then
         return false
@@ -177,8 +212,12 @@ local function FramePreview(scene, actor)
     end
     local tall = z2 - z1
     local across = math.sqrt((x2 - x1) ^ 2 + (y2 - y1) ^ 2)
+    if tall < 0.08 and across < 0.08 then
+        return false
+    end
     local span = math.max(tall, across, 0.35)
-    scene.distance = span / math.tan(PREVIEW_FOV / 2) * 0.9
+    scene.tall = tall
+    scene.distance = span / math.tan(PREVIEW_FOV / 2) * 1.65
     PlacePreviewCamera(scene)
     return true
 end
@@ -192,6 +231,10 @@ local function SetModel(kind)
     local info = G.KindInfo(kind)
     if not info.model or info.model == 0 then
         scene:Hide()
+        if scene.plate then
+            scene.plate:ClearAllPoints()
+            scene.plate:SetPoint("BOTTOM", scene.plate:GetParent(), "CENTER", 0, 28)
+        end
         return
     end
     scene:Show()
@@ -208,13 +251,38 @@ local function SetModel(kind)
     end
 end
 
+local function PreviewLook(look, clip)
+    local size = look.size or 100
+    local height = clip and clip:GetHeight() or 0
+    if height < 40 then
+        height = 260
+    end
+    local fit = (height * 1.05) / (4.5 * size)
+    if fit > 1.2 then
+        fit = 1.2
+    end
+    if fit < 0.85 then
+        fit = 0.85
+    end
+    return {
+        style = look.style,
+        color = look.color,
+        size = math.floor(size * fit + 0.5),
+        height = math.floor((look.height or -24) * fit + 0.5),
+        brightness = look.brightness or 100,
+        count = look.count or 8,
+    }
+end
+
 local function ShowPreview(kind)
     local preview = kindPage.preview
     local scene = preview.scene
     local spot = preview.clip or scene
     local host = G.PreviewHost(spot)
     local look = G.db.look[kind]
-    G.ApplySpark(host, look, spot, "CENTER", "CENTER", 0, look.height or -24)
+    local shown = PreviewLook(look, spot)
+    local plate = preview.plate or spot
+    G.PlaceOnPlate(host, shown, plate, shown.height)
     host:SetFrameLevel((scene and scene:GetFrameLevel() or spot:GetFrameLevel()) + 20)
     SetModel(kind)
     kindPage.sample:SetText(G.KindInfo(kind).label)
@@ -338,7 +406,7 @@ end
 
 local function BuildPreview(parent)
     local preview = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    preview:SetSize(360, 320)
+    preview:SetSize(360, 260)
     preview:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -357,9 +425,14 @@ local function BuildPreview(parent)
     background:SetDesaturated(true)
     background:SetVertexColor(0.45, 0.36, 0.2)
     preview.clip = clip
+    local plate = CreateFrame("Frame", nil, clip)
+    plate:SetSize(2, 2)
+    plate:SetPoint("BOTTOM", clip, "CENTER", 0, 28)
+    preview.plate = plate
     local scene = CreateFrame("ModelScene", nil, clip)
     scene:SetAllPoints()
     scene.zoom = 1.5
+    scene.plate = plate
     scene.yaw = 0.4
     scene.distance = 4
     local actor
@@ -503,7 +576,7 @@ local function BuildKind(parent)
         end)
         page.colors[index] = button
     end
-    page.size = Slider(page, "Size", 60, 160)
+    page.size = Slider(page, "Size", 60, 240)
     page.height = Slider(page, "Height", -80, 40)
     page.count = Slider(page, "Count", 3, 12)
     page.bright = Slider(page, "Brightness", 20, 100)
@@ -629,7 +702,7 @@ local function BuildVoice(parent)
     note:SetPoint("TOPLEFT", play, "BOTTOMLEFT", 0, -16)
     note:SetWidth(460)
     note:SetJustifyH("LEFT")
-    note:SetText("Check the distances you want to hear. You hear the name, then that distance, when the step changes. Close up, you hear At, then the name. The same boxes are on each sparkle page. A node without its own recording says Herb, Ore, Treasure, Quest object, Loot, Skin, or Fishing bobber. If the game will not give a distance, you hear the name, then At when you start to gather it.")
+    note:SetText("Check the distances you want to hear. You hear the name, then that distance, when the step changes. Close up, you hear At, then the name. The same boxes are on each sparkle page. A node without its own recording says Herb, Ore, Treasure, Quest object, Loot, Skin, or Fishing bobber. When the game hides the exact yards, farther than a short step says 20 yards, and the short step says 10 yards. You hear At when you are within a few yards, or when you open the loot.")
     page:Hide()
     return page
 end
@@ -816,7 +889,7 @@ end
 
 local function BuildWindow()
     frame = CreateFrame("Frame", "BMGSparkleGuideFrame", UIParent, "BackdropTemplate")
-    frame:SetSize(980, 1120)
+    frame:SetSize(980, 900)
     frame:SetPoint("CENTER")
     frame:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
@@ -912,9 +985,9 @@ boot:SetScript("OnEvent", function(_, event, name)
         end
         G.LoadDB()
     elseif event == "PLAYER_LOGIN" then
+        G.StartDetect()
         BuildWindow()
         BuildMinimap()
-        G.StartDetect()
         print("|cffd4af37BMG Sparkle Guide|r " .. G.VERSION .. " for WoW Forever. Type /sg to open the window.")
     elseif event == "PLAYER_LOGOUT" then
         if G.RestoreInteract then

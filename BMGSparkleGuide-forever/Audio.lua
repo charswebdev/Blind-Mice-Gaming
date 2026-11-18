@@ -10,8 +10,15 @@ local driver = CreateFrame("Frame")
 driver:Hide()
 
 local function Play(file)
-    local ok = PlaySoundFile(SOUND .. file .. ".ogg", "Master")
-    return ok == true or ok == 1
+    if not PlaySoundFile then
+        return false
+    end
+    local path = SOUND .. file .. ".ogg"
+    local ok, result = pcall(PlaySoundFile, path, "Master")
+    if not ok then
+        ok, result = pcall(PlaySoundFile, path, "SFX")
+    end
+    return ok and (result == true or result == 1)
 end
 
 local function Shared(file)
