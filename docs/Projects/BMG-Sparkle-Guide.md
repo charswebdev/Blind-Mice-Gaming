@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.0.0** retail and **1.0.0** WoW Forever |
+| Version | **1.0.1** retail and **1.0.1** WoW Forever |
 | Type | In-game sparkle and spoken guide for the object in front of you |
 | Retail folder | `BMGSparkleGuide/` |
 | Forever folder | `BMGSparkleGuide-forever/` |
@@ -31,6 +31,7 @@ The WoW Forever copy is the same window, the same voice clips, and the same prof
 - A distance is spoken only when the client gives a plain yard number under 80. Otherwise the guide says the name when the object is first picked, and “At” when a cast is sent at that same name.
 - While any sparkle is on, Interact Key is turned on and set to notice objects all around, out to 30 yards. Turning every sparkle off, or logging out, puts those settings back. The guide waits until combat ends before it changes them.
 - Hide in combat starts off. Hide in dungeons starts on. The minimap button starts on.
+- The addon list groups both copies under Blind Mice Gaming, the same category as the other addons.
 
 ## Development plan
 

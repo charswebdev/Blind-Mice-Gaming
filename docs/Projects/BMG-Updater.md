@@ -16,6 +16,7 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 
 ## Features
 
+- **2026-11-17:** BMG Sparkle Guide **1.0.1** and BMG Sparkle Guide - WoW Forever **1.0.1**. The addon list groups both under Blind Mice Gaming.
 - **2026-11-17:** BMG Sparkle Guide - WoW Forever **1.0.0** (`BMGSparkleGuide-forever`, `BMGSparkleGuideForeverDB`, `client: "forever"`). The same sparkle guide for `_forever_` only. Do not install Retail `BMGSparkleGuide/` into `_forever_`.
 - **2026-11-17:** BMG Sparkle Guide **1.0.0** (`BMGSparkleGuide`, `BMGSparkleGuideDB`, `client: "retail"`). A light beam and a spoken distance for the herb, ore, chest, quest object, or fishing bobber the Interact Key is pointing at. Do not install this folder into `_forever_`.
 - **2026-11-16:** Light Paws Loadouts (Retail) **1.2.7**. Hero talent names in the Limits and Filter menus use the same font size as the other entries.
