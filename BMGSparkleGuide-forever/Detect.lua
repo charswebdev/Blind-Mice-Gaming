@@ -590,6 +590,16 @@ local function SameUnit(a, b)
     return a == b
 end
 
+local function PlayerCanLoot(unit)
+    if G.IsTrue(UnitIsTapDenied, unit) then
+        return false
+    end
+    if not CanLootUnit then
+        return false
+    end
+    return G.IsTrue(CanLootUnit, unit)
+end
+
 local function UpdateUnit(unit, plate)
     if not NameplateUnit(unit) then
         return false
@@ -612,16 +622,16 @@ local function UpdateUnit(unit, plate)
     end
     local kind, name = Classify(unit, icon)
     if corpse then
-        if kind == "loot" and not G.db.enabled.loot and G.db.enabled.skinning then
-            kind = "skinning"
-        elseif kind == "skinning" and not G.db.enabled.skinning and G.db.enabled.loot then
+        local mine = PlayerCanLoot(unit)
+        if kind == "loot" and not mine then
+            kind = nil
+        end
+        if kind == "skinning" and not G.db.enabled.skinning and G.db.enabled.loot and mine then
             kind = "loot"
-        elseif kind ~= "loot" and kind ~= "skinning" then
-            if G.db.enabled.loot then
-                kind = "loot"
-            elseif G.db.enabled.skinning then
-                kind = "skinning"
-            end
+        elseif kind == "loot" and not G.db.enabled.loot and G.db.enabled.skinning then
+            kind = "skinning"
+        elseif mine and G.db.enabled.loot and kind ~= "skinning" then
+            kind = "loot"
         end
     end
     if object and (not kind or kind == "others") and not G.db.enabled.others then

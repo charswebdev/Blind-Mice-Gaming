@@ -16,6 +16,7 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 
 ## Features
 
+- **2026-11-18:** BMG Sparkle Guide **1.0.4** and BMG Sparkle Guide - WoW Forever **1.0.4**. Loot is spoken only for a corpse you can loot. A body tagged by someone else stays quiet.
 - **2026-11-18:** BMG Sparkle Guide **1.0.3** and BMG Sparkle Guide - WoW Forever **1.0.3**. Text on every settings page stays inside the window. The track list scrolls instead of drawing over the action bars.
 - **2026-11-17:** BMG Sparkle Guide **1.0.2** and BMG Sparkle Guide - WoW Forever **1.0.2**. The beacon sits on the object’s nameplate, the column is larger, and a far corpse says 20 yards or 10 yards instead of only “Loot.”
 - **2026-11-17:** BMG Sparkle Guide **1.0.1** and BMG Sparkle Guide - WoW Forever **1.0.1**. The addon list groups both under Blind Mice Gaming.

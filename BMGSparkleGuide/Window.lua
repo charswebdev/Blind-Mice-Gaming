@@ -335,7 +335,7 @@ local function ShowTrack(kind)
         local notes = {
             quests = "This page tracks every quest object while the box above is on.",
             bobber = "This page tracks your fishing bobber while the box above is on.",
-            loot = "This page tracks every corpse that still has loot while the box above is on.",
+            loot = "This page tracks corpses you can loot while the box above is on.",
             skinning = "This page tracks every corpse you can skin while the box above is on.",
             others = "This page tracks every other object you can use while the box above is on.",
         }

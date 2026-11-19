@@ -1,6 +1,6 @@
 local _, G = ...
 
-G.VERSION = "1.0.3"
+G.VERSION = "1.0.4"
 
 G.KINDS = {
     { key = "herbs", label = "Herbs", blurb = "Sparkles on herbs", sample = "Herbs", model = 219481 },
@@ -8,7 +8,7 @@ G.KINDS = {
     { key = "treasure", label = "Treasure", blurb = "Sparkles on chests and coffers", sample = "Treasure", model = 219372 },
     { key = "quests", label = "Quest objects", blurb = "Sparkles on things a quest sends you to", sample = "Quest object", model = 200960 },
     { key = "bobber", label = "Fishing bobber", blurb = "Sparkles on your fishing bobber", sample = "Fishing bobber", model = 201000 },
-    { key = "loot", label = "Loot", blurb = "Sparkles on corpses that still have loot", sample = "Loot", model = 0 },
+    { key = "loot", label = "Loot", blurb = "Sparkles on corpses you can loot", sample = "Loot", model = 0 },
     { key = "skinning", label = "Skinning", blurb = "Sparkles on corpses you can skin", sample = "Skin", model = 0 },
     { key = "others", label = "Other objects", blurb = "Sparkles on other things you can use", sample = "Object", model = 200912 },
 }
