@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.0.2** retail and **1.0.2** WoW Forever |
+| Version | **1.0.3** retail and **1.0.3** WoW Forever |
 | Type | In-game sparkle and spoken guide for the object in front of you |
 | Retail folder | `BMGSparkleGuide/` |
 | Forever folder | `BMGSparkleGuide-forever/` |
@@ -16,6 +16,8 @@
 
 A guide for the one object the Interact Key is pointing at. It draws a sparkle on that object and speaks the name with a pre-recorded voice. Herbs, ore, treasure, quest objects, and the fishing bobber start on. Loot, skinning, and other objects start off.
 
+It is its own addon. It does not load NodeSight Sparkles, does not read that addon’s settings, and does not need it installed. The folder, the saved settings, and the `/sg` window belong to BMG Sparkle Guide.
+
 The WoW Forever copy is the same window, the same voice clips, and the same profile code. It loads only in `_forever_`. Do not install `BMGSparkleGuide/` into `_forever_`, and do not install `BMGSparkleGuide-forever/` into `_retail_`.
 
 ## Features
@@ -24,7 +26,7 @@ The WoW Forever copy is the same window, the same voice clips, and the same prof
 - Colors are Gold and white, Nature, Arcane, Frost, Fire, Shadow, Holy, Blood, White, Sun, Fel, Sea, Royal blue, Rose, Copper, and Moon. Each beam stays in that color, so a green stays green and a blue stays blue. Royal blue is a deep blue with a bright blue core.
 - Import and export is a page in the left list. Export fills a box with a code for the sparkle, voice, and track settings. Import reads a pasted code and loads those settings. Size, height, count, and brightness are saved per kind. Each of those has a slider and a box, so the number can be typed. The low and high ends of the slider are written under it. Light beam does not use count.
 - The settings window has one preview of that kind’s node, turning on the mount-journal background, with the sparkle on the node. The window fits a 1080p screen. The camera waits until the model has a real size, then stands back so the node and the beam both show. The name under the picture is the kind, such as Herbs. Drag turns the node. The mouse wheel zooms. Height moves where the sparkle sits on that node. The light beam is a soft column with a glow on the ground. Under that, five sample pictures show Light beam, Twinkle, Glints, Pollen, and Star crown. Click a sample to use that style. Loot and skinning have no model, so the preview is the sparkle on the dark frame.
-- Herbs, ore, and treasure each have a Track these list. Every name starts checked. Uncheck a name to leave that node alone. Track all and Track none set the whole list. A node that is not on the list is still tracked while that page’s box is on. Quest objects, the fishing bobber, loot, skinning, and other objects are tracked as a whole group.
+- Herbs, ore, and treasure each have a Track these list. Every name starts checked. Uncheck a name to leave that node alone. Track all and Track none set the whole list. The list stays inside the window, and the rest of the names scroll. The same window clip holds the text on Announce at, Sparkle settings, and Import and export. A node that is not on the list is still tracked while that page’s box is on. Quest objects, the fishing bobber, loot, skinning, and other objects are tracked as a whole group. The kind name sits inside the preview.
 - Announce at is on every sparkle page and on its own page. The boxes are 20 yards, 15 yards, 10 yards, 5 yards, and At. A checked step is spoken when the distance changes to that step. Play sample says “Silverleaf. 10 yards.”
 - Voice is Microsoft Zira, a little slow, from short clips. “Silverleaf. 10 yards.” is the name clip, then a shared distance clip. “At Silverleaf.” is “At”, then the name.
 - A node without its own clip says Herb, Ore, Treasure, Quest object, Loot, Skin, Fishing bobber, or Object. A lush, rich, or themed prefix is skipped when the plain name has a clip.
@@ -53,7 +55,7 @@ The WoW Forever copy is the same window, the same voice clips, and the same prof
 | `UNIT_SPELLCAST_SENT`, `LOOT_OPENED` | “At” when a gather cast starts on that name, or the loot window opens |
 | `Sounds/*.ogg` | Zira clips at 22050 Hz. Names are the node. Distance, At, and the kind words are shared |
 
-The sparkle drawing uses Blizzard’s star, starburst, and white textures. It does not copy another addon’s code. NodeSight Sparkles was the reference for the job: one soft-interact object, the same CVars, and a light beam that is easy to see from far away.
+The sparkle drawing uses Blizzard’s star, starburst, and white textures.
 
 ## What worked
 
