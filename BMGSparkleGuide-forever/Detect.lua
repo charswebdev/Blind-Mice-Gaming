@@ -590,14 +590,21 @@ local function SameUnit(a, b)
     return a == b
 end
 
+local function TapDenied(unit)
+    return G.IsTrue(UnitIsTapDenied, unit)
+end
+
 local function PlayerCanLoot(unit)
-    if G.IsTrue(UnitIsTapDenied, unit) then
+    if TapDenied(unit) then
         return false
     end
-    if not CanLootUnit then
-        return false
+    if CanLootUnit and G.IsTrue(CanLootUnit, unit) then
+        return true
     end
-    return G.IsTrue(CanLootUnit, unit)
+    if unit ~= "softinteract" and CanLootUnit and G.IsTrue(CanLootUnit, "softinteract") then
+        return true
+    end
+    return false
 end
 
 local function UpdateUnit(unit, plate)
@@ -622,15 +629,15 @@ local function UpdateUnit(unit, plate)
     end
     local kind, name = Classify(unit, icon)
     if corpse then
+        local denied = TapDenied(unit)
         local mine = PlayerCanLoot(unit)
-        if kind == "loot" and not mine then
+        if denied and kind == "loot" then
             kind = nil
-        end
-        if kind == "skinning" and not G.db.enabled.skinning and G.db.enabled.loot and mine then
+        elseif kind == "skinning" and not G.db.enabled.skinning and G.db.enabled.loot and not denied then
             kind = "loot"
         elseif kind == "loot" and not G.db.enabled.loot and G.db.enabled.skinning then
             kind = "skinning"
-        elseif mine and G.db.enabled.loot and kind ~= "skinning" then
+        elseif not denied and G.db.enabled.loot and kind ~= "skinning" and (kind == "loot" or mine) then
             kind = "loot"
         end
     end

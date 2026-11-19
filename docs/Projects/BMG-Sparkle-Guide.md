@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.0.4** retail and **1.0.4** WoW Forever |
+| Version | **1.0.5** retail and **1.0.5** WoW Forever |
 | Type | In-game sparkle and spoken guide for the object in front of you |
 | Retail folder | `BMGSparkleGuide/` |
 | Forever folder | `BMGSparkleGuide-forever/` |
@@ -73,7 +73,7 @@ The sparkle drawing uses Blizzard’s star, starburst, and white textures.
 - The beacon is parented to the object nameplate, anchored to the bottom of that plate, and the column is three times the sparkle size. The beam’s ground is drawn below the frame’s middle, so the frame is lifted by that amount and the glow sits on the chosen height. A game object with no readable name still gets the herb beacon while Herbs is on.
 - The preview locked its camera before the model had loaded, and the sparkle was pinned to the middle of the box, so the node and the beam did not line up. The camera now waits for a real model size, and the sparkle hangs from a plate over the node.
 - A size of 160 still drew a thin short column, and the preview shrank it further, so the beacon looked small on the plant. The column is wider and taller now, the world beacon grows as the camera comes closer, and the preview keeps most of that size.
-- A killed beast gets a nameplate only while that corpse is the one in front of you, and only when Skinning or Loot is on. Loot is spoken only when that corpse is yours to loot. A body tagged by someone else, or one you cannot loot, stays quiet. A fresh kill still shows the loot icon. If Loot is off and Skinning is on, that body uses the skinning beacon.
+- A killed beast gets a nameplate only while that corpse is the one in front of you, and only when Skinning or Loot is on. Loot is spoken when that corpse shows the loot icon and another player does not own the tag. A body tagged by someone else stays quiet. Requiring the corpse to already be lootable hid a fresh kill, because that check stays false until the loot window can open. The loot icon is enough. If Loot is off and Skinning is on, that body uses the skinning beacon.
 
 ## Open work
 
