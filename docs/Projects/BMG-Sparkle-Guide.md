@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.0.6** retail and **1.0.6** WoW Forever |
+| Version | **1.0.7** retail and **1.0.7** WoW Forever |
 | Type | In-game sparkle and spoken guide for the object in front of you |
 | Retail folder | `BMGSparkleGuide/` |
 | Forever folder | `BMGSparkleGuide-forever/` |
@@ -27,11 +27,11 @@ The WoW Forever copy is the same window, the same voice clips, and the same prof
 - Import and export is a page in the left list. Export fills a box with a code for the sparkle, voice, and track settings. Import reads a pasted code and loads those settings. Size, height, count, and brightness are saved per kind. Each of those has a slider and a box, so the number can be typed. The low and high ends of the slider are written under it. Light beam does not use count.
 - The settings window has one preview of that kind’s node, turning on the mount-journal background, with the sparkle on the node. The window fits a 1080p screen. The camera waits until the model has a real size, then stands back so the node and the beam both show. The name under the picture is the kind, such as Herbs. Drag turns the node. The mouse wheel zooms. Height moves where the sparkle sits on that node. The light beam is a soft column with a glow on the ground. Under that, five sample pictures show Light beam, Twinkle, Glints, Pollen, and Star crown. Click a sample to use that style. Loot and skinning have no model, so the preview is the sparkle on the dark frame.
 - Every sparkle page has a Track these list. Uncheck a name to leave that object alone. Track all and Track none set the whole list. The list stays inside the window, and the rest of the names scroll. The same window clip holds the text on Announce at, Sparkle settings, and Import and export. A herb, ore node, or chest that is not on its list is still tracked while that page’s box is on. Other objects sparkle only for a checked row: anvil, forge, campfire, cooking fire, alchemy table, enchanting table, workbench, loom, portal, waygate, teleporter, meeting stone, summoning stone, mole machine, elevator, boat, door, guild vault, Great Vault, mission table, transmogrifier, book, bulletin board, lever, fishing pool, crate, barrel, and basket. Seat and Mailbox start unchecked. Quest objects lists the unfinished targets in your quest log. Fishing bobber, Loot, and Skin each list that one target, checked. Flight path is its own page, on at the start, and lists Flight path. A flight master gets the beacon and the spoken line “Flight path.” The kind name sits inside the preview.
-- Announce at is on every sparkle page and on its own page. The boxes are 20 yards, 15 yards, 10 yards, 5 yards, and At. A checked step is spoken when the distance changes to that step. Play sample says “Silverleaf. 10 yards.”
-- Voice is Microsoft Zira, a little slow, from short clips. “Silverleaf. 10 yards.” is the name clip, then a shared distance clip. “At Silverleaf.” is “At”, then the name.
+- Announce at is on every sparkle page and on its own page. The boxes are 40, 35, 30, 25, 20, 15, 10, 5, and At. At is 0 yards: “At”, then the label. A checked step is spoken when the distance changes to that step. Play sample says “Silverleaf. 10 yards.”
+- Voice is Microsoft Zira, a little slow, from short clips. “Silverleaf. 10 yards.” is the name clip, then a shared distance clip. “At Silverleaf.” is “At”, then the label, and that step is 0 yards.
 - The spoken line is the tracked label, such as Silverleaf, Portal, Door, or Corpse. It does not substitute Herb, Ore, Treasure, Quest, or Object. A lush, rich, or themed prefix still uses the plain label when that label has a clip. Loot says Corpse. Flight path says Flight path.
-- A distance is spoken when the client gives a plain yard number under 80. You hear the name, then 20, 15, 10, or 5. Under 3 yards you hear “At”, then the name. When that number is hidden, farther than about 11 yards says 20, and inside that says 10. “At” is also spoken when the loot window opens or a gather cast starts on that object.
-- While any sparkle is on, Interact Key is turned on and set to notice objects all around, out to 30 yards. Turning every sparkle off, or logging out, puts those settings back. The guide waits until combat ends before it changes them.
+- A distance is spoken when the client gives a plain yard number under 80. You hear the label, then 40, 35, 30, 25, 20, 15, 10, or 5. At 0 yards you hear “At”, then the label. When that number is hidden, farther than about 11 yards says 40, and inside that says 10. “At” is also spoken when the loot window opens or a gather cast starts on that object.
+- While any sparkle is on, Interact Key is turned on and set to notice objects all around, out to 40 yards. The beacon and the spoken line use that same range. Turning every sparkle off, or logging out, puts those settings back. The guide waits until combat ends before it changes them.
 - Hide in combat starts off. Hide in dungeons starts on. The minimap button starts on.
 - The addon list groups both copies under Blind Mice Gaming, the same category as the other addons.
 
@@ -45,13 +45,13 @@ The WoW Forever copy is the same window, the same voice clips, and the same prof
 
 | Path | Role |
 |------|------|
-| `softTargetInteract`, `SoftTargetIconGameObject`, `SoftTargetInteractArc`, `SoftTargetInteractRange` | The Interact Key. Saved once, then set to 3, 1, 2, and 30 while sparkles are on |
+| `softTargetInteract`, `SoftTargetIconGameObject`, `SoftTargetInteractArc`, `SoftTargetInteractRange` | The Interact Key. Saved once, then set to 3, 1, 2, and 40 while sparkles are on |
 | `PLAYER_SOFT_INTERACT_CHANGED`, `NAME_PLATE_UNIT_ADDED` | The one object the game is pointing at, and its nameplate |
 | Interact icon atlas | Herb, mining, skin, loot, and quest. A loot icon on a game object is treated as treasure |
 | Object name | Herb endings, vein or deposit or seam, chest or coffer, and the word bobber. Bobber object id 35591 |
 | Quest log objectives | Unfinished objective words, so a quest object can match when the icon does not |
 | `UnitDistanceSquared`, then `UnitPosition` | Yards when the number is plain and under 80. A hidden number is still compared when the client allows it. The nameplate is tried first, then `softinteract` |
-| `CheckInteractDistance` | When no yard number can be read: about 11 yards or closer says 10, farther says 20 |
+| `CheckInteractDistance` | When no yard number can be read: about 11 yards or closer says 10, farther says 40 |
 | `UNIT_SPELLCAST_SENT`, `LOOT_OPENED` | “At” when a gather cast starts on that name, or the loot window opens |
 | `Sounds/*.ogg` | Zira clips at 22050 Hz. Names are the node. Distance, At, and the kind words are shared |
 
@@ -65,7 +65,7 @@ The sparkle drawing uses Blizzard’s star, starburst, and white textures.
 
 ## What did not work
 
-- The game does not give a distance for every object. Saying “At” for a missing number called a far node “At loot,” and saying only the name left it as “Loot.” A hidden number is compared when the client allows it. Otherwise farther than about 11 yards says 20, and inside that says 10. “At” stays under 3 yards, when the loot window opens, or when a gather cast starts.
+- The game does not give a distance for every object. Saying “At” for a missing number called a far node “At loot,” and saying only the name left it as “Loot.” A hidden number is compared when the client allows it. Otherwise farther than about 11 yards says 40, and inside that says 10. “At” is 0 yards, and it is also spoken when the loot window opens or a gather cast starts. The beacon and the spoken line reach 40 yards.
 - A wave file is not a safe sound for this client. The clips are ogg.
 - The Interact Key can still notice the object from about 15 yards even when the setting asks for 30. That is the client, not a second scan.
 - Putting the sparkle on a nameplate and then changing that frame’s strata stopped the picture and the spoken line together. The sparkle now stays on the nameplate without that strata change. The spoken line plays even when the picture cannot be placed. The guide keeps looking while any sparkle page is on.

@@ -16,6 +16,7 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 
 ## Features
 
+- **2026-11-19:** BMG Sparkle Guide **1.0.7** and BMG Sparkle Guide - WoW Forever **1.0.7**. The beacon and the spoken line reach 40 yards. The steps are 40, 35, 30, 25, 20, 15, 10, 5, and At. At is 0 yards.
 - **2026-11-19:** BMG Sparkle Guide **1.0.6** and BMG Sparkle Guide - WoW Forever **1.0.6**. Each page lists what it tracks. Seat and Mailbox start unchecked. A flight master gets a beacon. The spoken line is the label, such as Portal or Corpse.
 - **2026-11-18:** BMG Sparkle Guide **1.0.5** and BMG Sparkle Guide - WoW Forever **1.0.5**. A kill of yours shows the loot beacon again. The loot icon is enough. A body tagged by someone else stays quiet.
 - **2026-11-18:** BMG Sparkle Guide **1.0.4** and BMG Sparkle Guide - WoW Forever **1.0.4**. Loot is spoken only for a corpse you can loot. A body tagged by someone else stays quiet.

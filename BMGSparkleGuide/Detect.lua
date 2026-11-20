@@ -4,7 +4,7 @@ local CVARS = {
     { "softTargetInteract", "3" },
     { "SoftTargetIconGameObject", "1" },
     { "SoftTargetInteractArc", "2" },
-    { "SoftTargetInteractRange", "30" },
+    { "SoftTargetInteractRange", "40" },
 }
 local CORPSE_PLATE = "SoftTargetNameplateInteract"
 
@@ -447,8 +447,11 @@ local function FromSquared(unit)
         return nil
     end
     local n = G.PlainNumber(squared)
-    if not n or n <= 0 then
+    if not n or n < 0 then
         return nil
+    end
+    if n == 0 then
+        return 0
     end
     local dist = math.sqrt(n)
     if dist < 80 then
@@ -472,7 +475,7 @@ local function FromPositions(unit)
         return nil
     end
     local dist = math.sqrt((x2 - x1) ^ 2 + (y2 - y1) ^ 2)
-    if dist > 0 and dist < 80 then
+    if dist >= 0 and dist < 80 then
         return dist
     end
     return nil
@@ -493,6 +496,18 @@ local function Band(dist)
     if not dist then
         return "near"
     end
+    if dist >= 37.5 then
+        return "40"
+    end
+    if dist >= 32.5 then
+        return "35"
+    end
+    if dist >= 27.5 then
+        return "30"
+    end
+    if dist >= 22.5 then
+        return "25"
+    end
     if dist >= 17.5 then
         return "20"
     end
@@ -502,17 +517,21 @@ local function Band(dist)
     if dist >= 7.5 then
         return "10"
     end
-    if dist >= 3 then
+    if dist >= 2.5 then
         return "5"
     end
     return "at"
 end
 
 local SQUARED_STEPS = {
+    { 1406.25, "40" },
+    { 1056.25, "35" },
+    { 756.25, "30" },
+    { 506.25, "25" },
     { 306.25, "20" },
     { 156.25, "15" },
     { 56.25, "10" },
-    { 9, "5" },
+    { 6.25, "5" },
 }
 
 local function SecretYes(value)
@@ -527,9 +546,9 @@ end
 
 local function StepFromSquared(raw)
     local n = G.PlainNumber(raw)
-    if n and n > 0 then
+    if n and n >= 0 then
         local dist = math.sqrt(n)
-        if dist > 0 and dist < 80 then
+        if dist >= 0 and dist < 80 then
             return Band(dist)
         end
         return nil
@@ -589,7 +608,7 @@ local function Bracket(unit)
     if close then
         return "10"
     end
-    return "20"
+    return "40"
 end
 
 local function StepFromUnit(unit)

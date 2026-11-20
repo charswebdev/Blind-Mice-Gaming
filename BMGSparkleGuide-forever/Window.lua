@@ -505,6 +505,10 @@ local function BuildKind(parent)
     page.announce:SetText("Announce at")
     page.steps = {}
     local stepList = {
+        { key = "40", label = "40 yards" },
+        { key = "35", label = "35 yards" },
+        { key = "30", label = "30 yards" },
+        { key = "25", label = "25 yards" },
         { key = "20", label = "20 yards" },
         { key = "15", label = "15 yards" },
         { key = "10", label = "10 yards" },
@@ -513,7 +517,9 @@ local function BuildKind(parent)
     }
     for index, step in ipairs(stepList) do
         local box = Check(page, step.label)
-        box:SetPoint("TOPLEFT", page.announce, "BOTTOMLEFT", (index - 1) * 124, -2)
+        local column = (index - 1) % 5
+        local row = math.floor((index - 1) / 5)
+        box:SetPoint("TOPLEFT", page.announce, "BOTTOMLEFT", column * 120, -2 - row * 26)
         box.step = step.key
         box:SetScript("OnClick", function(self)
             if filling then
@@ -525,7 +531,7 @@ local function BuildKind(parent)
         page.steps[step.key] = box
     end
     page.preview, page.sample = BuildPreview(page)
-    page.preview:SetPoint("TOPLEFT", page.announce, "BOTTOMLEFT", 0, -36)
+    page.preview:SetPoint("TOPLEFT", page.announce, "BOTTOMLEFT", 0, -64)
     page.styles = {}
     for index, style in ipairs(G.STYLES) do
         local tile = CreateFrame("Button", nil, page, "BackdropTemplate")
@@ -704,6 +710,10 @@ local function BuildVoice(parent)
     heading:SetText("Announce at")
     page.steps = {}
     local stepList = {
+        { key = "40", label = "40 yards" },
+        { key = "35", label = "35 yards" },
+        { key = "30", label = "30 yards" },
+        { key = "25", label = "25 yards" },
         { key = "20", label = "20 yards" },
         { key = "15", label = "15 yards" },
         { key = "10", label = "10 yards" },
@@ -712,7 +722,9 @@ local function BuildVoice(parent)
     }
     for index, step in ipairs(stepList) do
         local box = Check(page, step.label)
-        box:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", (index - 1) * 124, -4)
+        local column = (index - 1) % 5
+        local row = math.floor((index - 1) / 5)
+        box:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", column * 120, -4 - row * 26)
         box.step = step.key
         box:SetScript("OnClick", function(self)
             if filling then
@@ -724,7 +736,7 @@ local function BuildVoice(parent)
         page.steps[step.key] = box
     end
     local play = GoldButton(page, "Play sample", 140)
-    play:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -48)
+    play:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -72)
     play:SetScript("OnClick", function()
         G.PlaySample()
     end)
@@ -732,7 +744,7 @@ local function BuildVoice(parent)
     note:SetPoint("TOPLEFT", play, "BOTTOMLEFT", 0, -16)
     note:SetPoint("RIGHT", page, "RIGHT", -16, 0)
     note:SetJustifyH("LEFT")
-    note:SetText("Check the distances you want to hear. You hear the name, then that distance, when the step changes. Close up, you hear At, then the name. The same boxes are on each sparkle page. Each announcement says the tracked label, such as Silverleaf, Portal, or Corpse. It does not say Herb, Ore, Treasure, or Object in place of that label. Loot says Corpse. Flight path says Flight path. When the game hides the exact yards, farther than a short step says 20 yards, and the short step says 10 yards. You hear At when you are within a few yards, or when you open the loot.")
+    note:SetText("Check the distances you want to hear. You hear the label, then that distance, when the step changes. At 0 yards you hear At, then the label. The same boxes are on each sparkle page. Each announcement says the tracked label, such as Silverleaf, Portal, or Corpse. It does not say Herb, Ore, Treasure, or Object in place of that label. Loot says Corpse. Flight path says Flight path. When the game hides the exact yards, farther than a short step says 40 yards, and the short step says 10 yards. You hear At at 0 yards, or when you open the loot.")
     page:Hide()
     return page
 end
@@ -772,7 +784,7 @@ local function BuildSettings(parent)
     note:SetPoint("TOPLEFT", map, "BOTTOMLEFT", 4, -16)
     note:SetPoint("RIGHT", page, "RIGHT", -16, 0)
     note:SetJustifyH("LEFT")
-    note:SetText("While any sparkle is on, Interact Key is turned on and set to notice objects all around you, out to 30 yards. Turning every sparkle off puts those settings back. Logging out puts them back too. The guide speaks and sparkles the one object the game is pointing at.")
+    note:SetText("While any sparkle is on, Interact Key is turned on and set to notice objects all around you, out to 40 yards. Turning every sparkle off puts those settings back. Logging out puts them back too. The guide speaks and sparkles the one object the game is pointing at.")
     page:Hide()
     return page
 end

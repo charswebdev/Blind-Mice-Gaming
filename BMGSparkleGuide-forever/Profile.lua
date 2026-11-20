@@ -1,6 +1,6 @@
 local _, G = ...
 
-local STEPS = { "20", "15", "10", "5", "at" }
+local STEPS = { "20", "15", "10", "5", "at", "40", "35", "30", "25" }
 
 local function Known(list, key)
     for _, item in ipairs(list) do
@@ -125,16 +125,20 @@ function G.ImportProfile(text)
         return false
     end
     local voice = Bit(found.voice, 1)
-    if voice == nil or not found.steps or #found.steps ~= #STEPS then
+    if voice == nil or not found.steps or #found.steps < 1 or #found.steps > #STEPS then
         return false
     end
     local steps = {}
     for index, key in ipairs(STEPS) do
-        local bit = Bit(found.steps, index)
-        if bit == nil then
-            return false
+        if index <= #found.steps then
+            local bit = Bit(found.steps, index)
+            if bit == nil then
+                return false
+            end
+            steps[key] = bit
+        else
+            steps[key] = true
         end
-        steps[key] = bit
     end
     if not found.hide or #found.hide ~= 2 or not found.map or #found.map ~= 1 then
         return false

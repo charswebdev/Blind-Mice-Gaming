@@ -1,6 +1,6 @@
 local _, G = ...
 
-G.VERSION = "1.0.6"
+G.VERSION = "1.0.7"
 
 G.KINDS = {
     { key = "herbs", label = "Herbs", blurb = "Sparkles on herbs", sample = "Herbs", model = 219481 },
@@ -122,7 +122,7 @@ local function DefaultDB()
         enabled = enabled,
         look = look,
         voice = true,
-        steps = { ["20"] = true, ["15"] = true, ["10"] = true, ["5"] = true, at = true },
+        steps = { ["40"] = true, ["35"] = true, ["30"] = true, ["25"] = true, ["20"] = true, ["15"] = true, ["10"] = true, ["5"] = true, at = true },
         hideCombat = false,
         hideInstance = true,
         minimap = true,

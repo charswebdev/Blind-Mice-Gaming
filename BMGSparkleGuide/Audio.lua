@@ -139,7 +139,7 @@ function G.SpeakTarget(kind, name, step, label)
     local files
     if step == "at" and G.db.steps.at then
         files = { "at", nameFile }
-    elseif step == "20" or step == "15" or step == "10" or step == "5" then
+    elseif step == "40" or step == "35" or step == "30" or step == "25" or step == "20" or step == "15" or step == "10" or step == "5" then
         if G.db.steps[step] then
             files = { nameFile, "y" .. step }
         else
