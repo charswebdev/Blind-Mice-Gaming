@@ -4,7 +4,7 @@ local CVARS = {
     { "softTargetInteract", "3" },
     { "SoftTargetIconGameObject", "1" },
     { "SoftTargetInteractArc", "2" },
-    { "SoftTargetInteractRange", "40" },
+    { "SoftTargetInteractRange", "50" },
 }
 local CORPSE_PLATE = "SoftTargetNameplateInteract"
 
@@ -496,6 +496,12 @@ local function Band(dist)
     if not dist then
         return "near"
     end
+    if dist >= 47.5 then
+        return "50"
+    end
+    if dist >= 42.5 then
+        return "45"
+    end
     if dist >= 37.5 then
         return "40"
     end
@@ -524,6 +530,8 @@ local function Band(dist)
 end
 
 local SQUARED_STEPS = {
+    { 2256.25, "50" },
+    { 1806.25, "45" },
     { 1406.25, "40" },
     { 1056.25, "35" },
     { 756.25, "30" },
@@ -608,7 +616,7 @@ local function Bracket(unit)
     if close then
         return "10"
     end
-    return "40"
+    return "50"
 end
 
 local function StepFromUnit(unit)

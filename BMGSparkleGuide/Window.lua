@@ -505,6 +505,8 @@ local function BuildKind(parent)
     page.announce:SetText("Announce at")
     page.steps = {}
     local stepList = {
+        { key = "50", label = "50 yards" },
+        { key = "45", label = "45 yards" },
         { key = "40", label = "40 yards" },
         { key = "35", label = "35 yards" },
         { key = "30", label = "30 yards" },
@@ -531,7 +533,7 @@ local function BuildKind(parent)
         page.steps[step.key] = box
     end
     page.preview, page.sample = BuildPreview(page)
-    page.preview:SetPoint("TOPLEFT", page.announce, "BOTTOMLEFT", 0, -64)
+    page.preview:SetPoint("TOPLEFT", page.announce, "BOTTOMLEFT", 0, -90)
     page.styles = {}
     for index, style in ipairs(G.STYLES) do
         local tile = CreateFrame("Button", nil, page, "BackdropTemplate")
@@ -710,6 +712,8 @@ local function BuildVoice(parent)
     heading:SetText("Announce at")
     page.steps = {}
     local stepList = {
+        { key = "50", label = "50 yards" },
+        { key = "45", label = "45 yards" },
         { key = "40", label = "40 yards" },
         { key = "35", label = "35 yards" },
         { key = "30", label = "30 yards" },
@@ -736,7 +740,7 @@ local function BuildVoice(parent)
         page.steps[step.key] = box
     end
     local play = GoldButton(page, "Play sample", 140)
-    play:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -72)
+    play:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -100)
     play:SetScript("OnClick", function()
         G.PlaySample()
     end)
@@ -744,7 +748,7 @@ local function BuildVoice(parent)
     note:SetPoint("TOPLEFT", play, "BOTTOMLEFT", 0, -16)
     note:SetPoint("RIGHT", page, "RIGHT", -16, 0)
     note:SetJustifyH("LEFT")
-    note:SetText("Check the distances you want to hear. You hear the label, then that distance, when the step changes. At 0 yards you hear At, then the label. The same boxes are on each sparkle page. Each announcement says the tracked label, such as Silverleaf, Portal, or Corpse. It does not say Herb, Ore, Treasure, or Object in place of that label. Loot says Corpse. Flight path says Flight path. When the game hides the exact yards, farther than a short step says 40 yards, and the short step says 10 yards. You hear At at 0 yards, or when you open the loot.")
+    note:SetText("Check the distances you want to hear. You hear the label, then that distance, when the step changes. At 0 yards you hear At, then the label. The same boxes are on each sparkle page. Each announcement says the tracked label, such as Silverleaf, Portal, or Corpse. It does not say Herb, Ore, Treasure, or Object in place of that label. Loot says Corpse. Flight path says Flight path. When the game hides the exact yards, farther than a short step says 50 yards, and the short step says 10 yards. You hear At at 0 yards, or when you open the loot.")
     page:Hide()
     return page
 end
@@ -784,7 +788,7 @@ local function BuildSettings(parent)
     note:SetPoint("TOPLEFT", map, "BOTTOMLEFT", 4, -16)
     note:SetPoint("RIGHT", page, "RIGHT", -16, 0)
     note:SetJustifyH("LEFT")
-    note:SetText("While any sparkle is on, Interact Key is turned on and set to notice objects all around you, out to 40 yards. Turning every sparkle off puts those settings back. Logging out puts them back too. The guide speaks and sparkles the one object the game is pointing at.")
+    note:SetText("While any sparkle is on, Interact Key is turned on and set to notice objects all around you, out to 50 yards. Turning every sparkle off puts those settings back. Logging out puts them back too. The guide speaks and sparkles the one object the game is pointing at.")
     page:Hide()
     return page
 end
@@ -932,9 +936,30 @@ function G.ToggleWindow()
     end
 end
 
+local function SaveWindowSize()
+    if not frame or not G.db then
+        return
+    end
+    local width = frame:GetWidth()
+    local height = frame:GetHeight()
+    if type(width) ~= "number" or type(height) ~= "number" then
+        return
+    end
+    G.db.windowWidth = math.floor(width + 0.5)
+    G.db.windowHeight = math.floor(height + 0.5)
+end
+
 local function BuildWindow()
     frame = CreateFrame("Frame", "BMGSparkleGuideFrame", UIParent, "BackdropTemplate")
-    frame:SetSize(980, 900)
+    local width = 980
+    local height = 900
+    if G.db and type(G.db.windowWidth) == "number" then
+        width = G.db.windowWidth
+    end
+    if G.db and type(G.db.windowHeight) == "number" then
+        height = G.db.windowHeight
+    end
+    frame:SetSize(width, height)
     frame:SetPoint("CENTER")
     frame:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
@@ -944,6 +969,13 @@ local function BuildWindow()
     })
     frame:SetMovable(true)
     frame:EnableMouse(true)
+    frame:SetResizable(true)
+    if frame.SetResizeBounds then
+        frame:SetResizeBounds(820, 640, 1800, 1400)
+    else
+        frame:SetMinResize(820, 640)
+        frame:SetMaxResize(1800, 1400)
+    end
     frame:SetClampedToScreen(true)
     frame:SetClipsChildren(true)
     frame:SetFrameStrata("HIGH")
@@ -973,7 +1005,8 @@ local function BuildWindow()
 
     local list = CreateFrame("Frame", nil, frame)
     list:SetPoint("TOPLEFT", 20, -56)
-    list:SetSize(180, 480)
+    list:SetPoint("BOTTOMLEFT", 20, 20)
+    list:SetWidth(180)
     local entries = {}
     for _, info in ipairs(G.KINDS) do
         entries[#entries + 1] = { key = info.key, label = info.label }
@@ -1007,6 +1040,21 @@ local function BuildWindow()
     settingsPage = BuildSettings(body)
     profilePage = BuildProfile(body)
     Select("herbs")
+
+    local resizer = CreateFrame("Button", nil, frame)
+    resizer:SetSize(16, 16)
+    resizer:SetPoint("BOTTOMRIGHT", -4, 4)
+    resizer:SetFrameLevel(frame:GetFrameLevel() + 20)
+    resizer:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+    resizer:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+    resizer:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+    resizer:SetScript("OnMouseDown", function()
+        frame:StartSizing("BOTTOMRIGHT")
+    end)
+    resizer:SetScript("OnMouseUp", function()
+        frame:StopMovingOrSizing()
+        SaveWindowSize()
+    end)
 
     frame:SetScript("OnShow", function()
         voicePage.speak:SetChecked(G.db.voice == true)

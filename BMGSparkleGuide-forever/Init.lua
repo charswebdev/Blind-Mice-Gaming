@@ -1,6 +1,6 @@
 local _, G = ...
 
-G.VERSION = "1.0.7"
+G.VERSION = "1.0.8"
 
 G.KINDS = {
     { key = "herbs", label = "Herbs", blurb = "Sparkles on herbs", sample = "Herbs", model = 219481 },
@@ -122,11 +122,13 @@ local function DefaultDB()
         enabled = enabled,
         look = look,
         voice = true,
-        steps = { ["40"] = true, ["35"] = true, ["30"] = true, ["25"] = true, ["20"] = true, ["15"] = true, ["10"] = true, ["5"] = true, at = true },
+        steps = { ["50"] = true, ["45"] = true, ["40"] = true, ["35"] = true, ["30"] = true, ["25"] = true, ["20"] = true, ["15"] = true, ["10"] = true, ["5"] = true, at = true },
         hideCombat = false,
         hideInstance = true,
         minimap = true,
         minimapAngle = 220,
+        windowWidth = 980,
+        windowHeight = 900,
         cvarSaved = {},
     }
 end
@@ -192,6 +194,20 @@ function G.LoadDB()
     end
     if type(saved.minimapAngle) ~= "number" then
         saved.minimapAngle = 220
+    end
+    if type(saved.windowWidth) ~= "number" then
+        saved.windowWidth = 980
+    elseif saved.windowWidth < 820 then
+        saved.windowWidth = 820
+    elseif saved.windowWidth > 1800 then
+        saved.windowWidth = 1800
+    end
+    if type(saved.windowHeight) ~= "number" then
+        saved.windowHeight = 900
+    elseif saved.windowHeight < 640 then
+        saved.windowHeight = 640
+    elseif saved.windowHeight > 1400 then
+        saved.windowHeight = 1400
     end
     BMGSparkleGuideForeverDB = saved
     G.db = saved

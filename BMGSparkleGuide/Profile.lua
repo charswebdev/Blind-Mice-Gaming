@@ -1,6 +1,6 @@
 local _, G = ...
 
-local STEPS = { "20", "15", "10", "5", "at", "40", "35", "30", "25" }
+local STEPS = { "20", "15", "10", "5", "at", "40", "35", "30", "25", "45", "50" }
 
 local function Known(list, key)
     for _, item in ipairs(list) do
