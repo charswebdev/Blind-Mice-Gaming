@@ -34,9 +34,7 @@ local function Next()
         return
     end
     local file = table.remove(queue, 1)
-    if not Play(file) and not Shared(file) then
-        Play("object")
-    end
+    Play(file)
     if queue[1] then
         wait = GAP
     else
@@ -86,6 +84,7 @@ local KIND_FILE = {
     loot = "loot",
     skinning = "skin",
     others = "object",
+    flight = "flight_path",
 }
 
 function G.HasNameSound(key)
@@ -98,37 +97,45 @@ local PREFIX = {
     smoldering = true,
 }
 
-local function ResolveName(kind, name)
+local function KnownKey(name)
     local key = G.SoundKey(name)
     if G.HasNameSound(key) then
         return key
     end
-    if key then
-        local trimmed = key
-        for _ = 1, 3 do
-            local prefix, rest = trimmed:match("^([a-z0-9]+)_(.+)$")
-            if prefix and PREFIX[prefix] and rest then
-                trimmed = rest
-                if G.HasNameSound(trimmed) then
-                    return trimmed
-                end
-            else
-                break
+    if not key then
+        return nil
+    end
+    local trimmed = key
+    for _ = 1, 3 do
+        local prefix, rest = trimmed:match("^([a-z0-9]+)_(.+)$")
+        if prefix and PREFIX[prefix] and rest then
+            trimmed = rest
+            if G.HasNameSound(trimmed) then
+                return trimmed
             end
-        end
-        local shorter = trimmed:gsub("_seam$", ""):gsub("_deposit$", ""):gsub("_vein$", "")
-        if G.HasNameSound(shorter) then
-            return shorter
+        else
+            break
         end
     end
-    return KIND_FILE[kind] or "object"
+    local shorter = trimmed:gsub("_seam$", ""):gsub("_deposit$", ""):gsub("_vein$", "")
+    if G.HasNameSound(shorter) then
+        return shorter
+    end
+    return nil
 end
 
-function G.SpeakTarget(kind, name, step)
+local function ResolveName(kind, name, label)
+    return KnownKey(label) or KnownKey(name)
+end
+
+function G.SpeakTarget(kind, name, step, label)
     if not G.db.voice then
         return
     end
-    local nameFile = ResolveName(kind, name)
+    local nameFile = ResolveName(kind, name, label)
+    if not nameFile then
+        return
+    end
     local files
     if step == "at" and G.db.steps.at then
         files = { "at", nameFile }

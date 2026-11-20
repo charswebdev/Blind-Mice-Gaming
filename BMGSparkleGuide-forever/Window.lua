@@ -333,11 +333,8 @@ local function ShowTrack(kind)
     else
         kindPage.trackNote:Show()
         local notes = {
-            quests = "This page tracks every quest object while the box above is on.",
-            bobber = "This page tracks your fishing bobber while the box above is on.",
-            loot = "This page tracks corpses you can loot while the box above is on.",
-            skinning = "This page tracks every corpse you can skin while the box above is on.",
-            others = "This page tracks every other object you can use while the box above is on.",
+            quests = "Quest targets from your log show here while the box above is on.",
+            others = "This page tracks the objects checked below.",
         }
         kindPage.trackNote:SetText(notes[kind] or "This page tracks this whole group while the box above is on.")
     end
@@ -608,28 +605,55 @@ local function BuildKind(parent)
     page.trackChild:SetSize(580, 26)
     page.scroll:SetScrollChild(page.trackChild)
     page.trackBoxes = {}
+    local function AddTrackBox(kind, item, index)
+        local box = Check(page.trackChild, item.name)
+        local column = (index - 1) % 2
+        local row = math.floor((index - 1) / 2)
+        box:SetPoint("TOPLEFT", 4 + column * 280, -row * 26)
+        box.kind = kind
+        box.nodeKey = item.key
+        box:SetScript("OnClick", function(self)
+            if filling then
+                return
+            end
+            G.db.track[self.kind][self.nodeKey] = IsChecked(self)
+            if G.Refresh then
+                G.Refresh()
+            end
+        end)
+        box:Hide()
+        page.trackBoxes[#page.trackBoxes + 1] = box
+    end
     for _, info in ipairs(G.KINDS) do
         local items = G.TRACK[info.key]
         if items then
             for index, item in ipairs(items) do
-                local box = Check(page.trackChild, item.name)
-                local column = (index - 1) % 2
-                local row = math.floor((index - 1) / 2)
-                box:SetPoint("TOPLEFT", 4 + column * 280, -row * 26)
-                box.kind = info.key
-                box.nodeKey = item.key
-                box:SetScript("OnClick", function(self)
-                    if filling then
-                        return
-                    end
-                    G.db.track[self.kind][self.nodeKey] = IsChecked(self)
-                    if G.Refresh then
-                        G.Refresh()
-                    end
-                end)
-                box:Hide()
-                page.trackBoxes[#page.trackBoxes + 1] = box
+                AddTrackBox(info.key, item, index)
             end
+        end
+    end
+    function G.RelayoutTrack(kind)
+        if not page.trackBoxes or not G.TRACK then
+            return
+        end
+        local kept = {}
+        for _, box in ipairs(page.trackBoxes) do
+            if box.kind == kind then
+                box:Hide()
+                box:SetParent(nil)
+            else
+                kept[#kept + 1] = box
+            end
+        end
+        page.trackBoxes = kept
+        local items = G.TRACK[kind]
+        if items then
+            for index, item in ipairs(items) do
+                AddTrackBox(kind, item, index)
+            end
+        end
+        if selected == kind then
+            ShowTrack(kind)
         end
     end
     local function SetKind(kind, allowed)
@@ -708,7 +732,7 @@ local function BuildVoice(parent)
     note:SetPoint("TOPLEFT", play, "BOTTOMLEFT", 0, -16)
     note:SetPoint("RIGHT", page, "RIGHT", -16, 0)
     note:SetJustifyH("LEFT")
-    note:SetText("Check the distances you want to hear. You hear the name, then that distance, when the step changes. Close up, you hear At, then the name. The same boxes are on each sparkle page. A node without its own recording says Herb, Ore, Treasure, Quest object, Loot, Skin, or Fishing bobber. When the game hides the exact yards, farther than a short step says 20 yards, and the short step says 10 yards. You hear At when you are within a few yards, or when you open the loot.")
+    note:SetText("Check the distances you want to hear. You hear the name, then that distance, when the step changes. Close up, you hear At, then the name. The same boxes are on each sparkle page. Each announcement says the tracked label, such as Silverleaf, Portal, or Corpse. It does not say Herb, Ore, Treasure, or Object in place of that label. Loot says Corpse. Flight path says Flight path. When the game hides the exact yards, farther than a short step says 20 yards, and the short step says 10 yards. You hear At when you are within a few yards, or when you open the loot.")
     page:Hide()
     return page
 end

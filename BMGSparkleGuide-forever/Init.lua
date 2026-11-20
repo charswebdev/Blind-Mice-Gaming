@@ -1,6 +1,6 @@
 local _, G = ...
 
-G.VERSION = "1.0.5"
+G.VERSION = "1.0.6"
 
 G.KINDS = {
     { key = "herbs", label = "Herbs", blurb = "Sparkles on herbs", sample = "Herbs", model = 219481 },
@@ -10,7 +10,8 @@ G.KINDS = {
     { key = "bobber", label = "Fishing bobber", blurb = "Sparkles on your fishing bobber", sample = "Fishing bobber", model = 201000 },
     { key = "loot", label = "Loot", blurb = "Sparkles on corpses you can loot", sample = "Loot", model = 0 },
     { key = "skinning", label = "Skinning", blurb = "Sparkles on corpses you can skin", sample = "Skin", model = 0 },
-    { key = "others", label = "Other objects", blurb = "Sparkles on other things you can use", sample = "Object", model = 200912 },
+    { key = "others", label = "Other objects", blurb = "Sparkles on the other objects checked below", sample = "Object", model = 200912 },
+    { key = "flight", label = "Flight path", blurb = "Sparkles on a flight master", sample = "Flight path", model = 0 },
 }
 
 G.STYLES = {
@@ -40,7 +41,7 @@ G.COLORS = {
     { key = "moon", label = "Moon", r1 = 0.5, g1 = 0.54, b1 = 0.6, r2 = 0.78, g2 = 0.8, b2 = 0.84 },
 }
 
-local ON = { herbs = true, ore = true, treasure = true, quests = true, bobber = true }
+local ON = { herbs = true, ore = true, treasure = true, quests = true, bobber = true, flight = true }
 
 local function CopyLook()
     return { style = "lightbeam", color = "gold", size = 100, height = -24, brightness = 100, count = 8 }
@@ -194,6 +195,9 @@ function G.LoadDB()
     end
     BMGSparkleGuideForeverDB = saved
     G.db = saved
+    if G.ApplyTrackDefaults then
+        G.ApplyTrackDefaults()
+    end
 end
 
 function G.AnySparkleOn()

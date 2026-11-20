@@ -19,6 +19,9 @@ local ORE_END = { "vein", "deposit", "seam" }
 local CHEST_END = { "chest", "coffer", "footlocker", "strongbox", "lockbox" }
 
 local questWords
+local questLabels
+local questSig
+local FlightUnit
 local lastIdentity, lastStep
 local missingSince
 local probe
@@ -96,7 +99,8 @@ function G.ApplyCorpsePlate()
         end
         return
     end
-    local want = (G.db.enabled.skinning or G.db.enabled.loot) and CorpseUnit("softinteract")
+    local want = ((G.db.enabled.skinning or G.db.enabled.loot) and CorpseUnit("softinteract"))
+        or (G.db.enabled.flight and FlightUnit and FlightUnit("softinteract"))
     if want then
         local current = GetC(CORPSE_PLATE)
         if not SameC(current, "1") then
@@ -121,9 +125,74 @@ function G.RestoreInteract()
     end
 end
 
+local QUEST_STOP = {
+    slain = true, killed = true, collect = true, speak = true, talk = true,
+    click = true, ["use"] = true, find = true, ["return"] = true, bring = true,
+    complete = true, from = true, with = true, your = true, that = true,
+    this = true, have = true, been = true, into = true, onto = true,
+    over = true, ["then"] = true, them = true, they = true, kill = true,
+    loot = true, item = true, quest = true, near = true, west = true,
+    east = true, north = true, south = true, inside = true, outside = true,
+    around = true, the = true, ["and"] = true,
+}
+
+local function QuestLabel(text)
+    local label = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+    label = label:gsub("%d+%s*/%s*%d+", "")
+    label = label:gsub("^%s*%d+%s*", "")
+    label = label:gsub(":%s*$", "")
+    label = label:gsub("%s+", " ")
+    label = label:gsub("^%s+", ""):gsub("%s+$", "")
+    if #label > 48 then
+        label = label:sub(1, 45)
+        label = label:gsub("%s+%S*$", "")
+    end
+    if label == "" then
+        return nil
+    end
+    return label
+end
+
+local function QuestItemWords(label)
+    local words = { label:lower() }
+    for word in label:lower():gmatch("%a%a%a%a+") do
+        if not QUEST_STOP[word] then
+            words[#words + 1] = word
+        end
+    end
+    return words
+end
+
+local function PublishQuestTrack()
+    local items = {}
+    local keys = {}
+    local names = {}
+    for key, label in pairs(questLabels or {}) do
+        keys[key] = true
+        items[#items + 1] = { name = label, key = key, words = QuestItemWords(label) }
+        names[#names + 1] = key
+    end
+    table.sort(items, function(a, b)
+        return a.name < b.name
+    end)
+    table.sort(names)
+    local sig = table.concat(names, ",")
+    G.TRACK.quests = items
+    G.TRACK_KEY.quests = keys
+    if sig == questSig then
+        return
+    end
+    questSig = sig
+    if G.RelayoutTrack then
+        G.RelayoutTrack("quests")
+    end
+end
+
 local function ReadQuests()
     questWords = {}
+    questLabels = {}
     if not C_QuestLog or not C_QuestLog.GetNumQuestLogEntries then
+        PublishQuestTrack()
         return
     end
     local count = C_QuestLog.GetNumQuestLogEntries()
@@ -139,11 +208,17 @@ local function ReadQuests()
                         for word in text:lower():gmatch("%a%a%a+") do
                             questWords[word] = true
                         end
+                        local label = QuestLabel(text)
+                        local key = label and G.SoundKey(label)
+                        if key and not questLabels[key] then
+                            questLabels[key] = label
+                        end
                     end
                 end
             end
         end
     end
+    PublishQuestTrack()
 end
 
 local function HasWord(name)
@@ -283,6 +358,35 @@ local function Fishing()
     return G.PlainNumber(texture) == 136245
 end
 
+local function IsFlight(name, iconText)
+    if G.ListedKey and G.ListedKey("flight", name) then
+        return true
+    end
+    local text = G.PlainString(iconText)
+    if not text then
+        return false
+    end
+    text = text:lower()
+    if text:find("taxi", 1, true) or text:find("flightmaster", 1, true) or text:find("flight_master", 1, true) then
+        return true
+    end
+    return false
+end
+
+FlightUnit = function(unit)
+    if G.IsTrue(UnitIsPlayer, unit) or G.IsTrue(UnitIsDead, unit) or G.IsTrue(UnitIsGameObject, unit) then
+        return false
+    end
+    local name
+    if UnitName then
+        local ok, value = pcall(UnitName, unit)
+        if ok then
+            name = G.PlainString(value)
+        end
+    end
+    return IsFlight(name, IconText(nil, unit))
+end
+
 local function Classify(unit, icon)
     local object = G.IsTrue(UnitIsGameObject, unit)
     local dead = G.IsTrue(UnitIsDead, unit)
@@ -294,8 +398,12 @@ local function Classify(unit, icon)
             name = G.PlainString(value)
         end
     end
-    local iconKind = KindFromIcon(IconText(icon, unit))
+    local iconText = IconText(icon, unit)
+    local iconKind = KindFromIcon(iconText)
     local named = NameKind(name)
+    if not object and not dead and not player and IsFlight(name, iconText) then
+        return "flight", name
+    end
     if named == "bobber" or ObjectID(unit) == 35591 or (object and Fishing() and iconKind == nil) then
         return "bobber", name
     end
@@ -543,7 +651,7 @@ local function IdentityOf(unit, name, kind)
     return guid or ((name or kind or "object") .. ":" .. kind)
 end
 
-local function Announce(unit, kind, name, forceAt)
+local function Announce(unit, kind, name, forceAt, label)
     local step = SpokenStep(unit, forceAt)
     local identity = IdentityOf(unit, name, kind)
     missingSince = nil
@@ -552,7 +660,10 @@ local function Announce(unit, kind, name, forceAt)
     end
     lastIdentity = identity
     lastStep = step
-    G.SpeakTarget(kind, name, step)
+    if kind == "loot" then
+        label = "Corpse"
+    end
+    G.SpeakTarget(kind, name, step, label)
 end
 
 function G.MarkArrived(targetName)
@@ -562,12 +673,12 @@ function G.MarkArrived(targetName)
     end
     if G.liveName and G.liveName == name then
         lastStep = nil
-        Announce(G.liveUnit or "softinteract", G.liveKind, G.liveName, true)
+        Announce(G.liveUnit or "softinteract", G.liveKind, G.liveName, true, G.liveLabel)
     end
 end
 
 local function ClearLive()
-    G.liveKind, G.liveName, G.liveUnit = nil, nil, nil
+    G.liveKind, G.liveName, G.liveUnit, G.liveLabel = nil, nil, nil, nil
     G.HideSpark(G.worldHost)
     if not missingSince then
         missingSince = GetTime()
@@ -641,6 +752,15 @@ local function UpdateUnit(unit, plate)
             kind = "loot"
         end
     end
+    local allowedName = name
+    if kind == "others" then
+        local group = G.OtherGroup(name, IconText(icon, unit))
+        if group then
+            allowedName = group
+        else
+            kind = nil
+        end
+    end
     if object and (not kind or kind == "others") and not G.db.enabled.others then
         if G.db.enabled.herbs then
             kind = "herbs"
@@ -650,17 +770,30 @@ local function UpdateUnit(unit, plate)
             kind = "treasure"
         end
     end
-    if not object and not corpse and kind ~= "herbs" and kind ~= "ore" and kind ~= "treasure" and kind ~= "quests" and kind ~= "bobber" then
+    if not object and not corpse and kind ~= "herbs" and kind ~= "ore" and kind ~= "treasure" and kind ~= "quests" and kind ~= "bobber" and kind ~= "flight" then
         return false
     end
-    if not kind or not G.db.enabled[kind] or not G.NodeAllowed(kind, name) then
+    local pageName = {
+        bobber = "Fishing bobber",
+        loot = "Corpse",
+        skinning = "Skin",
+        flight = "Flight path",
+    }
+    if kind and pageName[kind] then
+        allowedName = pageName[kind]
+    end
+    if not kind or not G.db.enabled[kind] or not G.NodeAllowed(kind, allowedName) then
         if SameUnit(G.liveUnit, unit) then
             ClearLive()
         end
         return false
     end
-    G.liveKind, G.liveName, G.liveUnit = kind, name, unit
-    Announce(unit, kind, name, false)
+    local label = allowedName
+    if G.TrackLabel then
+        label = G.TrackLabel(kind, name) or G.TrackLabel(kind, allowedName) or allowedName
+    end
+    G.liveKind, G.liveName, G.liveUnit, G.liveLabel = kind, name, unit, label
+    Announce(unit, kind, name, false, label)
     local look = G.db.look[kind]
     G.PlaceOnPlate(G.WorldHost(), look, plate, look.height or -24)
     return true
@@ -734,11 +867,11 @@ function G.StartDetect()
     events:RegisterEvent("LOOT_OPENED")
     events:SetScript("OnEvent", function(_, event, arg1, arg2)
         if event == "QUEST_LOG_UPDATE" then
-            questWords = nil
+            ReadQuests()
             return
         end
         if event == "LOOT_OPENED" and G.liveKind and lastStep ~= "at" then
-            Announce(G.liveUnit or "softinteract", G.liveKind, G.liveName, true)
+            Announce(G.liveUnit or "softinteract", G.liveKind, G.liveName, true, G.liveLabel)
             return
         end
         if event == "UNIT_SPELLCAST_SENT" and arg1 == "player" then
@@ -768,5 +901,6 @@ function G.StartDetect()
     end
     ArmWatch()
     G.ApplyInteract()
+    ReadQuests()
     G.Refresh()
 end

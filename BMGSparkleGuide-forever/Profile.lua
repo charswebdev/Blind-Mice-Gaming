@@ -106,16 +106,20 @@ function G.ImportProfile(text)
         end
         found[key] = value
     end
-    if not found.on or #found.on ~= #G.KINDS then
+    if not found.on or #found.on < 1 or #found.on > #G.KINDS then
         return false
     end
     local enabled = {}
     for index, info in ipairs(G.KINDS) do
-        local bit = Bit(found.on, index)
-        if bit == nil then
-            return false
+        if index <= #found.on then
+            local bit = Bit(found.on, index)
+            if bit == nil then
+                return false
+            end
+            enabled[info.key] = bit
+        else
+            enabled[info.key] = true
         end
-        enabled[info.key] = bit
     end
     if not found.voice or #found.voice ~= 1 then
         return false
@@ -144,22 +148,21 @@ function G.ImportProfile(text)
     local looks = {}
     for _, info in ipairs(G.KINDS) do
         local value = found[info.key]
-        if not value then
-            return false
+        if value then
+            local style, color, size, height, bright, count = value:match("^([%w]+),([%w]+),(%-?%d+),(%-?%d+),(%-?%d+),(%-?%d+)$")
+            size, height, bright, count = tonumber(size), tonumber(height), tonumber(bright), tonumber(count)
+            if not style or not size or not Known(G.STYLES, style) or not Known(G.COLORS, color) then
+                return false
+            end
+            looks[info.key] = {
+                style = style,
+                color = color,
+                size = Clamp(size, 60, 240),
+                height = Clamp(height, -80, 40),
+                brightness = Clamp(bright, 20, 100),
+                count = Clamp(count, 3, 12),
+            }
         end
-        local style, color, size, height, bright, count = value:match("^([%w]+),([%w]+),(%-?%d+),(%-?%d+),(%-?%d+),(%-?%d+)$")
-        size, height, bright, count = tonumber(size), tonumber(height), tonumber(bright), tonumber(count)
-        if not style or not size or not Known(G.STYLES, style) or not Known(G.COLORS, color) then
-            return false
-        end
-        looks[info.key] = {
-            style = style,
-            color = color,
-            size = Clamp(size, 60, 240),
-            height = Clamp(height, -80, 40),
-            brightness = Clamp(bright, 20, 100),
-            count = Clamp(count, 3, 12),
-        }
     end
     local track = {}
     for _, info in ipairs(G.KINDS) do
@@ -184,12 +187,14 @@ function G.ImportProfile(text)
         G.db.enabled[info.key] = enabled[info.key]
         local look = G.db.look[info.key]
         local incoming = looks[info.key]
-        look.style = incoming.style
-        look.color = incoming.color
-        look.size = incoming.size
-        look.height = incoming.height
-        look.brightness = incoming.brightness
-        look.count = incoming.count
+        if incoming then
+            look.style = incoming.style
+            look.color = incoming.color
+            look.size = incoming.size
+            look.height = incoming.height
+            look.brightness = incoming.brightness
+            look.count = incoming.count
+        end
         G.db.track[info.key] = track[info.key]
     end
     G.db.voice = voice
