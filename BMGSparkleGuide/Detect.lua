@@ -23,6 +23,9 @@ local questLabels
 local questSig
 local FlightUnit
 local lastIdentity, lastStep
+local lastSayKey
+local lastSay = 0
+local lastSpokenStep
 local missingSince
 local probe
 local watch
@@ -45,6 +48,18 @@ local function SetC(name, value)
     if C_CVar and C_CVar.SetCVar and not InCombatLockdown() then
         pcall(C_CVar.SetCVar, name, value)
     end
+end
+
+local function RaiseC(name, least)
+    local current = GetC(name)
+    local n = current and tonumber(current)
+    if n and n >= least then
+        return
+    end
+    if current and G.db.cvarSaved[name] == nil then
+        G.db.cvarSaved[name] = current
+    end
+    SetC(name, tostring(least))
 end
 
 local function SameC(a, b)
@@ -83,6 +98,8 @@ function G.ApplyInteract()
             SetC(name, wanted)
         end
     end
+    RaiseC("targetNearestDistance", 50)
+    RaiseC("nameplateMaxDistance", 50)
 end
 
 local function CorpseUnit(unit)
@@ -358,23 +375,82 @@ local function Fishing()
     return G.PlainNumber(texture) == 136245
 end
 
-local function IsFlight(name, iconText)
+local function IsPlayerUnit(unit)
+    if G.IsTrue(UnitIsPlayer, unit) or G.IsTrue(UnitIsUnit, unit, "player") or G.IsTrue(UnitPlayerControlled, unit) then
+        return true
+    end
+    if UnitIsOtherPlayer and G.IsTrue(UnitIsOtherPlayer, unit) then
+        return true
+    end
+    if not UnitGUID then
+        return false
+    end
+    local ok, guid = pcall(UnitGUID, unit)
+    if not ok then
+        return false
+    end
+    guid = G.PlainString(guid)
+    return guid ~= nil and guid:sub(1, 7) == "Player-"
+end
+
+local function IsSoftUnit(unit)
+    if unit == "softinteract" then
+        return true
+    end
+    return G.IsTrue(UnitIsUnit, unit, "softinteract")
+end
+
+local function UnitTitle(unit)
+    if not C_TooltipInfo or not C_TooltipInfo.GetUnit then
+        return nil
+    end
+    local ok, text = pcall(function()
+        local info = C_TooltipInfo.GetUnit(unit)
+        if not info or G.Secret(info) or type(info) ~= "table" then
+            return nil
+        end
+        local lines = info.lines
+        if not lines or G.Secret(lines) or type(lines) ~= "table" then
+            return nil
+        end
+        local line = lines[2]
+        if not line or G.Secret(line) or type(line) ~= "table" then
+            return nil
+        end
+        return G.PlainString(line.leftText)
+    end)
+    if not ok or not text then
+        return nil
+    end
+    return text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+end
+
+local function IsFlight(name, iconText, unit)
+    if IsPlayerUnit(unit) then
+        return false
+    end
     if G.ListedKey and G.ListedKey("flight", name) then
         return true
+    end
+    if G.ListedKey and G.ListedKey("flight", UnitTitle(unit)) then
+        return true
+    end
+    if not IsSoftUnit(unit) then
+        return false
     end
     local text = G.PlainString(iconText)
     if not text then
         return false
     end
     text = text:lower()
-    if text:find("taxi", 1, true) or text:find("flightmaster", 1, true) or text:find("flight_master", 1, true) then
+    if text:find("taxi", 1, true) or text:find("flightmaster", 1, true) or text:find("flight_master", 1, true) or text:find("flightpath", 1, true) then
         return true
     end
     return false
 end
 
 FlightUnit = function(unit)
-    if G.IsTrue(UnitIsPlayer, unit) or G.IsTrue(UnitIsDead, unit) or G.IsTrue(UnitIsGameObject, unit) then
+    if IsPlayerUnit(unit) or G.IsTrue(UnitIsDead, unit) or G.IsTrue(UnitIsGameObject, unit) then
         return false
     end
     local name
@@ -384,7 +460,7 @@ FlightUnit = function(unit)
             name = G.PlainString(value)
         end
     end
-    return IsFlight(name, IconText(nil, unit))
+    return IsFlight(name, IconText(nil, unit), unit)
 end
 
 local function Classify(unit, icon)
@@ -401,25 +477,26 @@ local function Classify(unit, icon)
     local iconText = IconText(icon, unit)
     local iconKind = KindFromIcon(iconText)
     local named = NameKind(name)
-    if not object and not dead and not player and IsFlight(name, iconText) then
+    if IsPlayerUnit(unit) then
+        return nil, name
+    end
+    if not object and not dead and IsFlight(name, iconText, unit) then
         return "flight", name
     end
-    if named == "bobber" or ObjectID(unit) == 35591 or (object and Fishing() and iconKind == nil) then
+    if ObjectID(unit) == 35591 or (object and named == "bobber") then
         return "bobber", name
     end
-    if named == "herbs" or named == "ore" or named == "treasure" then
+    if object and (named == "herbs" or named == "ore" or named == "treasure") then
         return named, name
     end
-    if iconKind == "herbs" or iconKind == "ore" then
+    if object and (iconKind == "herbs" or iconKind == "ore") then
         return iconKind, name
     end
-    if iconKind == "quests" or (object and HasWord(name)) then
+    if object and (iconKind == "quests" or HasWord(name)) then
         return "quests", name
     end
-    if iconKind == "loot" and (object or named == nil) then
-        if object or not dead then
-            return "treasure", name
-        end
+    if object and iconKind == "loot" then
+        return "treasure", name
     end
     if object then
         if iconKind == nil then
@@ -451,7 +528,7 @@ local function FromSquared(unit)
         return nil
     end
     if n == 0 then
-        return 0
+        return nil
     end
     local dist = math.sqrt(n)
     if dist < 80 then
@@ -475,7 +552,7 @@ local function FromPositions(unit)
         return nil
     end
     local dist = math.sqrt((x2 - x1) ^ 2 + (y2 - y1) ^ 2)
-    if dist >= 0 and dist < 80 then
+    if dist > 0 and dist < 80 then
         return dist
     end
     return nil
@@ -554,11 +631,14 @@ end
 
 local function StepFromSquared(raw)
     local n = G.PlainNumber(raw)
-    if n and n >= 0 then
+    if n and n > 0 then
         local dist = math.sqrt(n)
-        if dist >= 0 and dist < 80 then
+        if dist > 0 and dist < 80 then
             return Band(dist)
         end
+        return nil
+    end
+    if n == 0 then
         return nil
     end
     if not G.Secret(raw) then
@@ -582,7 +662,7 @@ local function StepFromSquared(raw)
             return step
         end
     end
-    return "at"
+    return nil
 end
 
 local function InteractRange(unit, index)
@@ -644,6 +724,15 @@ local function SpokenStep(unit, forceAt)
     if not step and unit ~= "softinteract" then
         step = StepFromUnit("softinteract")
     end
+    if step == "at" then
+        local close = InteractRange(unit, 2)
+        if close == nil and unit ~= "softinteract" then
+            close = InteractRange("softinteract", 2)
+        end
+        if close ~= true then
+            step = nil
+        end
+    end
     if step then
         return step
     end
@@ -668,6 +757,9 @@ local function IconFor(plate)
 end
 
 local function IdentityOf(unit, name, kind)
+    if kind == "flight" then
+        return "flight"
+    end
     local guid
     if UnitGUID then
         local ok, value = pcall(UnitGUID, unit)
@@ -682,11 +774,26 @@ local function Announce(unit, kind, name, forceAt, label)
     local step = SpokenStep(unit, forceAt)
     local identity = IdentityOf(unit, name, kind)
     missingSince = nil
+    if step == "at" and lastSpokenStep == "at" then
+        lastIdentity = identity
+        lastStep = step
+        return
+    end
+    local sayKey = (kind or "") .. ":" .. (label or name or "") .. ":" .. (step or "")
+    local now = GetTime and GetTime() or 0
+    if sayKey == lastSayKey and now - lastSay < 4 then
+        lastIdentity = identity
+        lastStep = step
+        return
+    end
     if identity == lastIdentity and step == lastStep then
         return
     end
     lastIdentity = identity
     lastStep = step
+    lastSayKey = sayKey
+    lastSay = now
+    lastSpokenStep = step
     if kind == "loot" then
         label = "Corpse"
     end
@@ -709,12 +816,15 @@ local function ClearLive()
     G.HideSpark(G.worldHost)
     if not missingSince then
         missingSince = GetTime()
-    elseif GetTime() - missingSince > 1 then
+    elseif GetTime() - missingSince > 4 then
         lastIdentity, lastStep = nil, nil
     end
 end
 
 local function NameplateUnit(unit)
+    if unit == "softinteract" then
+        return true
+    end
     if G.Secret(unit) or type(unit) ~= "string" then
         return false
     end
@@ -788,15 +898,6 @@ local function UpdateUnit(unit, plate)
             kind = nil
         end
     end
-    if object and (not kind or kind == "others") and not G.db.enabled.others then
-        if G.db.enabled.herbs then
-            kind = "herbs"
-        elseif G.db.enabled.ore then
-            kind = "ore"
-        elseif G.db.enabled.treasure then
-            kind = "treasure"
-        end
-    end
     if not object and not corpse and kind ~= "herbs" and kind ~= "ore" and kind ~= "treasure" and kind ~= "quests" and kind ~= "bobber" and kind ~= "flight" then
         return false
     end
@@ -833,7 +934,11 @@ local function UpdateAll()
     end
     local shown = false
     local readable = 0
-    if C_NamePlate and C_NamePlate.GetNamePlates then
+    local softPlate = PlateFor("softinteract")
+    if softPlate and UpdateUnit("softinteract", softPlate) then
+        shown = true
+    end
+    if not shown and C_NamePlate and C_NamePlate.GetNamePlates then
         local ok, plates = pcall(C_NamePlate.GetNamePlates)
         if ok and type(plates) == "table" then
             for _, candidate in ipairs(plates) do
@@ -850,7 +955,7 @@ local function UpdateAll()
             end
         end
     end
-    if readable > 0 and not shown then
+    if not shown and (readable > 0 or softPlate) then
         ClearLive()
     end
 end
