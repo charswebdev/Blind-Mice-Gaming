@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.1.8** retail and **1.1.8** WoW Forever |
+| Version | **1.1.9** retail and **1.1.9** WoW Forever |
 | Type | In-game sparkle and spoken guide for the object in front of you |
 | Retail folder | `BMGSparkleGuide/` |
 | Forever folder | `BMGSparkleGuide-forever/` |
@@ -31,7 +31,7 @@ The WoW Forever copy is the same window, the same voice clips, and the same prof
 - Voice is Microsoft Zira, a little slow, from short clips. “Silverleaf. 10 yards.” is the name clip, then a shared distance clip. “At Silverleaf.” is “At”, then the label, and that step is 0 yards.
 - The spoken line is the tracked label, such as Silverleaf, Portal, Door, or Corpse. It does not substitute Herb, Ore, Treasure, Quest, or Object. A lush, rich, or themed prefix still uses the plain label when that label has a clip. Loot says Corpse. Flight path says Flight path.
 - A distance is spoken when the client gives a plain yard number under 80. You hear the label, then 50, 45, 40, 35, 30, 25, 20, 15, 10, or 5. At is a real distance under 2.5 yards, and only when the close interact check agrees: “At”, then the label. A reported 0 is ignored, because that number shows up when the client has no yards. Turning away does not say At again. A hidden yard number is compared directly, so the steps still run out to 50. A flight master is not a group member, so that yard number is often missing. The guide then uses the world position, then item and spell ranges at each 5-yard step. The spoken number is the near side of that gap, so standing on the flight master says At, not 5. 45 and 50 are included. It does not call everything inside 28 yards “25,” and it does not jump from there to 50. “At” is also spoken when the loot window opens or a gather cast starts on that object. The same line is not spoken again for 4 seconds.
-- While any sparkle is on, Interact Key is turned on and set to notice objects all around, out to 50 yards. If tab-target range, nameplate distance, or the game-object nameplate distance is shorter than 60, those are raised, so a flight master is not cut off around 25 yards. A herb, mine, chest, quest object, fishing bobber, or other tracked object gets that same nameplate while it is the one in front of you. Loot and Skinning keep that nameplate on. The Corpse beacon is only for a body this player can loot. The game still drops a corpse nameplate at 20 yards, so the guide saves that plate’s spot and keeps the beacon on it out to 50 yards. Turning every sparkle off, or logging out, puts those settings back. The guide waits until combat ends before it changes them.
+- While any sparkle is on, Interact Key is turned on and set to notice objects all around, out to 50 yards. If tab-target range, nameplate distance, or the game-object nameplate distance is shorter than 60, those are raised, so a flight master is not cut off around 25 yards. A herb, mine, chest, quest object, fishing bobber, or other tracked object gets that same nameplate while it is the one in front of you. Loot and Skinning keep that nameplate on. The Corpse beacon is only for a body this player can loot. On a kill this player made, Corpse stays up while that body still has loot. Skin shows only after there is nothing left to loot and the body can be skinned. The game still drops a corpse nameplate at 20 yards, so the guide saves that plate’s spot and keeps the beacon on it out to 50 yards. Turning every sparkle off, or logging out, puts those settings back. The guide waits until combat ends before it changes them.
 - Hide in combat starts off. Hide in dungeons starts on. The minimap button starts on.
 - The addon list groups both copies under Blind Mice Gaming, the same category as the other addons.
 
@@ -89,6 +89,7 @@ The sparkle drawing uses Blizzard’s star, starburst, and white textures.
 - Every dead body was getting that beacon, including corpses this player cannot loot. The Corpse beacon now stays on a body only when this player can loot it. Someone else’s corpse stays dark. Skin stays on a body this player can skin, or on a beast, dragon, or critter this player can loot.
 - The saved spot was guessed again whenever you moved, so the beacon slid around the screen. The spot is saved once, and the beam is drawn from the camera, so it stays on that body while you walk. The Skin beacon uses that same saved spot, so it stays on a skinnable body instead of sliding as you move.
 - Drawing the beam from the nameplate’s screen position hid every beacon, because that position is not a plain number. The beam is parented to the nameplate again, which is what shows it. A hidden plate does not block the separate beacon on a targeted corpse.
+- Skinning was taking the beacon on a kill that still had loot, because a skinnable beast was marked Skin before Corpse. Corpse now stays while this player can loot. Skin shows after there is nothing left to loot.
 
 ## Open work
 

@@ -1205,29 +1205,55 @@ local function FlagTrue(value)
     return value == true or value == 1
 end
 
-local function PlayerCanLoot(unit)
-    if not unit or TapDenied(unit) or not CanLootUnit or not UnitGUID then
-        return false
+-- "yes" this player can loot, "no" there is nothing for them, "unknown" when the check cannot be read.
+local function LootAnswer(unit)
+    if not unit or not CanLootUnit or not UnitGUID then
+        return "unknown"
+    end
+    if TapDenied(unit) then
+        return "no"
     end
     local guid = UnitGUID(unit)
     if G.Secret(guid) or guid == nil then
-        return false
+        return "unknown"
     end
     guid = G.PlainString(guid)
     if not guid then
-        return false
+        return "unknown"
     end
     local ok, hasLoot, canLoot = pcall(CanLootUnit, guid)
     if not ok then
-        return false
+        return "unknown"
     end
     if G.Secret(canLoot) then
-        return FlagTrue(canLoot)
+        if FlagTrue(canLoot) then
+            return "yes"
+        end
+        return "no"
     end
     if canLoot ~= nil then
-        return FlagTrue(canLoot)
+        if FlagTrue(canLoot) then
+            return "yes"
+        end
+        return "no"
     end
-    return FlagTrue(hasLoot)
+    if G.Secret(hasLoot) then
+        if FlagTrue(hasLoot) then
+            return "yes"
+        end
+        return "no"
+    end
+    if FlagTrue(hasLoot) then
+        return "yes"
+    end
+    if hasLoot ~= nil then
+        return "no"
+    end
+    return "unknown"
+end
+
+local function PlayerCanLoot(unit)
+    return LootAnswer(unit) == "yes"
 end
 
 local function FocusUnit(unit)
@@ -1262,17 +1288,37 @@ local function SkinnableCreature(unit)
     return false
 end
 
-local function SkinnableUnit(unit)
-    if not G.db or not G.db.enabled or not G.db.enabled.skinning or not unit then
-        return false
+-- Loot stays on a kill this player can still loot. Skin replaces it only after that loot is gone.
+local function CorpseBeaconKind(unit)
+    if not G.db or not G.db.enabled or not unit then
+        return nil
     end
-    if KindFromIcon(IconText(nil, unit)) == "skinning" then
-        return true
+    if TapDenied(unit) or G.IsTrue(UnitIsPlayer, unit) then
+        return nil
     end
-    if PlayerCanLoot(unit) and SkinnableCreature(unit) then
-        return true
+    local lootOn = G.db.enabled.loot
+    local skinOn = G.db.enabled.skinning
+    if not lootOn and not skinOn then
+        return nil
     end
-    return false
+    local answer = LootAnswer(unit)
+    local iconKind = KindFromIcon(IconText(nil, unit))
+    if lootOn and (answer == "yes" or iconKind == "loot") then
+        return "loot"
+    end
+    local skinnable = iconKind == "skinning" or SkinnableCreature(unit)
+    if skinOn and skinnable and answer == "no" and iconKind ~= "loot" then
+        if iconKind == "skinning" or FocusUnit(unit) then
+            return "skinning"
+        end
+    end
+    if lootOn and FocusUnit(unit) and answer ~= "no" then
+        return "loot"
+    end
+    if skinOn and iconKind == "skinning" and not lootOn then
+        return "skinning"
+    end
+    return nil
 end
 
 local RememberFromPlate
@@ -1299,20 +1345,7 @@ local function UpdateUnit(unit, plate)
     end
     local kind, name = Classify(unit, icon)
     if corpse or kind == "loot" or kind == "skinning" then
-        local denied = TapDenied(unit)
-        local mine = PlayerCanLoot(unit)
-        local focus = FocusUnit(unit)
-        if denied then
-            kind = nil
-        elseif G.db.enabled.skinning and (SkinnableUnit(unit) or (focus and SkinnableCreature(unit))) then
-            kind = "skinning"
-        elseif G.db.enabled.loot and (mine or kind == "loot" or focus) then
-            kind = "loot"
-        elseif G.db.enabled.skinning and focus then
-            kind = "skinning"
-        else
-            kind = nil
-        end
+        kind = CorpseBeaconKind(unit)
     end
     local allowedName = name
     if kind == "others" then
@@ -1605,15 +1638,12 @@ local function FarKind(unit)
             name = G.PlainString(value)
         end
     end
-    local focus = FocusUnit(unit)
-    if SkinnableUnit(unit) or (G.db.enabled.skinning and focus and SkinnableCreature(unit)) then
+    local picked = CorpseBeaconKind(unit)
+    if picked == "skinning" then
         return "skinning", name, "Skin"
     end
-    if G.db.enabled.loot and (PlayerCanLoot(unit) or KindFromIcon(IconText(nil, unit)) == "loot" or focus) then
+    if picked == "loot" then
         return "loot", name, "Corpse"
-    end
-    if G.db.enabled.skinning and focus then
-        return "skinning", name, "Skin"
     end
     return nil
 end
@@ -1676,13 +1706,11 @@ local function KeepDead(unit)
     if not guid or corpseAt[guid] or not spot then
         return
     end
-    if SkinnableUnit(unit) then
-        spot.kind = "skinning"
-    elseif G.db.enabled.loot and PlayerCanLoot(unit) then
-        spot.kind = "loot"
-    else
+    local picked = CorpseBeaconKind(unit)
+    if picked ~= "loot" and picked ~= "skinning" then
         return
     end
+    spot.kind = picked
     spot.name = spot.name
     spot.t = GetTime()
     corpseAt[guid] = spot
@@ -1912,15 +1940,14 @@ function G.StartDetect()
             return
         end
         if event == "LOOT_OPENED" and G.liveKind and lastStep ~= "at" then
-            if shownGuid and corpseAt[shownGuid] and G.db and G.db.enabled and G.db.enabled.skinning then
-                corpseAt[shownGuid].kind = "skinning"
-            elseif shownGuid then
-                corpseAt[shownGuid] = nil
-            end
-            if held and G.db and G.db.enabled and G.db.enabled.skinning then
-                held.kind = "skinning"
-            else
-                held = nil
+            local nextKind = CorpseBeaconKind(G.liveUnit or "target")
+            if nextKind == "skinning" then
+                if shownGuid and corpseAt[shownGuid] then
+                    corpseAt[shownGuid].kind = "skinning"
+                end
+                if held then
+                    held.kind = "skinning"
+                end
             end
             Announce(G.liveUnit or "softinteract", G.liveKind, G.liveName, true, G.liveLabel)
             return
