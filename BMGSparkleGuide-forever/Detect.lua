@@ -3,7 +3,9 @@ local _, G = ...
 local CVARS = {
     { "softTargetInteract", "3" },
     { "SoftTargetIconGameObject", "1" },
+    { "SoftTargetIconInteract", "1" },
     { "SoftTargetInteractArc", "2" },
+    { "SoftTargetInteractRangeIsHard", "0" },
     { "SoftTargetInteractRange", "50" },
 }
 local CORPSE_PLATE = "SoftTargetNameplateInteract"
@@ -88,6 +90,9 @@ function G.ApplyInteract()
         end
         return
     end
+    -- The interact range cannot pass the tab-target distance, so raise that first.
+    RaiseC("targetNearestDistance", 50)
+    RaiseC("nameplateMaxDistance", 50)
     for _, entry in ipairs(CVARS) do
         local name, wanted = entry[1], entry[2]
         local current = GetC(name)
@@ -98,8 +103,6 @@ function G.ApplyInteract()
             SetC(name, wanted)
         end
     end
-    RaiseC("targetNearestDistance", 50)
-    RaiseC("nameplateMaxDistance", 50)
 end
 
 local function CorpseUnit(unit)
@@ -619,16 +622,6 @@ local SQUARED_STEPS = {
     { 6.25, "5" },
 }
 
-local function SecretYes(value)
-    if G.Secret(value) then
-        if value then
-            return true
-        end
-        return false
-    end
-    return value == true
-end
-
 local function StepFromSquared(raw)
     local n = G.PlainNumber(raw)
     if n and n > 0 then
@@ -638,28 +631,16 @@ local function StepFromSquared(raw)
         end
         return nil
     end
-    if n == 0 then
+    if n == 0 or not G.Secret(raw) then
         return nil
     end
-    if not G.Secret(raw) then
-        return nil
-    end
-    local okZero, aboveZero = pcall(function()
-        return raw > 0
-    end)
-    if not okZero or not SecretYes(aboveZero) then
-        return nil
-    end
-    for i = 1, #SQUARED_STEPS do
-        local limit, step = SQUARED_STEPS[i][1], SQUARED_STEPS[i][2]
-        local ok, result = pcall(function()
-            return raw >= limit
-        end)
-        if not ok then
-            return nil
-        end
-        if SecretYes(result) then
-            return step
+    -- A secret compare has to stay in this function. pcall drops the result, and that left every step as 10 yards.
+    if raw > 0 then
+        for i = 1, #SQUARED_STEPS do
+            local limit, step = SQUARED_STEPS[i][1], SQUARED_STEPS[i][2]
+            if raw >= limit then
+                return step
+            end
         end
     end
     return nil
@@ -685,24 +666,33 @@ local function InteractRange(unit, index)
     return value == true or value == 1
 end
 
-local function Bracket(unit)
-    local close = InteractRange(unit, 2)
+local function AskRange(unit, index)
+    local close = InteractRange(unit, index)
     if close == nil and unit ~= "softinteract" then
-        close = InteractRange("softinteract", 2)
+        close = InteractRange("softinteract", index)
     end
-    if close == nil then
-        return nil
-    end
-    if close then
+    return close
+end
+
+local function Bracket(unit)
+    local trade = AskRange(unit, 2)
+    if trade == true then
         return "10"
     end
-    return "50"
+    local inspect = AskRange(unit, 1)
+    if inspect == true then
+        return "25"
+    end
+    if trade == false or inspect == false then
+        return "50"
+    end
+    return nil
 end
 
 local function StepFromUnit(unit)
     if UnitDistanceSquared then
-        local ok, squared = pcall(UnitDistanceSquared, unit)
-        if ok and (G.Secret(squared) or G.PlainNumber(squared)) then
+        local squared = UnitDistanceSquared(unit)
+        if G.Secret(squared) or G.PlainNumber(squared) then
             local step = StepFromSquared(squared)
             if step then
                 return step

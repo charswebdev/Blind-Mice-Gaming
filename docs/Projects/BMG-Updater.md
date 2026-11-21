@@ -16,6 +16,7 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 
 ## Features
 
+- **2026-11-20:** BMG Sparkle Guide **1.1.0** and BMG Sparkle Guide - WoW Forever **1.1.0**. The beacon and the spoken steps reach 50 yards. A hidden yard number is no longer forced down to 10.
 - **2026-11-19:** BMG Sparkle Guide **1.0.9** and BMG Sparkle Guide - WoW Forever **1.0.9**. Players and trees are not tracked. A player whose name sounds like a node is skipped. The flight beacon stays on the flight master. Turning away no longer says At.
 - **2026-11-19:** BMG Sparkle Guide **1.0.8** and BMG Sparkle Guide - WoW Forever **1.0.8**. The window can be resized from the lower right corner. The beacon and the spoken line reach 50 yards. The steps add 50 and 45.
 - **2026-11-19:** BMG Sparkle Guide **1.0.7** and BMG Sparkle Guide - WoW Forever **1.0.7**. The beacon and the spoken line reach 40 yards. The steps are 40, 35, 30, 25, 20, 15, 10, 5, and At. At is 0 yards.

@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.0.9** retail and **1.0.9** WoW Forever |
+| Version | **1.1.0** retail and **1.1.0** WoW Forever |
 | Type | In-game sparkle and spoken guide for the object in front of you |
 | Retail folder | `BMGSparkleGuide/` |
 | Forever folder | `BMGSparkleGuide-forever/` |
@@ -30,7 +30,7 @@ The WoW Forever copy is the same window, the same voice clips, and the same prof
 - Announce at is on every sparkle page and on its own page. The boxes are 50, 45, 40, 35, 30, 25, 20, 15, 10, 5, and At. At is 0 yards: “At”, then the label. A checked step is spoken when the distance changes to that step. Play sample says “Silverleaf. 10 yards.”
 - Voice is Microsoft Zira, a little slow, from short clips. “Silverleaf. 10 yards.” is the name clip, then a shared distance clip. “At Silverleaf.” is “At”, then the label, and that step is 0 yards.
 - The spoken line is the tracked label, such as Silverleaf, Portal, Door, or Corpse. It does not substitute Herb, Ore, Treasure, Quest, or Object. A lush, rich, or themed prefix still uses the plain label when that label has a clip. Loot says Corpse. Flight path says Flight path.
-- A distance is spoken when the client gives a plain yard number under 80. You hear the label, then 50, 45, 40, 35, 30, 25, 20, 15, 10, or 5. At is a real distance under 2.5 yards, and only when the close interact check agrees: “At”, then the label. A reported 0 is ignored, because that number shows up when the client has no yards. Turning away does not say At again. When the number is hidden, farther than about 11 yards says 50, and inside that says 10. “At” is also spoken when the loot window opens or a gather cast starts on that object. The same line is not spoken again for 4 seconds.
+- A distance is spoken when the client gives a plain yard number under 80. You hear the label, then 50, 45, 40, 35, 30, 25, 20, 15, 10, or 5. At is a real distance under 2.5 yards, and only when the close interact check agrees: “At”, then the label. A reported 0 is ignored, because that number shows up when the client has no yards. Turning away does not say At again. A hidden yard number is compared directly, so the steps still run out to 50. When that compare is not allowed, about 28 yards says 25, farther says 50, and inside about 11 yards says 10. “At” is also spoken when the loot window opens or a gather cast starts on that object. The same line is not spoken again for 4 seconds.
 - While any sparkle is on, Interact Key is turned on and set to notice objects all around, out to 50 yards. If tab-target range or nameplate distance is shorter than 50, those are raised to 50 too, so a flight master is not cut off around 25 yards. The beacon and the spoken line use that same range. Turning every sparkle off, or logging out, puts those settings back. The guide waits until combat ends before it changes them.
 - Hide in combat starts off. Hide in dungeons starts on. The minimap button starts on.
 - The addon list groups both copies under Blind Mice Gaming, the same category as the other addons.
@@ -45,14 +45,14 @@ The WoW Forever copy is the same window, the same voice clips, and the same prof
 
 | Path | Role |
 |------|------|
-| `softTargetInteract`, `SoftTargetIconGameObject`, `SoftTargetInteractArc`, `SoftTargetInteractRange` | The Interact Key. Saved once, then set to 3, 1, 2, and 50 while sparkles are on |
-| `targetNearestDistance`, `nameplateMaxDistance` | Raised to 50 while sparkles are on when the saved value is shorter, then put back. The interact range cannot pass the tab-target distance |
+| `targetNearestDistance`, then `softTargetInteract`, `SoftTargetIconGameObject`, `SoftTargetIconInteract`, `SoftTargetInteractArc`, `SoftTargetInteractRangeIsHard`, `SoftTargetInteractRange` | Tab-target distance is raised first. The Interact Key is then set to 3, 1, 1, 2, 0, and 50. The range cannot pass the tab-target distance, and a hard cap would leave it at 10 yards |
+| `nameplateMaxDistance` | Raised to 50 while sparkles are on when the saved value is shorter, then put back |
 | `PLAYER_SOFT_INTERACT_CHANGED`, `NAME_PLATE_UNIT_ADDED` | The one object the game is pointing at, and its nameplate |
 | Interact icon atlas | Herb, mining, skin, loot, and quest. A loot icon on a game object is treated as treasure |
 | Object name | Herb endings, vein or deposit or seam, chest or coffer, and the word bobber. Bobber object id 35591 |
 | Quest log objectives | Unfinished objective words, so a quest object can match when the icon does not |
 | `UnitDistanceSquared`, then `UnitPosition` | Yards when the number is plain, above 0, and under 80. A 0 is ignored. A hidden number is still compared when the client allows it. The nameplate is tried first, then `softinteract` |
-| `CheckInteractDistance` | When no yard number can be read: about 11 yards or closer says 10, farther says 50 |
+| `CheckInteractDistance` | Used only when the yard number cannot be compared. About 11 yards or closer says 10, about 28 yards says 25, farther says 50 |
 | `UNIT_SPELLCAST_SENT`, `LOOT_OPENED` | “At” when a gather cast starts on that name, or the loot window opens |
 | `Sounds/*.ogg` | Zira clips at 22050 Hz. Names are the node. Distance, At, and the kind words are shared |
 
@@ -78,6 +78,7 @@ The sparkle drawing uses Blizzard’s star, starburst, and white textures.
 - Other objects used to sparkle on every leftover object, including every chair and mailbox, and the page did not say which ones. The page now lists each type. Seat and Mailbox start unchecked. Quest objects, the fishing bobber, loot, and skinning had no list. Those pages now list what they track. A flight master had no beacon. Flight path draws one and says “Flight path.” Saying “Object” or “Loot” did not name the thing in front of you. The spoken line now uses the tracked label, and a corpse says “Corpse.”
 - The flight beacon sat on a player nameplate, so it stopped around that plate’s distance and a missing yard number was spoken as “At” again and again. The beacon now stays on the flight master. A player is rejected. A distance of 0 is not “At.” The same line waits 4 seconds before it can be spoken again. Tab-target range and nameplate distance are raised to 50 while sparkles are on.
 - A player named like a node, such as a name ending in Vein, was marked as ore. Herb, ore, and chest names now count only on a game object. Players are skipped, including when one stands in front of a node. A tree or other loose object is not given a herb beacon. “At” is spoken only for a real distance under 2.5 yards when the close check agrees, so turning away at 15 yards does not say At again.
+- The spoken distance stopped at 10 yards. The interact range was applied before the tab-target distance, so the game kept the 10-yard default. A hidden yard number was also compared inside a protected call, which dropped the result and left the short step as 10. The tab-target distance is raised first, the hard range cap is turned off, and the hidden number is compared directly so 15 through 50 can be spoken.
 
 ## Open work
 
