@@ -16,6 +16,7 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 
 ## Features
 
+- **2026-11-20:** BMG Sparkle Guide **1.1.5** and BMG Sparkle Guide - WoW Forever **1.1.5**. Loot and a skinnable corpse track out to 50 yards, the same as a flight master.
 - **2026-11-20:** BMG Sparkle Guide **1.1.4** and BMG Sparkle Guide - WoW Forever **1.1.4**. Herbs, ore, chests, quest objects, and the fishing bobber track out to 50 yards, the same as a flight master.
 - **2026-11-20:** Accessibility Helper - WoW Forever **1.5.2** and Accessibility Helper - Retail **3.8.1**. The Pet switch speaks your pet's action, such as Wolf used Bite. Another player's pet stays quiet.
 - **2026-11-20:** BMG Sparkle Guide **1.1.3** and BMG Sparkle Guide - WoW Forever **1.1.3**. A mine you are facing lights up.

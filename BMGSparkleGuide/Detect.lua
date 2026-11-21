@@ -106,13 +106,6 @@ function G.ApplyInteract()
     end
 end
 
-local function CorpseUnit(unit)
-    if G.IsTrue(UnitIsPlayer, unit) or G.IsTrue(UnitIsGameObject, unit) then
-        return false
-    end
-    return G.IsTrue(UnitIsDead, unit)
-end
-
 function G.ApplyCorpsePlate()
     if not G.db or InCombatLockdown() then
         if InCombatLockdown() then
@@ -121,8 +114,8 @@ function G.ApplyCorpsePlate()
         return
     end
     -- A flight master already has a nameplate out to 50. A herb, mine, chest, quest object,
-    -- or bobber only gets one while this is on, so the beacon can use that same distance.
-    local want = ((G.db.enabled.skinning or G.db.enabled.loot) and CorpseUnit("softinteract"))
+    -- bobber, loot corpse, or skinnable corpse only gets one while this is on.
+    local want = (G.db.enabled.skinning or G.db.enabled.loot)
         or (G.db.enabled.flight and FlightUnit and FlightUnit("softinteract"))
         or (TrackedObject and TrackedObject("softinteract"))
     if want then
@@ -550,7 +543,7 @@ local function Classify(unit, icon)
         end
         return iconKind, name
     end
-    if dead and not player then
+    if not player and (dead or (IsSoftUnit(unit) and (iconKind == "skinning" or iconKind == "loot"))) then
         if iconKind == "skinning" then
             return "skinning", name
         end
@@ -1227,7 +1220,7 @@ local function UpdateUnit(unit, plate)
         icon = iconValue
     end
     local kind, name = Classify(unit, icon)
-    if corpse then
+    if corpse or kind == "loot" or kind == "skinning" then
         local denied = TapDenied(unit)
         local mine = PlayerCanLoot(unit)
         if denied and kind == "loot" then
@@ -1249,7 +1242,7 @@ local function UpdateUnit(unit, plate)
             kind = nil
         end
     end
-    if not object and not corpse and kind ~= "herbs" and kind ~= "ore" and kind ~= "treasure" and kind ~= "quests" and kind ~= "bobber" and kind ~= "flight" then
+    if not object and not corpse and kind ~= "herbs" and kind ~= "ore" and kind ~= "treasure" and kind ~= "quests" and kind ~= "bobber" and kind ~= "flight" and kind ~= "loot" and kind ~= "skinning" then
         return false
     end
     local pageName = {

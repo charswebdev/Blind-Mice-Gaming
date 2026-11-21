@@ -2,7 +2,7 @@
 ## Title: BMG Sparkle Guide
 ## Notes: A beacon and a spoken distance for the herb, ore, chest, quest object, or fishing bobber in front of you.
 ## Author: Blind Mice Gaming
-## Version: 1.1.4
+## Version: 1.1.5
 ## Category: Blind Mice Gaming
 ## Category-enUS: Blind Mice Gaming
 ## SavedVariables: BMGSparkleGuideDB
