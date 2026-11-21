@@ -466,8 +466,42 @@ FlightUnit = function(unit)
     return IsFlight(name, IconText(nil, unit), unit)
 end
 
+local function GameObjectUnit(unit)
+    if not UnitIsGameObject or not unit then
+        return false
+    end
+    -- Called directly. A protected call drops a hidden true, and a mine then never lights.
+    local value = UnitIsGameObject(unit)
+    if G.Secret(value) then
+        if value then
+            return true
+        end
+        return false
+    end
+    if value == nil then
+        return false
+    end
+    return value == true or value == 1
+end
+
+local function ListedGather(name)
+    if not G.ListedKey or not name then
+        return nil
+    end
+    if G.ListedKey("ore", name) then
+        return "ore"
+    end
+    if G.ListedKey("herbs", name) then
+        return "herbs"
+    end
+    if G.ListedKey("treasure", name) then
+        return "treasure"
+    end
+    return nil
+end
+
 local function Classify(unit, icon)
-    local object = G.IsTrue(UnitIsGameObject, unit)
+    local object = GameObjectUnit(unit)
     local dead = G.IsTrue(UnitIsDead, unit)
     local player = G.IsTrue(UnitIsPlayer, unit)
     local name
@@ -486,13 +520,18 @@ local function Classify(unit, icon)
     if not object and not dead and IsFlight(name, iconText, unit) then
         return "flight", name
     end
-    if ObjectID(unit) == 35591 or (object and named == "bobber") then
+    local tracked = object or IsSoftUnit(unit)
+    if ObjectID(unit) == 35591 or (tracked and named == "bobber") then
         return "bobber", name
     end
-    if object and (named == "herbs" or named == "ore" or named == "treasure") then
+    local listed = ListedGather(name)
+    if tracked and listed then
+        return listed, name
+    end
+    if tracked and (named == "herbs" or named == "ore" or named == "treasure") then
         return named, name
     end
-    if object and (iconKind == "herbs" or iconKind == "ore") then
+    if tracked and (iconKind == "herbs" or iconKind == "ore") then
         return iconKind, name
     end
     if object and (iconKind == "quests" or HasWord(name)) then
@@ -1165,7 +1204,7 @@ local function UpdateUnit(unit, plate)
     if not plate then
         return false
     end
-    local object = G.IsTrue(UnitIsGameObject, unit)
+    local object = GameObjectUnit(unit)
     local corpse = (not object) and G.IsTrue(UnitIsDead, unit) and not G.IsTrue(UnitIsPlayer, unit)
     local icon
     local okIcon, iconValue = pcall(IconFor, plate)
@@ -1218,9 +1257,9 @@ local function UpdateUnit(unit, plate)
         label = G.TrackLabel(kind, name) or G.TrackLabel(kind, allowedName) or allowedName
     end
     G.liveKind, G.liveName, G.liveUnit, G.liveLabel = kind, name, unit, label
-    Announce(unit, kind, name, false, label)
     local look = G.db.look[kind]
     G.PlaceOnPlate(G.WorldHost(), look, plate, look.height or -24)
+    pcall(Announce, unit, kind, name, false, label)
     return true
 end
 

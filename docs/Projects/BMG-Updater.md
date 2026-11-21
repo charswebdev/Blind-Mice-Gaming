@@ -16,6 +16,7 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 
 ## Features
 
+- **2026-11-20:** BMG Sparkle Guide **1.1.3** and BMG Sparkle Guide - WoW Forever **1.1.3**. A mine you are facing lights up.
 - **2026-11-20:** BMG Sparkle Guide **1.1.2** and BMG Sparkle Guide - WoW Forever **1.1.2**. Standing on a flight master says At. The spoken steps include 45 and 50, and each step matches the yards you are at.
 - **2026-11-20:** BMG Sparkle Guide **1.1.1** and BMG Sparkle Guide - WoW Forever **1.1.1**. A flight master at 20 yards says 20. The spoken steps no longer jump from 25 to 50.
 - **2026-11-20:** BMG Sparkle Guide **1.1.0** and BMG Sparkle Guide - WoW Forever **1.1.0**. The beacon and the spoken steps reach 50 yards. A hidden yard number is no longer forced down to 10.
