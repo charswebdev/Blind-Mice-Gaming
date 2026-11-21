@@ -224,6 +224,19 @@ local function NewHost(parent)
     host.t = 0
     host:SetScript("OnUpdate", function(self, elapsed)
         self.t = self.t + elapsed
+        if self.anchor and not self.onWorld then
+            G.FollowPlate(self)
+        end
+        if self.onWorld and self.project then
+            local ok, sx, sy = pcall(self.project, self.worldY, self.worldX, self.worldZ)
+            if ok and not G.Secret(sx) and not G.Secret(sy) and type(sx) == "number" and type(sy) == "number" then
+                if self:GetParent() ~= UIParent then
+                    self:SetParent(UIParent)
+                end
+                self:ClearAllPoints()
+                self:SetPoint("CENTER", UIParent, "BOTTOMLEFT", sx, sy)
+            end
+        end
         if self.draw then
             self.draw(self)
         end
@@ -354,8 +367,11 @@ local function BeamScale()
     return scale
 end
 
-function G.PlaceOnPlate(host, look, plate, y)
-    if not host or not look or not plate then
+function G.PlaceOnWorld(host, look, y, x, z, project)
+    if not host or not look or not project then
+        return
+    end
+    if G.Secret(y) or G.Secret(x) or not y or not x then
         return
     end
     local style = DRAWS[look.style] or DrawBeam
@@ -369,8 +385,56 @@ function G.PlaceOnPlate(host, look, plate, y)
     if size < 20 then
         size = 100
     end
+    size = math.floor(size * BeamScale() + 0.5)
+    host:SetSize(size, size)
+    host.project = project
+    host.onWorld = true
+    host.worldY, host.worldX, host.worldZ = y, x, z
+    host.anchor = nil
+    if host:GetParent() ~= UIParent then
+        host:SetParent(UIParent)
+    end
+    host:SetFrameStrata("TOOLTIP")
+    local ok, sx, sy = pcall(project, y, x, z)
+    if ok and not G.Secret(sx) and not G.Secret(sy) and type(sx) == "number" and type(sy) == "number" then
+        host:ClearAllPoints()
+        host:SetPoint("CENTER", UIParent, "BOTTOMLEFT", sx, sy)
+    end
+    host:Show()
+end
+
+function G.PlaceOnPlate(host, look, plate, y)
+    if not host or not look or not plate then
+        return
+    end
+    local style = DRAWS[look.style] or DrawBeam
+    if host.draw ~= style then
+        host.seeds = nil
+    end
+    host.look = look
+    host.draw = style
+    host.project = nil
+    host.onWorld = nil
+    host.worldY, host.worldX, host.worldZ = nil, nil, nil
+    host:SetScale(1)
+    local size = look.size or 100
+    if size < 20 then
+        size = 100
+    end
     if host.followPlate then
         size = math.floor(size * BeamScale() + 0.5)
+        host:SetSize(size, size)
+        host.anchor = plate
+        host.anchorY = (y or -24) + math.floor(size * 0.3 + 0.5)
+        if host.SetIgnoreParentAlpha then
+            host:SetIgnoreParentAlpha(true)
+        end
+        host:SetFrameStrata("TOOLTIP")
+        G.FollowPlate(host)
+        if host.placed then
+            host:Show()
+        end
+        return
     end
     host:SetSize(size, size)
     if host:GetParent() ~= plate then
@@ -388,6 +452,9 @@ function G.HideSpark(host)
     end
     host.draw = nil
     host.anchor = nil
+    host.project = nil
+    host.onWorld = nil
+    host.worldY, host.worldX, host.worldZ = nil, nil, nil
     host:Hide()
     host:ClearAllPoints()
     if host.followPlate and host:GetParent() ~= UIParent then
