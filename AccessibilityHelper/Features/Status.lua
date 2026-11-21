@@ -425,6 +425,8 @@ local durabilityLow = nil
 local lastPetName = nil
 local lastPetHealAt = nil
 local lastPetHealSpell = nil
+local lastPetActionAt = nil
+local lastPetActionSpell = nil
 local stuck = { x = nil, y = nil, since = nil, said = false }
 local fall = { since = nil, said = false }
 
@@ -1072,6 +1074,84 @@ local function SpellNameFromArgs(...)
     return nil
 end
 
+local function SpellNameFromRaw(spellID)
+    if spellID == nil then
+        return nil
+    end
+    local spellName = nil
+    if C_Spell and C_Spell.GetSpellName then
+        local spellOk, spellValue = pcall(C_Spell.GetSpellName, spellID)
+        spellName = spellOk and Text(spellValue) or nil
+    end
+    if not spellName and GetSpellInfo then
+        local spellOk, spellValue = pcall(GetSpellInfo, spellID)
+        spellName = spellOk and Text(spellValue) or nil
+    end
+    return spellName
+end
+
+local function PetActionSpell(...)
+    local argCount = select("#", ...)
+    local argIndex
+    for argIndex = 1, argCount do
+        local arg = select(argIndex, ...)
+        local asNumber = Num(arg)
+        if asNumber and asNumber > 0 then
+            local spellName = SpellNameFromRaw(asNumber)
+            if spellName then
+                return spellName
+            end
+        elseif type(arg) == "number" and AH.Compat and AH.Compat.IsSecretValue and AH.Compat.IsSecretValue(arg) then
+            local spellName = SpellNameFromRaw(arg)
+            if spellName then
+                return spellName
+            end
+        end
+    end
+    for argIndex = 2, argCount do
+        local argName = Text(select(argIndex, ...))
+        if argName and not LooksLikeUnit(argName) and string.sub(argName, 1, 5) ~= "Cast-" and string.find(argName, "%a") then
+            return argName
+        end
+    end
+    return nil
+end
+
+local function IsPlayersPetUnit(unit)
+    unit = Text(unit)
+    if not unit or unit == "player" then
+        return false
+    end
+    if unit == "pet" then
+        return true
+    end
+    if AH.Compat and AH.Compat.SameUnit then
+        return AH.Compat.SameUnit(unit, "pet")
+    end
+    return false
+end
+
+local function AnnouncePetAction(...)
+    local spellName = PetActionSpell(...)
+    if not spellName then
+        return
+    end
+    local lowerName = string.lower(spellName)
+    if lowerName == "attack" or lowerName == "auto attack" or lowerName == "follow"
+        or lowerName == "stay" or lowerName == "passive" or lowerName == "move to"
+        or lowerName == "dismiss" or lowerName == "assist"
+    then
+        return
+    end
+    local now = Now()
+    if lastPetActionSpell == lowerName and lastPetActionAt and (now - lastPetActionAt) < 1.5 then
+        return
+    end
+    lastPetActionSpell = lowerName
+    lastPetActionAt = now
+    Say((PetLabel() or "Pet") .. " used " .. spellName .. ".")
+end
+
 local function EventIsTame(...)
     if IsTameSpell(SpellNameFromArgs(...)) then
         return true
@@ -1432,6 +1512,10 @@ frame:SetScript("OnEvent", function(_, event, ...)
             return
         end
         local unit = Text(select(1, ...))
+        if IsPlayersPetUnit(unit) then
+            AnnouncePetAction(...)
+            return
+        end
         if unit ~= "player" then
             return
         end

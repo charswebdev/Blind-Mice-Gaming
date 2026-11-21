@@ -167,8 +167,52 @@ while watchIndex <= 30 do
     watchIndex = watchIndex + 1
 end
 
+local function SecretTrue(value)
+    if AH.Compat and AH.Compat.IsSecretValue and AH.Compat.IsSecretValue(value) then
+        if value then
+            return true
+        end
+        return false
+    end
+    if value == true or value == 1 then
+        return true
+    end
+    return false
+end
+
+local function IsPlayersPet(unit)
+    if type(unit) ~= "string" or unit == "" then
+        return false
+    end
+    if unit == "pet" then
+        return true
+    end
+    return Same(unit, "pet")
+end
+
+--- Another player's hunter pet, warlock minion, or similar. Your pet is never this.
+local function IsOtherPlayersPet(unit)
+    if type(unit) ~= "string" or unit == "" then
+        return false
+    end
+    if IsPlayersPet(unit) then
+        return false
+    end
+    local lower = string.lower(unit)
+    if string.match(lower, "^partypet%d+$") or string.match(lower, "^raidpet%d+$") or string.match(lower, "^arenapet%d+$") then
+        return true
+    end
+    if UnitIsOtherPlayersPet then
+        local ok, value = pcall(UnitIsOtherPlayersPet, unit)
+        if ok and SecretTrue(value) then
+            return true
+        end
+    end
+    return false
+end
+
 local function EnemyTargetsYou(unit)
-    if Same(unit, "player") then
+    if Same(unit, "player") or IsPlayersPet(unit) or IsOtherPlayersPet(unit) then
         return false
     end
     if not Bool(UnitCanAttack, "player", unit) then
@@ -380,7 +424,7 @@ local function ReadCast(unit)
 end
 
 local function HandleCast(unit)
-    if Same(unit, "player") then
+    if Same(unit, "player") or IsPlayersPet(unit) or IsOtherPlayersPet(unit) then
         return
     end
     if not EnemyTargetsYou(unit) then

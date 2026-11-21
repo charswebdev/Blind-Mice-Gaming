@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **3.8.0** |
+| Version | **3.8.1** |
 | Type | In-game addon (VI / TTS) |
 | Folder | `AccessibilityHelper/` |
 | Author tools | `Tools/AccessibilityHelper/` (release checklists; not in the addon zip) |
@@ -21,11 +21,11 @@ Version numbers stay short on purpose (3.6.2, then 3.6.3) — not 3.6.18-style p
 
 ## Features
 
-3.8.0 loads the same files and window as Accessibility Helper - WoW Forever 1.5.1. The left list stays inside the window. A gold bar on that list scrolls with the mouse wheel or by dragging.
+3.8.1 speaks your pet's actions only. Another player's pet stays quiet. It loads the same files and window as Accessibility Helper - WoW Forever 1.5.2.
 
 - `/ah` opens Tooltip, Speech, Status, Arrows, Rewards, Combat, Chat, and Commands.
 - Tooltip reads on the key. TomTom is `/ahtt`. Zygor is `/ahz`.
-- Status speaks skill, level, follow, place, a new location, red error text, and the condition lines, including pet death, low health, and food.
+- Status speaks skill, level, follow, place, a new location, red error text, and the condition lines, including pet death, low health, and food. The Pet switch speaks your pet's action, such as Wolf used Bite. Another player's pet stays quiet.
 - Rewards speaks experience, reputation, currency, gold, loot, a completed quest, and an earned achievement.
 - Chat speaks the channels that are on, plus progress, collections, an accepted quest, quest details, the NPC window, a sale, and a repair.
 - Combat speaks the fight lines that are on. Read combat starts off.
@@ -66,6 +66,7 @@ Work was phased in the Lua headers and later combat/cast slices:
 | 3.7.8 | Lighter announcements | Combat lines are checked twice a second, and only while Read combat is on. The speech list keeps a few waiting lines and skips a repeat of the same line. Same as Forever 1.4.9. |
 | 3.7.9 | Progress and left list | Chat Progress checks a few quests and achievements at a time, and only while those switches are on. The left list scrolls with the mouse wheel. Same as Forever 1.5.0. |
 | 3.8.0 | Left list bar | The left list stays inside the window. A gold bar on that list scrolls with the mouse wheel or by dragging. Same as Forever 1.5.1. |
+| 3.8.1 | Your pet | The Pet switch speaks your pet's action, such as Wolf used Bite. Another player's pet stays quiet. Same as Forever 1.5.2. |
 
 Settings were rewritten to the two-pane pattern so VI users get one topic at a time instead of a dense options dump.
 
@@ -95,6 +96,7 @@ Settings were rewritten to the two-pane pattern so VI users get one topic at a t
 - `message == ""` on `CHAT_MSG_MONSTER_SAY` (secret string, tainted). Skip via `Compat.UsableString` before any compare.
 - `guid ~= ""` before `issecretvalue` in `Compat.UnitSeen`. Targeting from a macro (`TargetUnit` / action button) returns a secret `UnitGUID("target")`; `type()` is `"string"` so the empty-string compare ran and threw. `UsableString` first. Retail AddOns still had the old `type(guid) == "string" and guid ~= ""` at Compat.lua:123 (`PLAYER_TARGET_CHANGED` → `OnTarget` → `UnitSeen`); Documents already used `UsableString`.
 - `OpenMerchantAction` compared `UnitName("npc")` with `type(n) == "string" and n ~= ""`. A merchant name is often a secret string, so the cursor poll threw hundreds of times. `UsableString` first; if the name stays secret, the vendor line is skipped.
+- Pet actions were spoken for any pet that was fighting you. The Pet switch now speaks only your pet (`pet`, or the same guid). Party, raid, arena, and other players' pets stay quiet, including their targeting and cast lines.
 
 ## Open work
 

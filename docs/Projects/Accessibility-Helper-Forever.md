@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.5.1** |
+| Version | **1.5.2** |
 | Type | In-game addon (VI / TTS) |
 | Folder | `AccessibilityHelper-forever/` |
 | Clients | `_forever_` (wowf 1.60.1.70634, Interface 16001) |
@@ -20,6 +20,7 @@ WoW Forever copy of Accessibility Helper. It is its own addon folder and saved-v
 - Tooltip reader (`/ahtip`) speaks only when the read key is pressed. A later press stops that read. Holding the key does not start it again.
 - `/ah` opens Tooltip, Speech, Status, Arrows, Rewards, Combat, and Chat. The left list scrolls with the mouse wheel. Click Rewards, Chat, or Combat to show or hide the section names under it. The arrow points down while they are showing and up while they are hidden. Combat starts quiet until Read combat is on. Status speaks profession skill, level-up, a learned recipe, a crafted item, follow, indoor and outdoors, swimming, flying, mount, AFK, a new location, red error text, and the condition lines when those switches are on. Commands lists the slash commands and key bindings. Arrows reads the TomTom arrow with `/ahtt`, `/aharrow`, `/ahtomtom`, or the TomTom keybind, and the Zygor arrow with `/ahz`, `/ahzygor`, or the Zygor keybind. Rewards speaks experience, reputation, currency, gold, loot, a completed quest, and an earned achievement. Chat Progress speaks achievement progress, quest progress, an accepted quest, and the open quest's description, objectives, and rewards. Chat NPC speaks the window, a merchant sale, and a repair. Chat Collections speaks item pickup and new collection items. Those lines are not printed.
 - The older cursor, quest, and combat readers are not loaded. Combat uses the new Combat page. Quest text uses the Chat switches.
+- The Pet switch speaks your pet's action, such as Wolf used Bite. Another player's pet stays quiet, including their targeting and cast lines.
 
 ## Development plan
 
@@ -121,6 +122,8 @@ WoW Forever copy of Accessibility Helper. It is its own addon folder and saved-v
 
 1.5.1 keeps the left list inside the window. A gold bar on that list scrolls with the mouse wheel or by dragging. The version line sits on its own strip at the bottom.
 
+1.5.2 speaks your pet's action, such as Wolf used Bite. Another player's pet stays quiet, including their targeting and cast lines. Same as Retail 3.8.1.
+
 ## Sources and data
 
 Copied from `AccessibilityHelper/` at 3.6.5. Game state still comes from Blizzard APIs. Saved defaults live in `Core/DB.lua` and are stored in `AccessibilityHelperForeverDB`.
@@ -136,6 +139,8 @@ On 2026-11-10, v1.1.7, Numpad * speaks the tooltip again. The saved read key is 
 Chat Progress was reading the whole quest log on every quest update, and every unfinished achievement when achievement progress changed. That stopped the game for a moment. Those reads now happen a few at a time, and only while the matching switch is on. The spoken lines are the same.
 
 Announcements were waking the game on every health tick, every power tick, every bag change, and every target change, and the speech list kept every line. That used the game’s resources while a fight or a loot window was open. The checks now run on a short timer, and extra copies of the same line are left out.
+
+Pet actions were spoken for any pet that was fighting you. The Pet switch now speaks only your pet. Party, raid, arena, and other players' pets stay quiet.
 
 The read key spoke a switch from a page that was not open, because hidden switches still sat under the mouse. 1.1.9 speaks only a switch on the open page. The window switch descriptions were drawn on screen, and the read key did not speak them. 1.1.4 keeps that description with the switch and speaks it on the read key. A second tooltip key press could start the read again while the first one was still speaking. 1.0.2 stops speech when that same tooltip is still under the mouse. Holding the read key then started and stopped that line in a loop, and moving the mouse over a window button spoke that button again and again. 1.0.6 reads once per press. The older player-state reader was still loaded, so a saved Following switch kept saying “Following” and “Stopped following.” 1.0.7 does not load that reader.
 
