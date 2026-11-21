@@ -642,6 +642,7 @@ local function StepFromSquared(raw)
                 return step
             end
         end
+        return "at"
     end
     return nil
 end
@@ -675,10 +676,12 @@ local function AskRange(unit, index)
 end
 
 -- Friendly checks, short to long. A flight master is not a group member, so the yard number is often 0.
--- The old fallback called everything inside 28 yards "25" and everything past it "50".
+-- A check that says "within 10" used to be spoken as 10, which is 5 yards high. 0 yards was spoken as 5.
+-- The spoken step is the nearer edge of that gap. 45 and 50 need their item data loaded or those checks stay empty.
 local RANGE_CHECKS = {
+    { yards = 2, step = "at", items = { 168948, 194718, 42732 } },
     { yards = 5, step = "5", items = { 1970, 8149 }, spell = true },
-    { yards = 8, step = "10", interact = 2 },
+    { yards = 8, step = "5", interact = 2 },
     { yards = 10, step = "10", items = { 17626, 32321 }, spell = true },
     { yards = 15, step = "15", items = { 1251, 33069 }, spell = true },
     { yards = 20, step = "20", items = { 21519, 17757 }, spell = true },
@@ -687,8 +690,8 @@ local RANGE_CHECKS = {
     { yards = 30, step = "30", items = { 1180, 34191 }, spell = true },
     { yards = 35, step = "35", items = { 18904, 24501 }, spell = true },
     { yards = 40, step = "40", items = { 34471, 28767 }, spell = true, unitRange = true },
-    { yards = 45, step = "45", items = { 32698, 28369 }, spell = true },
-    { yards = 50, step = "50", items = { 116139, 110009 }, spell = true },
+    { yards = 45, step = "45", items = { 32698, 34691, 49647, 88377 }, spell = true },
+    { yards = 50, step = "50", items = { 116139, 110009, 147006, 207084 }, spell = true },
 }
 
 local spellForStep = {}
@@ -698,16 +701,52 @@ local function StepKeyForYards(yards)
     local steps = { 5, 10, 15, 20, 25, 30, 35, 40, 45, 50 }
     for i = 1, #steps do
         local n = steps[i]
-        if yards >= n - 1.5 and yards <= n + 1.5 then
+        local slop = (n >= 45) and 3 or 1.5
+        if yards >= n - slop and yards <= n + slop then
             return tostring(n)
         end
     end
     return nil
 end
 
+local function PrepareRangeItems()
+    if not C_Item or not C_Item.RequestLoadItemDataByID then
+        return
+    end
+    for i = 1, #RANGE_CHECKS do
+        local items = RANGE_CHECKS[i].items
+        if items then
+            for j = 1, #items do
+                local id = items[j]
+                if not C_Item.IsItemDataCachedByID or not C_Item.IsItemDataCachedByID(id) then
+                    C_Item.RequestLoadItemDataByID(id)
+                end
+            end
+        end
+    end
+end
+
+local function StepForSpan(inner, outer)
+    if inner > 0 and inner < 2.5 and outer <= 5 then
+        return "5"
+    end
+    if inner < 2.5 then
+        return "at"
+    end
+    local steps = { 5, 10, 15, 20, 25, 30, 35, 40, 45, 50 }
+    local speak = "5"
+    for i = 1, #steps do
+        if inner >= steps[i] - 0.1 then
+            speak = tostring(steps[i])
+        end
+    end
+    return speak
+end
+
 local function LearnSpells()
     spellsReady = true
     spellForStep = {}
+    PrepareRangeItems()
     if not C_SpellBook or not C_SpellBook.GetNumSpellBookItems or not C_SpellBook.GetSpellBookItemInfo then
         return
     end
@@ -774,7 +813,11 @@ local function AskItem(item, unit)
     if not ok then
         return nil
     end
-    return Flag(value)
+    local reached = Flag(value)
+    if reached == nil and C_Item.RequestLoadItemDataByID then
+        C_Item.RequestLoadItemDataByID(item)
+    end
+    return reached
 end
 
 local function AskSpell(spellID, unit)
@@ -842,16 +885,17 @@ end
 local function StepFromChecks(unit)
     if not spellsReady then
         LearnSpells()
+    else
+        PrepareRangeItems()
     end
     local longestFalse = 0
     for i = 1, #RANGE_CHECKS do
         local check = RANGE_CHECKS[i]
         local reached = AskListed(check, unit)
         if reached == true then
-            -- Only speak when the previous real check is the next shorter step.
-            -- Inside 28 yards and outside 8 yards is not "25".
-            if check.yards - longestFalse <= 5.5 or (check.yards <= 8 and longestFalse == 0) then
-                return check.step
+            -- Speak the nearer edge. "Within 5" at the flight master is At, not 5 yards.
+            if check.yards - longestFalse <= 5.5 then
+                return StepForSpan(longestFalse, check.yards)
             end
             return nil
         end
