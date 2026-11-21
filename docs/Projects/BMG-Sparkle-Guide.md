@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.1.3** retail and **1.1.3** WoW Forever |
+| Version | **1.1.4** retail and **1.1.4** WoW Forever |
 | Type | In-game sparkle and spoken guide for the object in front of you |
 | Retail folder | `BMGSparkleGuide/` |
 | Forever folder | `BMGSparkleGuide-forever/` |
@@ -31,7 +31,7 @@ The WoW Forever copy is the same window, the same voice clips, and the same prof
 - Voice is Microsoft Zira, a little slow, from short clips. “Silverleaf. 10 yards.” is the name clip, then a shared distance clip. “At Silverleaf.” is “At”, then the label, and that step is 0 yards.
 - The spoken line is the tracked label, such as Silverleaf, Portal, Door, or Corpse. It does not substitute Herb, Ore, Treasure, Quest, or Object. A lush, rich, or themed prefix still uses the plain label when that label has a clip. Loot says Corpse. Flight path says Flight path.
 - A distance is spoken when the client gives a plain yard number under 80. You hear the label, then 50, 45, 40, 35, 30, 25, 20, 15, 10, or 5. At is a real distance under 2.5 yards, and only when the close interact check agrees: “At”, then the label. A reported 0 is ignored, because that number shows up when the client has no yards. Turning away does not say At again. A hidden yard number is compared directly, so the steps still run out to 50. A flight master is not a group member, so that yard number is often missing. The guide then uses the world position, then item and spell ranges at each 5-yard step. The spoken number is the near side of that gap, so standing on the flight master says At, not 5. 45 and 50 are included. It does not call everything inside 28 yards “25,” and it does not jump from there to 50. “At” is also spoken when the loot window opens or a gather cast starts on that object. The same line is not spoken again for 4 seconds.
-- While any sparkle is on, Interact Key is turned on and set to notice objects all around, out to 50 yards. If tab-target range or nameplate distance is shorter than 50, those are raised to 50 too, so a flight master is not cut off around 25 yards. The beacon and the spoken line use that same range. Turning every sparkle off, or logging out, puts those settings back. The guide waits until combat ends before it changes them.
+- While any sparkle is on, Interact Key is turned on and set to notice objects all around, out to 50 yards. If tab-target range or nameplate distance is shorter than 50, those are raised to 50 too, so a flight master is not cut off around 25 yards. A herb, mine, chest, quest object, fishing bobber, or other tracked object gets that same nameplate while it is the one in front of you, so the beacon and the spoken steps reach 50 yards on those too. Turning every sparkle off, or logging out, puts those settings back. The guide waits until combat ends before it changes them.
 - Hide in combat starts off. Hide in dungeons starts on. The minimap button starts on.
 - The addon list groups both copies under Blind Mice Gaming, the same category as the other addons.
 
@@ -83,9 +83,10 @@ The sparkle drawing uses Blizzard’s star, starburst, and white textures.
 - A flight master at 20 yards was spoken as 25, then the next line was 50. The yard number for that NPC is often 0, so the guide used the only two interact checks it had: inside about 28 yards became 25, and past that became 50. The world position is compared directly now, and item and spell ranges fill the 5-yard steps. 20 yards stays 20.
 - Those range checks then read 5 yards high, so standing on the flight master said 5, and 45 and 50 never played. The spoken step is the near side of each gap, so 0 yards says At. The 45 and 50 yard items are loaded before they are checked.
 - A mine in front of you did not light. The object flag was read inside a protected call, so a hidden true was dropped and the node was skipped. A vein, deposit, seam, listed ore name, or mining cursor now lights on the node you are facing. The beacon is drawn before the spoken line, so a distance miss cannot hide it.
+- Flight path reached 50 yards because a flight master already has a nameplate. A herb, mine, chest, quest object, or bobber did not, so the beacon waited until you were close. Those objects now get the same interact nameplate while they are in front of you.
 
 ## Open work
 
-- In-game check with `/reload`, then `/sg`. Stand in front of a mine and confirm the beacon lights. Confirm a herb, an ore node, a chest, and a fishing bobber on retail and on WoW Forever.
+- In-game check with `/reload`, then `/sg`. Walk in from about 50 yards on a herb, a mine, a chest, a quest object, and a fishing bobber. Each should light and speak 50, the same way a flight master does. Confirm a tree still does not take the beacon.
 - Drag the lower right corner and confirm the window keeps that size after `/reload`. Confirm a node near 50 yards speaks 50, and one near 45 yards speaks 45.
 - Stand more than 25 yards from a flight master and confirm the beacon is on that NPC, not on a player, and that it does not say “At” until you are next to them. Walk in from about 50 yards and confirm the spoken steps are 50, 45, 40, 35, 30, 25, 20, 15, 10, and 5, and that standing on the flight master says At. Turn away at about 15 yards and confirm it does not keep saying At. Stand near a player whose name ends like a node and confirm that player is not marked. Confirm a tree in front of a herb does not take the beacon.

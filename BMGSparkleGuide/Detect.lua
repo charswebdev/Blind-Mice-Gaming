@@ -24,6 +24,7 @@ local questWords
 local questLabels
 local questSig
 local FlightUnit
+local TrackedObject
 local lastIdentity, lastStep
 local lastSayKey
 local lastSay = 0
@@ -119,8 +120,11 @@ function G.ApplyCorpsePlate()
         end
         return
     end
+    -- A flight master already has a nameplate out to 50. A herb, mine, chest, quest object,
+    -- or bobber only gets one while this is on, so the beacon can use that same distance.
     local want = ((G.db.enabled.skinning or G.db.enabled.loot) and CorpseUnit("softinteract"))
         or (G.db.enabled.flight and FlightUnit and FlightUnit("softinteract"))
+        or (TrackedObject and TrackedObject("softinteract"))
     if want then
         local current = GetC(CORPSE_PLATE)
         if not SameC(current, "1") then
@@ -555,6 +559,17 @@ local function Classify(unit, icon)
         end
     end
     return nil, name
+end
+
+TrackedObject = function(unit)
+    if not G.db or not G.db.enabled or not GameObjectUnit(unit) then
+        return false
+    end
+    local enabled = G.db.enabled
+    if enabled.herbs or enabled.ore or enabled.treasure or enabled.quests or enabled.bobber or enabled.others then
+        return true
+    end
+    return false
 end
 
 local function FromSquared(unit)
