@@ -674,17 +674,262 @@ local function AskRange(unit, index)
     return close
 end
 
-local function Bracket(unit)
-    local trade = AskRange(unit, 2)
-    if trade == true then
-        return "10"
+-- Friendly checks, short to long. A flight master is not a group member, so the yard number is often 0.
+-- The old fallback called everything inside 28 yards "25" and everything past it "50".
+local RANGE_CHECKS = {
+    { yards = 5, step = "5", items = { 1970, 8149 }, spell = true },
+    { yards = 8, step = "10", interact = 2 },
+    { yards = 10, step = "10", items = { 17626, 32321 }, spell = true },
+    { yards = 15, step = "15", items = { 1251, 33069 }, spell = true },
+    { yards = 20, step = "20", items = { 21519, 17757 }, spell = true },
+    { yards = 25, step = "25", items = { 31463, 24268 }, spell = true },
+    { yards = 28, step = "25", interact = 1 },
+    { yards = 30, step = "30", items = { 1180, 34191 }, spell = true },
+    { yards = 35, step = "35", items = { 18904, 24501 }, spell = true },
+    { yards = 40, step = "40", items = { 34471, 28767 }, spell = true, unitRange = true },
+    { yards = 45, step = "45", items = { 32698, 28369 }, spell = true },
+    { yards = 50, step = "50", items = { 116139, 110009 }, spell = true },
+}
+
+local spellForStep = {}
+local spellsReady = false
+
+local function StepKeyForYards(yards)
+    local steps = { 5, 10, 15, 20, 25, 30, 35, 40, 45, 50 }
+    for i = 1, #steps do
+        local n = steps[i]
+        if yards >= n - 1.5 and yards <= n + 1.5 then
+            return tostring(n)
+        end
     end
-    local inspect = AskRange(unit, 1)
-    if inspect == true then
-        return "25"
+    return nil
+end
+
+local function LearnSpells()
+    spellsReady = true
+    spellForStep = {}
+    if not C_SpellBook or not C_SpellBook.GetNumSpellBookItems or not C_SpellBook.GetSpellBookItemInfo then
+        return
     end
-    if trade == false or inspect == false then
+    if not C_Spell or not C_Spell.GetSpellInfo or not Enum or not Enum.SpellBookSpellBank then
+        return
+    end
+    local bank = Enum.SpellBookSpellBank.Player
+    local count = G.PlainNumber(C_SpellBook.GetNumSpellBookItems(bank))
+    if not count or count < 1 then
+        return
+    end
+    if count > 500 then
+        count = 500
+    end
+    for i = 1, count do
+        local info = C_SpellBook.GetSpellBookItemInfo(i, bank)
+        if info and not G.Secret(info) and type(info) == "table" then
+            local spellID = G.PlainNumber(info.spellID)
+            local passive = info.isPassive
+            if spellID and not G.Secret(passive) and not passive then
+                local spell = C_Spell.GetSpellInfo(spellID)
+                if spell and not G.Secret(spell) and type(spell) == "table" then
+                    local maxRange = G.PlainNumber(spell.maxRange)
+                    local minRange = G.PlainNumber(spell.minRange) or 0
+                    if maxRange and minRange <= 0 then
+                        local key = StepKeyForYards(maxRange)
+                        if key and not spellForStep[key] then
+                            spellForStep[key] = spellID
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+local function Flag(value)
+    if G.Secret(value) then
+        if value then
+            return true
+        end
+        return false
+    end
+    if value == nil then
+        return nil
+    end
+    if value == true or value == 1 then
+        return true
+    end
+    if value == false or value == 0 then
+        return false
+    end
+    return nil
+end
+
+local function AskItem(item, unit)
+    if not C_Item or not C_Item.IsItemInRange or not unit then
+        return nil
+    end
+    if InCombatLockdown and InCombatLockdown() then
+        return nil
+    end
+    local ok, value = pcall(C_Item.IsItemInRange, item, unit)
+    if not ok then
+        return nil
+    end
+    return Flag(value)
+end
+
+local function AskSpell(spellID, unit)
+    if not spellID or not C_Spell or not C_Spell.IsSpellInRange or not unit then
+        return nil
+    end
+    local ok, value = pcall(C_Spell.IsSpellInRange, spellID, unit)
+    if not ok then
+        return nil
+    end
+    return Flag(value)
+end
+
+local function AskForty(unit)
+    if not UnitInRange or not unit then
+        return nil
+    end
+    local ok, inRange, checked = pcall(UnitInRange, unit)
+    if not ok or Flag(checked) ~= true then
+        return nil
+    end
+    return Flag(inRange)
+end
+
+local function AskListed(check, unit)
+    if check.interact then
+        return AskRange(unit, check.interact)
+    end
+    local sawFalse = false
+    if check.items then
+        for i = 1, #check.items do
+            local reached = AskItem(check.items[i], unit)
+            if reached == true then
+                return true
+            end
+            if reached == false then
+                sawFalse = true
+            end
+        end
+    end
+    if check.spell then
+        local reached = AskSpell(spellForStep[check.step], unit)
+        if reached == true then
+            return true
+        end
+        if reached == false then
+            sawFalse = true
+        end
+    end
+    if check.unitRange then
+        local reached = AskForty(unit)
+        if reached == true then
+            return true
+        end
+        if reached == false then
+            sawFalse = true
+        end
+    end
+    if sawFalse then
+        return false
+    end
+    return nil
+end
+
+local function StepFromChecks(unit)
+    if not spellsReady then
+        LearnSpells()
+    end
+    local longestFalse = 0
+    for i = 1, #RANGE_CHECKS do
+        local check = RANGE_CHECKS[i]
+        local reached = AskListed(check, unit)
+        if reached == true then
+            -- Only speak when the previous real check is the next shorter step.
+            -- Inside 28 yards and outside 8 yards is not "25".
+            if check.yards - longestFalse <= 5.5 or (check.yards <= 8 and longestFalse == 0) then
+                return check.step
+            end
+            return nil
+        end
+        if reached == false and check.yards > longestFalse then
+            longestFalse = check.yards
+        end
+    end
+    if longestFalse >= 45 then
         return "50"
+    end
+    return nil
+end
+
+local function PointUsable(value)
+    if G.Secret(value) then
+        return true
+    end
+    return type(value) == "number"
+end
+
+local function StepFromPositions(unit)
+    if not UnitPosition or not unit then
+        return nil
+    end
+    -- Called directly. A protected call would drop a hidden coordinate, and the flight master would fall through to 25 or 50.
+    local a1, b1, c1, map1 = UnitPosition("player")
+    local a2, b2, c2, map2 = UnitPosition(unit)
+    if not G.Secret(map1) and not G.Secret(map2) and map1 ~= nil and map2 ~= nil and map1 ~= map2 then
+        return nil
+    end
+    if not PointUsable(a1) or not PointUsable(b1) or not PointUsable(a2) or not PointUsable(b2) then
+        return nil
+    end
+    local raw = (a2 - a1) * (a2 - a1) + (b2 - b1) * (b2 - b1)
+    if PointUsable(c1) and PointUsable(c2) then
+        raw = raw + (c2 - c1) * (c2 - c1)
+    end
+    return StepFromSquared(raw)
+end
+
+local function StepFromMap(unit)
+    if not unit or not C_Map or not C_Map.GetBestMapForUnit or not C_Map.GetPlayerMapPosition or not C_Map.GetWorldPosFromMapPos or not CreateVector2D then
+        return nil
+    end
+    local mapID = C_Map.GetBestMapForUnit("player")
+    if G.Secret(mapID) or type(mapID) ~= "number" then
+        return nil
+    end
+    local player = C_Map.GetPlayerMapPosition(mapID, "player")
+    local other = C_Map.GetPlayerMapPosition(mapID, unit)
+    if G.Secret(player) or G.Secret(other) or not player or not other then
+        return nil
+    end
+    local x1, y1, x2, y2 = player.x, player.y, other.x, other.y
+    if G.Secret(x1) or G.Secret(y1) or G.Secret(x2) or G.Secret(y2) then
+        return nil
+    end
+    if type(x1) ~= "number" or type(y1) ~= "number" or type(x2) ~= "number" or type(y2) ~= "number" then
+        return nil
+    end
+    if x2 == 0 and y2 == 0 then
+        return nil
+    end
+    local _, world1 = C_Map.GetWorldPosFromMapPos(mapID, CreateVector2D(x1, y1))
+    local _, world2 = C_Map.GetWorldPosFromMapPos(mapID, CreateVector2D(x2, y2))
+    if G.Secret(world1) or G.Secret(world2) or not world1 or not world2 then
+        return nil
+    end
+    local wx1, wy1, wx2, wy2 = world1.x, world1.y, world2.x, world2.y
+    if G.Secret(wx1) or G.Secret(wy1) or G.Secret(wx2) or G.Secret(wy2) then
+        return nil
+    end
+    if type(wx1) ~= "number" or type(wy1) ~= "number" or type(wx2) ~= "number" or type(wy2) ~= "number" then
+        return nil
+    end
+    local dist = math.sqrt((wx2 - wx1) ^ 2 + (wy2 - wy1) ^ 2)
+    if dist > 0 and dist < 80 then
+        return Band(dist)
     end
     return nil
 end
@@ -698,6 +943,14 @@ local function StepFromUnit(unit)
                 return step
             end
         end
+    end
+    local placed = StepFromPositions(unit)
+    if placed then
+        return placed
+    end
+    local mapped = StepFromMap(unit)
+    if mapped then
+        return mapped
     end
     local yards = FromPositions(unit)
     if yards then
@@ -714,6 +967,9 @@ local function SpokenStep(unit, forceAt)
     if not step and unit ~= "softinteract" then
         step = StepFromUnit("softinteract")
     end
+    if not step and unit ~= "softfriend" and G.IsTrue(UnitIsUnit, unit, "softfriend") then
+        step = StepFromUnit("softfriend")
+    end
     if step == "at" then
         local close = InteractRange(unit, 2)
         if close == nil and unit ~= "softinteract" then
@@ -726,7 +982,14 @@ local function SpokenStep(unit, forceAt)
     if step then
         return step
     end
-    return Bracket(unit) or "near"
+    local ranged = StepFromChecks(unit)
+    if not ranged and unit ~= "softinteract" then
+        ranged = StepFromChecks("softinteract")
+    end
+    if not ranged and unit ~= "softfriend" and G.IsTrue(UnitIsUnit, unit, "softfriend") then
+        ranged = StepFromChecks("softfriend")
+    end
+    return ranged or "near"
 end
 
 local function PlateFor(unit)
@@ -987,6 +1250,7 @@ function G.StartDetect()
     events:RegisterEvent("QUEST_LOG_UPDATE")
     events:RegisterEvent("UNIT_SPELLCAST_SENT")
     events:RegisterEvent("LOOT_OPENED")
+    events:RegisterEvent("SPELLS_CHANGED")
     events:SetScript("OnEvent", function(_, event, arg1, arg2)
         if event == "QUEST_LOG_UPDATE" then
             ReadQuests()
@@ -999,6 +1263,9 @@ function G.StartDetect()
         if event == "UNIT_SPELLCAST_SENT" and arg1 == "player" then
             G.MarkArrived(arg2)
             return
+        end
+        if event == "SPELLS_CHANGED" or event == "PLAYER_ENTERING_WORLD" then
+            spellsReady = false
         end
         if event == "PLAYER_REGEN_ENABLED" and G.interactPending then
             G.ApplyInteract()

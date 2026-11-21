@@ -748,7 +748,7 @@ local function BuildVoice(parent)
     note:SetPoint("TOPLEFT", play, "BOTTOMLEFT", 0, -16)
     note:SetPoint("RIGHT", page, "RIGHT", -16, 0)
     note:SetJustifyH("LEFT")
-    note:SetText("Check the distances you want to hear. You hear the label, then that distance, when the step changes. At 0 yards you hear At, then the label. The same boxes are on each sparkle page. Each announcement says the tracked label, such as Silverleaf, Portal, or Corpse. It does not say Herb, Ore, Treasure, or Object in place of that label. Loot says Corpse. Flight path says Flight path. When the game hides the exact yards, about 28 yards says 25, farther says 50, and the short step says 10. You hear At at 0 yards, or when you open the loot.")
+    note:SetText("Check the distances you want to hear. You hear the label, then that distance, when the step changes. At 0 yards you hear At, then the label. The same boxes are on each sparkle page. Each announcement says the tracked label, such as Silverleaf, Portal, or Corpse. It does not say Herb, Ore, Treasure, or Object in place of that label. Loot says Corpse. Flight path says Flight path. A flight master uses those same steps. 20 yards says 20. It does not call that 25, and it does not skip from there to 50. You hear At at 0 yards, or when you open the loot.")
     page:Hide()
     return page
 end
