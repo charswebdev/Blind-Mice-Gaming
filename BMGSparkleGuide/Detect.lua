@@ -7,6 +7,8 @@ local CVARS = {
     { "SoftTargetInteractArc", "2" },
     { "SoftTargetInteractRangeIsHard", "0" },
     { "SoftTargetInteractRange", "50" },
+    { "SoftTargetInteractOnlyInRange", "0" },
+    { "SoftTargetIconLowPriorityIcons", "1" },
 }
 local CORPSE_PLATE = "SoftTargetNameplateInteract"
 
@@ -92,8 +94,11 @@ function G.ApplyInteract()
         return
     end
     -- The interact range cannot pass the tab-target distance, so raise that first.
-    RaiseC("targetNearestDistance", 50)
-    RaiseC("nameplateMaxDistance", 50)
+    -- A corpse nameplate uses the game-object distance, which stays at 20 yards
+    -- until that one is raised too. A flight master uses the normal nameplate distance.
+    RaiseC("targetNearestDistance", 60)
+    RaiseC("nameplateMaxDistance", 60)
+    RaiseC("nameplateGameObjectMaxDistance", 60)
     for _, entry in ipairs(CVARS) do
         local name, wanted = entry[1], entry[2]
         local current = GetC(name)
@@ -1229,7 +1234,7 @@ local function UpdateUnit(unit, plate)
             kind = "loot"
         elseif kind == "loot" and not G.db.enabled.loot and G.db.enabled.skinning then
             kind = "skinning"
-        elseif not denied and G.db.enabled.loot and kind ~= "skinning" and (kind == "loot" or mine) then
+        elseif not denied and G.db.enabled.loot and kind ~= "skinning" and (kind == "loot" or mine or (kind == nil and IsSoftUnit(unit))) then
             kind = "loot"
         end
     end
