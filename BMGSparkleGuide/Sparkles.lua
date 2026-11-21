@@ -224,9 +224,6 @@ local function NewHost(parent)
     host.t = 0
     host:SetScript("OnUpdate", function(self, elapsed)
         self.t = self.t + elapsed
-        if self.anchor and not self.onWorld then
-            G.FollowPlate(self)
-        end
         if self.onWorld and self.project then
             local ok, sx, sy = pcall(self.project, self.worldY, self.worldX, self.worldZ)
             if ok and not G.Secret(sx) and not G.Secret(sy) and type(sx) == "number" and type(sy) == "number" then
@@ -423,20 +420,12 @@ function G.PlaceOnPlate(host, look, plate, y)
     end
     if host.followPlate then
         size = math.floor(size * BeamScale() + 0.5)
-        host:SetSize(size, size)
-        host.anchor = plate
-        host.anchorY = (y or -24) + math.floor(size * 0.3 + 0.5)
-        if host.SetIgnoreParentAlpha then
-            host:SetIgnoreParentAlpha(true)
-        end
-        host:SetFrameStrata("TOOLTIP")
-        G.FollowPlate(host)
-        if host.placed then
-            host:Show()
-        end
-        return
     end
     host:SetSize(size, size)
+    host.anchor = nil
+    if host.SetIgnoreParentAlpha then
+        host:SetIgnoreParentAlpha(true)
+    end
     if host:GetParent() ~= plate then
         host:SetParent(plate)
     end

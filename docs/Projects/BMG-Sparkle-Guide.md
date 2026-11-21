@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.1.7** retail and **1.1.7** WoW Forever |
+| Version | **1.1.8** retail and **1.1.8** WoW Forever |
 | Type | In-game sparkle and spoken guide for the object in front of you |
 | Retail folder | `BMGSparkleGuide/` |
 | Forever folder | `BMGSparkleGuide-forever/` |
@@ -88,7 +88,7 @@ The sparkle drawing uses Blizzard’s star, starburst, and white textures.
 - After a kill, that corpse still appeared only at 20 yards and closer. The beam sat on the corpse nameplate, and the plate itself ends around the 8 to 28 yard mark on the target frame. The corpse’s own position cannot be drawn once that plate is gone, so the guide saves the spot from the plate and keeps its own beacon on that spot out to 50 yards. A skinnable corpse, such as a beast, keeps the Skin beacon the same way.
 - Every dead body was getting that beacon, including corpses this player cannot loot. The Corpse beacon now stays on a body only when this player can loot it. Someone else’s corpse stays dark. Skin stays on a body this player can skin, or on a beast, dragon, or critter this player can loot.
 - The saved spot was guessed again whenever you moved, so the beacon slid around the screen. The spot is saved once, and the beam is drawn from the camera, so it stays on that body while you walk. The Skin beacon uses that same saved spot, so it stays on a skinnable body instead of sliding as you move.
-- A dead boar at the 8 to 28 yard mark had no beacon, even while its nameplate was still on the screen. The beam was attached to a plate frame that was not the one being shown. It is now drawn on the screen at that nameplate, including the targeted corpse.
+- Drawing the beam from the nameplate’s screen position hid every beacon, because that position is not a plain number. The beam is parented to the nameplate again, which is what shows it. A hidden plate does not block the separate beacon on a targeted corpse.
 
 ## Open work
 

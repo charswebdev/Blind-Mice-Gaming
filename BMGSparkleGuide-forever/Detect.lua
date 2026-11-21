@@ -1718,8 +1718,20 @@ local function ShowFar(kind, name, label, y, x, z, unit, guid)
     return true
 end
 
+local function ShownPlate(unit)
+    local plate = PlateFor(unit)
+    if not plate then
+        return nil
+    end
+    local ok, shown = pcall(plate.IsShown, plate)
+    if ok and not G.Secret(shown) and shown == false then
+        return nil
+    end
+    return plate
+end
+
 local function ShowFarUnit(unit)
-    if PlateFor(unit) then
+    if ShownPlate(unit) then
         return false
     end
     local kind, name, label = FarKind(unit)
@@ -1817,7 +1829,7 @@ local function UpdateAll()
     if softPlate and UpdateUnit("softinteract", softPlate) then
         shown = true
     end
-    local targetPlate = PlateFor("target")
+    local targetPlate = ShownPlate("target")
     if not shown and targetPlate and UpdateUnit("target", targetPlate) then
         shown = true
     end

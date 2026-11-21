@@ -16,6 +16,7 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 
 ## Features
 
+- **2026-11-20:** BMG Sparkle Guide **1.1.8** and BMG Sparkle Guide - WoW Forever **1.1.8**. Beacons show on the nameplate again. Drawing them from a hidden screen position had turned every beacon off.
 - **2026-11-20:** BMG Sparkle Guide **1.1.7** and BMG Sparkle Guide - WoW Forever **1.1.7**. The Corpse beacon and the Skin beacon stay on a body this player can loot or skin, including after the nameplate drops.
 - **2026-11-20:** BMG Sparkle Guide **1.1.6** and BMG Sparkle Guide - WoW Forever **1.1.6**. A corpse you can loot, and a skinnable corpse, stay lit out to 50 yards instead of cutting off at 20.
 - **2026-11-20:** BMG Sparkle Guide **1.1.5** and BMG Sparkle Guide - WoW Forever **1.1.5**. Loot and a skinnable corpse track out to 50 yards, the same as a flight master.
