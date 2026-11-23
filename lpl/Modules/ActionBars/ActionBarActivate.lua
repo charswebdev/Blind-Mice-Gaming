@@ -35,16 +35,50 @@ local function Push(tbl, ...)
     tbl.n = n
 end
 
+local function IsSecret(value)
+    return type(issecretvalue) == "function" and issecretvalue(value)
+end
+
+local function CursorIsLoaded()
+    local cursorType = GetCursorInfo()
+    if IsSecret(cursorType) then
+        return true
+    end
+    if cursorType then
+        return true
+    end
+    return false
+end
+
 local function CompareCursor(a, b)
+    if IsSecret(a.n) or IsSecret(b.n) then
+        return false
+    end
     if a.n ~= b.n then
         return false
     end
     for i = 1, a.n do
+        if IsSecret(a[i]) or IsSecret(b[i]) then
+            return false
+        end
         if a[i] ~= b[i] then
             return false
         end
     end
     return true
+end
+
+local function SlotHoldsItem(slot, itemID)
+    local actionType, id = GetActionInfo(slot)
+    if IsSecret(actionType) or IsSecret(id) then
+        return false
+    end
+    itemID = tonumber(itemID)
+    id = tonumber(id)
+    if itemID and id and id == itemID then
+        return true
+    end
+    return false
 end
 
 local function FindBaseSpellByID(spellID)
@@ -584,8 +618,47 @@ local function PickupPetSpellDirect(spellID, test)
     return false
 end
 
+local function ShowBarForSlot(slot)
+    local name
+    if slot >= 145 and slot <= 156 then
+        name = "MultiBar5"
+    elseif slot >= 157 and slot <= 168 then
+        name = "MultiBar6"
+    elseif slot >= 169 and slot <= 180 then
+        name = "MultiBar7"
+    end
+    local bar = name and _G[name]
+    if not bar or not bar.Show then
+        return
+    end
+    local shown = bar.IsShown and bar:IsShown()
+    if IsSecret(shown) then
+        return
+    end
+    if shown then
+        return
+    end
+    bar:Show()
+    if Settings and Settings.SetValue then
+        local setting
+        if name == "MultiBar5" then
+            setting = "PROXY_SHOW_ACTIONBAR_6"
+        elseif name == "MultiBar6" then
+            setting = "PROXY_SHOW_ACTIONBAR_7"
+        elseif name == "MultiBar7" then
+            setting = "PROXY_SHOW_ACTIONBAR_8"
+        end
+        if setting then
+            pcall(Settings.SetValue, setting, true)
+        end
+    end
+end
+
 local function CompareSlot(slot, tbl)
     local actionType, id, subType = GetActionInfo(slot)
+    if IsSecret(actionType) or IsSecret(id) or IsSecret(subType) then
+        return false
+    end
 
     if subType == "assistedcombat" then
         id = 1229376
@@ -893,9 +966,9 @@ local function OwnsToy(itemID)
     if not itemID or not PlayerHasToy then
         return false
     end
-    local ok, has = pcall(PlayerHasToy, itemID)
-    if not ok then
-        return false
+    local has = PlayerHasToy(itemID)
+    if IsSecret(has) then
+        return true
     end
     if has then
         return true
@@ -903,30 +976,163 @@ local function OwnsToy(itemID)
     return false
 end
 
-local function PickupToy(itemID, test)
+local function BagItemCanPickup(itemID)
     itemID = tonumber(itemID)
-    if not OwnsToy(itemID) then
+    if not itemID or not GetItemInfoInstant then
         return false
     end
-    if test then
+    local equipLoc = select(4, GetItemInfoInstant(itemID))
+    if IsSecret(equipLoc) then
         return true
     end
-    if not (C_ToyBox and C_ToyBox.PickupToyBoxItem) then
+    local count = GetItemCount and GetItemCount(itemID)
+    if IsSecret(count) then
+        return true
+    end
+    if equipLoc ~= "" and type(count) == "number" and count > 0 then
+        return true
+    end
+    if equipLoc == "" and IsUsableItem then
+        local usable = IsUsableItem(itemID)
+        if IsSecret(usable) or usable then
+            return true
+        end
+    end
+    return false
+end
+
+local function LoadToyBox()
+    local loaded
+    if C_AddOns and C_AddOns.IsAddOnLoaded then
+        loaded = C_AddOns.IsAddOnLoaded("Blizzard_Collections")
+    elseif IsAddOnLoaded then
+        loaded = IsAddOnLoaded("Blizzard_Collections")
+    end
+    if loaded then
+        return
+    end
+    if C_AddOns and C_AddOns.LoadAddOn then
+        C_AddOns.LoadAddOn("Blizzard_Collections")
+    elseif LoadAddOn then
+        LoadAddOn("Blizzard_Collections")
+    end
+end
+
+local function PutToyOnCursor(itemID)
+    LoadToyBox()
+    local box = C_ToyBox
+    if not (box and box.PickupToyBoxItem) then
         return false
     end
-    local ok = pcall(C_ToyBox.PickupToyBoxItem, itemID)
-    if not ok then
+    box.PickupToyBoxItem(itemID)
+    if CursorIsLoaded() then
+        return true
+    end
+    if C_ToyBoxInfo and C_ToyBoxInfo.SetDefaultFilters then
+        C_ToyBoxInfo.SetDefaultFilters()
+    end
+    if box.SetCollectedShown then
+        box.SetCollectedShown(true)
+    end
+    if box.SetUnusableShown then
+        box.SetUnusableShown(true)
+    end
+    if box.SetAllSourceTypeFilters then
+        box.SetAllSourceTypeFilters(true)
+    end
+    if box.SetAllExpansionTypeFilters then
+        box.SetAllExpansionTypeFilters(true)
+    end
+    if box.SetFilterString then
+        box.SetFilterString("")
+    end
+    if box.ForceToyRefilter then
+        box.ForceToyRefilter()
+    end
+    box.PickupToyBoxItem(itemID)
+    return CursorIsLoaded()
+end
+
+local function PutSpellForItemOnCursor(itemID)
+    local spellID
+    if C_Item and C_Item.GetItemSpell then
+        spellID = select(2, C_Item.GetItemSpell(itemID))
+    elseif GetItemSpell then
+        spellID = select(2, GetItemSpell(itemID))
+    end
+    if IsSecret(spellID) then
+        -- A secret spell id can still be picked up.
+    elseif not spellID then
+        return false
+    else
+        spellID = tonumber(spellID)
+        if not spellID or spellID <= 0 then
+            return false
+        end
+    end
+    if C_Spell and C_Spell.PickupSpell then
+        C_Spell.PickupSpell(spellID)
+    elseif PickupSpell then
+        PickupSpell(spellID)
+    else
         return false
     end
-    if GetCursorInfo() then
+    return CursorIsLoaded()
+end
+
+local function PutItemOnCursor(itemID)
+    itemID = tonumber(itemID)
+    if not itemID then
+        return false
+    end
+    ClearCursor()
+    if OwnsToy(itemID) and PutToyOnCursor(itemID) then
+        return true
+    end
+    ClearCursor()
+    PickupItem(itemID)
+    if CursorIsLoaded() then
+        return true
+    end
+    ClearCursor()
+    local link = C_ToyBox and C_ToyBox.GetToyLink and C_ToyBox.GetToyLink(itemID)
+    if IsSecret(link) then
+        link = nil
+    end
+    if type(link) == "string" and link ~= "" then
+        PickupItem(link)
+        if CursorIsLoaded() then
+            return true
+        end
+    end
+    ClearCursor()
+    if OwnsToy(itemID) and PutSpellForItemOnCursor(itemID) then
         return true
     end
     return false
 end
 
+local function PickupItemOrToy(tbl, test)
+    local itemID = tonumber(tbl.id)
+    if test then
+        if tbl.type == "toy" or OwnsToy(itemID) or BagItemCanPickup(itemID) then
+            return true, "Success"
+        end
+        return false, "Item unavailable."
+    end
+    if PutItemOnCursor(itemID) then
+        return true, "Success"
+    end
+    return false, "Item unavailable."
+end
+
 local function PickupActionTable(tbl, test, activating)
     if tbl == nil or tbl.type == nil then
         return true, "Success"
+    end
+
+    if tbl.type == "toy" or tbl.type == "item" then
+        return PickupItemOrToy(tbl, test)
     end
 
     local success, msg = true, "Success"
@@ -958,28 +1164,6 @@ local function PickupActionTable(tbl, test, activating)
                 success = true
             else
                 success, msg = false, "Spell not found."
-            end
-        elseif tbl.type == "toy" or tbl.type == "item" then
-            local itemID = tonumber(tbl.id)
-            if tbl.type == "toy" or OwnsToy(itemID) then
-                -- Hearthstone toys are not bag items. PickupItem leaves the cursor empty.
-                if PickupToy(itemID, test) then
-                    success = true
-                elseif not OwnsToy(itemID) then
-                    success, msg = false, "Toy is not collected."
-                else
-                    success, msg = false, "Toy could not be placed."
-                end
-            else
-                local itemEquipLoc = select(4, GetItemInfoInstant(itemID))
-                if (itemEquipLoc ~= "" and GetItemCount(itemID) > 0)
-                    or (itemEquipLoc == "" and IsUsableItem(itemID)) then
-                    if not test then
-                        PickupItem(itemID)
-                    end
-                else
-                    success, msg = false, "Item unavailable."
-                end
             end
         elseif tbl.type == "summonmount" then
             if tbl.id == 0xFFFFFFF then
@@ -1127,14 +1311,145 @@ local function PickupActionTable(tbl, test, activating)
     return success, msg
 end
 
+local function PlacePickedAction(slot, itemID)
+    PlaceAction(slot)
+    ClearCursor()
+    return SlotHoldsItem(slot, itemID)
+end
+
+local function PlaceUseMacro(slot, itemID)
+    if not CreateMacro or not PickupMacro or not GetMacroIndexByName then
+        return false
+    end
+    local macroName = "LPL" .. itemID
+    if #macroName > 16 then
+        macroName = string.sub(macroName, 1, 16)
+    end
+    local body = "#showtooltip\n/use item:" .. itemID
+    local index = GetMacroIndexByName(macroName)
+    if type(index) ~= "number" or index == 0 then
+        local numGlobal = GetNumMacros and select(1, GetNumMacros()) or 0
+        if numGlobal >= (MAX_ACCOUNT_MACROS or 120) then
+            return false
+        end
+        index = CreateMacro(macroName, "INV_Misc_QuestionMark", body, false)
+    elseif EditMacro then
+        EditMacro(index, nil, nil, body)
+    end
+    if type(index) ~= "number" or index == 0 then
+        return false
+    end
+    ClearCursor()
+    PickupMacro(index)
+    PlaceAction(slot)
+    ClearCursor()
+    local actionType = GetActionInfo(slot)
+    if IsSecret(actionType) then
+        return true
+    end
+    return actionType == "macro"
+end
+
+local function PlaceItemOnSlot(slot, itemID)
+    itemID = tonumber(itemID)
+    if not itemID then
+        return false
+    end
+    ShowBarForSlot(slot)
+    LoadToyBox()
+
+    -- Do not ask the cursor what it holds. A toy hearthstone is on the cursor
+    -- even when that check comes back empty, and clearing it drops the stone.
+    ClearCursor()
+    if C_ToyBox and C_ToyBox.PickupToyBoxItem then
+        C_ToyBox.PickupToyBoxItem(itemID)
+        if PlacePickedAction(slot, itemID) then
+            return true
+        end
+    end
+
+    ClearCursor()
+    if C_ToyBoxInfo and C_ToyBoxInfo.SetDefaultFilters then
+        C_ToyBoxInfo.SetDefaultFilters()
+    end
+    if C_ToyBox and C_ToyBox.SetCollectedShown then
+        C_ToyBox.SetCollectedShown(true)
+    end
+    if C_ToyBox and C_ToyBox.SetFilterString then
+        C_ToyBox.SetFilterString("")
+    end
+    if C_ToyBox and C_ToyBox.ForceToyRefilter then
+        C_ToyBox.ForceToyRefilter()
+    end
+    if C_ToyBox and C_ToyBox.PickupToyBoxItem then
+        C_ToyBox.PickupToyBoxItem(itemID)
+        if PlacePickedAction(slot, itemID) then
+            return true
+        end
+    end
+
+    ClearCursor()
+    if PickupItem then
+        PickupItem(itemID)
+        if PlacePickedAction(slot, itemID) then
+            return true
+        end
+    end
+
+    local spellID
+    if C_Item and C_Item.GetItemSpell then
+        spellID = select(2, C_Item.GetItemSpell(itemID))
+    elseif GetItemSpell then
+        spellID = select(2, GetItemSpell(itemID))
+    end
+    if IsSecret(spellID) then
+        ClearCursor()
+        if C_Spell and C_Spell.PickupSpell then
+            C_Spell.PickupSpell(spellID)
+        elseif PickupSpell then
+            PickupSpell(spellID)
+        end
+        PlaceAction(slot)
+        ClearCursor()
+        return true
+    end
+    spellID = tonumber(spellID)
+    if spellID and spellID > 0 then
+        ClearCursor()
+        if C_Spell and C_Spell.PickupSpell then
+            C_Spell.PickupSpell(spellID)
+        elseif PickupSpell then
+            PickupSpell(spellID)
+        end
+        PlaceAction(slot)
+        ClearCursor()
+        local actionType, id = GetActionInfo(slot)
+        if IsSecret(actionType) or IsSecret(id) then
+            return true
+        end
+        if actionType == "spell" and tonumber(id) == spellID then
+            return true
+        end
+    end
+
+    return PlaceUseMacro(slot, itemID)
+end
+
 local function SetPlayerAction(slot, tbl)
+    if tbl and (tbl.type == "item" or tbl.type == "toy") then
+        if PlaceItemOnSlot(slot, tbl.id) then
+            return true, true, "Success"
+        end
+        return false, false, "Item unavailable."
+    end
+
     local success, done, msg = true, true, "Success"
 
     ClearCursor()
     success, msg = PickupActionTable(tbl, false, true)
 
     -- Skyriding bar: if book pickup failed, force direct spell pickup.
-    if (not success or not GetCursorInfo()) and tbl and tbl.type == "spell" and (IsSkyridingBarSlot(slot) or IsSkyridingSpellID(tbl.id)) then
+    if (not success or not CursorIsLoaded()) and tbl and tbl.type == "spell" and (IsSkyridingBarSlot(slot) or IsSkyridingSpellID(tbl.id)) then
         ClearCursor()
         local rawID = tonumber(tbl.id)
         local tryIDs = { rawID, FindBaseSpellByID(rawID) }
@@ -1150,7 +1465,21 @@ local function SetPlayerAction(slot, tbl)
         if tbl == nil or tbl.type == nil then
             PickupAction(slot)
             ClearCursor()
-        elseif GetCursorInfo() then
+        elseif CursorIsLoaded() then
+            if tbl and (tbl.type == "item" or tbl.type == "toy") then
+                ShowBarForSlot(slot)
+                PlaceAction(slot)
+                local placed = SlotHoldsItem(slot, tbl.id)
+                if not placed and not CursorIsLoaded() then
+                    local actionType = GetActionInfo(slot)
+                    if IsSecret(actionType) or actionType then
+                        placed = true
+                    end
+                end
+                if not placed then
+                    success, done, msg = false, false, "Failed to place action."
+                end
+            else
             Push(ActionCacheA, GetCursorInfo())
             PlaceAction(slot)
             Push(ActionCacheB, GetCursorInfo())
@@ -1169,6 +1498,7 @@ local function SetPlayerAction(slot, tbl)
                     end
                 end
                 success, done, msg = false, false, "Failed to place action."
+            end
             end
         else
             success, done, msg = false, false, "Failed to pickup action."
@@ -1317,6 +1647,9 @@ local function ApplySetData(setData, setName)
     for _, slot in ipairs(managedSlots) do
         if not setData.ignored or not setData.ignored[slot] then
             local action = setData.actions and setData.actions[slot]
+            if action and action.type and slot >= 145 then
+                ShowBarForSlot(slot)
+            end
             local actionType = GetActionInfo(slot)
             if not CompareSlot(slot, action) or actionType == "macro" then
                 local _, done = SetPlayerAction(slot, action)

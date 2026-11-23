@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.2.8** |
+| Version | **1.2.9** |
 | Type | In-game composite loadout vault |
 | Folder | `lpl/` |
 | Clients | Retail (`120105`, `120100`, `120007`, `120001`) |
@@ -50,6 +50,7 @@ This is the pattern every Classic flavor is supposed to **clone for UX** while r
 - **1.2.5:** Retail Interface `120105` for patch 12.1.5. `120100` stays so 12.1.0 still loads.
 - **1.2.6 Profiles:** a book tab on the main rail stores talents, bars, keybinds, gear, PvP, Cooldown Manager, Edit Mode, loadouts, conditions, macros, addon sets, addon profiles, and housing. Create starts empty. Load switches the vault the other tabs read. Rename and delete work; the last profile cannot be deleted. Existing saves move into Default once. Export and import use one `!LPLP1!` code for the whole profile, and that code only imports into Retail. Window position stays out of the profile. The rail keeps every icon on screen, including Profiles. If the window is short, the icons shrink instead of hiding the last tab. Icon file: `icons/profiles_64.tga`.
 - **1.2.8:** A hearthstone toy saved on an action bar set is placed from the toy box. The slot already showed the icon. Apply was picking it up as a bag item, so the cursor stayed empty.
+- **1.2.9:** A hearthstone toy is placed on the bar without checking the cursor. If the toy still will not sit on the slot, Apply puts a button that uses that item. Bar 6, Bar 7, and Bar 8 are shown when the set uses them.
 
 ## Development plan
 
@@ -81,11 +82,11 @@ Desktop siblings: **LPTM** (talent planner) and **LPLM** (loadout catalog + comm
 - Hero talent Limits keyed only by subtree id. Pack Leader is the same id on Beast Mastery and Survival, so one checkbox locked both specs.
 - Importing a Blizzard talent string without checking `C_Traits.GetTreeHash`. After a tree edit, those bits line up with the new node order and the wrong talents get points. Import now stops when the hash does not match the live tree.
 - Local talent-tree builds 1.2.7 through 1.3.3 were reverted on 2026-11-16. New Build could open and a tree could draw, but the nodes, columns, and icons did not match 1.2.6. Retail LPL is 1.2.6 again.
-- Hearthstone toys showed on the action bar page because the saved slot keeps the item icon. Apply called PickupItem, which only works for a bag item. A toy hearthstone is not in the bags, so the cursor stayed empty and that slot was skipped. Apply now picks the toy up from the toy box.
+- Hearthstone toys showed on the action bar page because the saved slot keeps the item icon. Apply asked the cursor if the toy was there, got no answer, and skipped the slot. Apply now places the toy without that check. If the toy still will not sit on the slot, it places a `/use item:` button for that hearthstone.
 
 ## Open work
 
-- **1.2.8** places a collected hearthstone toy onto the action bar from the toy box. **1.2.7** stays the hero-font release. Hero talent names in the Limits and Filter menus use the same font size as Class, Specialization, Race, and Covenant. Profiles store the whole vault and import only into Retail. Retail Interface is `120105` for patch 12.1.5. Housing, Macros, and Addons Manager have no drag button. A bar press applies the build with the window closed. Addon sets still ask before they replace the addon list. A condition applies the first linked build that fits this character. If the client rejects the card file, the cursor can show the question mark and the bar button still draws the card.
+- **1.2.9** places a hearthstone toy on the bar without the cursor check, and uses a `/use item:` button when the toy still will not sit. **1.2.8** skipped those slots. **1.2.7** stays the hero-font release. Hero talent names in the Limits and Filter menus use the same font size as Class, Specialization, Race, and Covenant. Profiles store the whole vault and import only into Retail. Retail Interface is `120105` for patch 12.1.5. Housing, Macros, and Addons Manager have no drag button. A bar press applies the build with the window closed. Addon sets still ask before they replace the addon list. A condition applies the first linked build that fits this character. If the client rejects the card file, the cursor can show the question mark and the bar button still draws the card.
 - Uncommitted Module dirty files may exist locally (`ActionBars`, `Loadouts`, `Keybinds`, …). Do not mix into unrelated commits.
 - Further Midnight patch talent layout changes track Blizzard, not a BMG DB2 extract. The 2026-09-22 class tuning is damage and effect numbers on existing nodes (no new, moved, or removed talents). LPL reads the live tree, so that pass needs no talent-data update.
 - Blizzard import strings are positional. A tree-hash mismatch now fails the import instead of spending the old bits on the current node list.
