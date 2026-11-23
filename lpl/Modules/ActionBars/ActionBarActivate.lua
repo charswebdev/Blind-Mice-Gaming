@@ -888,6 +888,42 @@ local function PickupSpellFromBook(spellID, subType, test)
     return false
 end
 
+local function OwnsToy(itemID)
+    itemID = tonumber(itemID)
+    if not itemID or not PlayerHasToy then
+        return false
+    end
+    local ok, has = pcall(PlayerHasToy, itemID)
+    if not ok then
+        return false
+    end
+    if has then
+        return true
+    end
+    return false
+end
+
+local function PickupToy(itemID, test)
+    itemID = tonumber(itemID)
+    if not OwnsToy(itemID) then
+        return false
+    end
+    if test then
+        return true
+    end
+    if not (C_ToyBox and C_ToyBox.PickupToyBoxItem) then
+        return false
+    end
+    local ok = pcall(C_ToyBox.PickupToyBoxItem, itemID)
+    if not ok then
+        return false
+    end
+    if GetCursorInfo() then
+        return true
+    end
+    return false
+end
+
 local function PickupActionTable(tbl, test, activating)
     if tbl == nil or tbl.type == nil then
         return true, "Success"
@@ -923,16 +959,27 @@ local function PickupActionTable(tbl, test, activating)
             else
                 success, msg = false, "Spell not found."
             end
-        elseif tbl.type == "item" then
-            local itemEquipLoc = select(4, GetItemInfoInstant(tbl.id))
-            if C_ToyBox and C_ToyBox.GetToyInfo(tbl.id)
-                or (itemEquipLoc ~= "" and GetItemCount(tbl.id) > 0)
-                or (itemEquipLoc == "" and IsUsableItem(tbl.id)) then
-                if not test then
-                    PickupItem(tbl.id)
+        elseif tbl.type == "toy" or tbl.type == "item" then
+            local itemID = tonumber(tbl.id)
+            if tbl.type == "toy" or OwnsToy(itemID) then
+                -- Hearthstone toys are not bag items. PickupItem leaves the cursor empty.
+                if PickupToy(itemID, test) then
+                    success = true
+                elseif not OwnsToy(itemID) then
+                    success, msg = false, "Toy is not collected."
+                else
+                    success, msg = false, "Toy could not be placed."
                 end
             else
-                success, msg = false, "Item unavailable."
+                local itemEquipLoc = select(4, GetItemInfoInstant(itemID))
+                if (itemEquipLoc ~= "" and GetItemCount(itemID) > 0)
+                    or (itemEquipLoc == "" and IsUsableItem(itemID)) then
+                    if not test then
+                        PickupItem(itemID)
+                    end
+                else
+                    success, msg = false, "Item unavailable."
+                end
             end
         elseif tbl.type == "summonmount" then
             if tbl.id == 0xFFFFFFF then

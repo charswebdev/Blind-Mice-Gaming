@@ -774,7 +774,7 @@ function LPL.ActionBarCodec:ResolveActionDisplay(action, ignored)
     local name = action.name
     local errorText
 
-    if action.type == "item" then
+    if action.type == "item" or action.type == "toy" then
         if GetItemInfoInstant then
             name = name or select(1, GetItemInfoInstant(action.id))
             icon = icon or select(5, GetItemInfoInstant(action.id))
