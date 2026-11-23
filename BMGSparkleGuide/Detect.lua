@@ -1288,12 +1288,28 @@ local function SkinnableCreature(unit)
     return false
 end
 
--- Loot stays on a kill this player can still loot. Skin replaces it only after that loot is gone.
+-- Only this player's own loot and skin. Another player does not clear these.
+local emptied = {}
+local skinned = {}
+
+local function UnitGuid(unit)
+    if not UnitGUID or not unit then
+        return nil
+    end
+    local guid = UnitGUID(unit)
+    if G.Secret(guid) or guid == nil then
+        return nil
+    end
+    return G.PlainString(guid)
+end
+
+-- Loot stays until this player takes it. Another player's loot does not change that.
+-- Skin shows only after this player's loot is gone, until this player skins.
 local function CorpseBeaconKind(unit)
     if not G.db or not G.db.enabled or not unit then
         return nil
     end
-    if TapDenied(unit) or G.IsTrue(UnitIsPlayer, unit) then
+    if G.IsTrue(UnitIsPlayer, unit) then
         return nil
     end
     local lootOn = G.db.enabled.loot
@@ -1301,22 +1317,27 @@ local function CorpseBeaconKind(unit)
     if not lootOn and not skinOn then
         return nil
     end
-    local answer = LootAnswer(unit)
-    local iconKind = KindFromIcon(IconText(nil, unit))
-    if lootOn and (answer == "yes" or iconKind == "loot") then
-        return "loot"
+    local guid = UnitGuid(unit)
+    if guid and skinned[guid] then
+        return nil
     end
+    local iconKind = KindFromIcon(IconText(nil, unit))
     local skinnable = iconKind == "skinning" or SkinnableCreature(unit)
-    if skinOn and skinnable and answer == "no" and iconKind ~= "loot" then
-        if iconKind == "skinning" or FocusUnit(unit) then
+    local mine = guid and emptied[guid]
+    if mine then
+        if skinOn and skinnable then
             return "skinning"
         end
+        return nil
     end
-    if lootOn and FocusUnit(unit) and answer ~= "no" then
-        return "loot"
+    if TapDenied(unit) then
+        return nil
     end
-    if skinOn and iconKind == "skinning" and not lootOn then
+    if not lootOn and skinOn and skinnable and (iconKind == "skinning" or FocusUnit(unit)) then
         return "skinning"
+    end
+    if lootOn and (FocusUnit(unit) or iconKind == "loot" or LootAnswer(unit) == "yes") then
+        return "loot"
     end
     return nil
 end
@@ -1471,15 +1492,25 @@ local function ViewZoom()
     return 15
 end
 
+local function RealYards(unit)
+    if not UnitDistanceSquared or not unit then
+        return nil
+    end
+    local squared = UnitDistanceSquared(unit)
+    if G.Secret(squared) or squared == nil then
+        return nil
+    end
+    local n = G.PlainNumber(squared)
+    if n and n > 1 then
+        return math.sqrt(n)
+    end
+    return nil
+end
+
 local function PlainYards(unit)
-    if UnitDistanceSquared and unit then
-        local squared = UnitDistanceSquared(unit)
-        if squared and not G.Secret(squared) then
-            local n = G.PlainNumber(squared)
-            if n and n > 1 then
-                return math.sqrt(n)
-            end
-        end
+    local real = RealYards(unit)
+    if real then
+        return real
     end
     local step = StepFromUnit(unit)
     if step == "at" then
@@ -1490,7 +1521,7 @@ end
 
 local function AimPoint(unit, plate)
     local y, x, z = MapWorld(unit)
-    if y and not G.Secret(y) and not G.Secret(x) then
+    if not G.Secret(y) and not G.Secret(x) and y and x then
         y, x = G.PlainNumber(y), G.PlainNumber(x)
         if y and x then
             return y, x, G.PlainNumber(z) or 0
@@ -1498,7 +1529,10 @@ local function AimPoint(unit, plate)
     end
     local py, px, pz = PlayerSpot()
     local facing = ViewYaw()
-    local dist = PlainYards(unit)
+    local dist = RealYards(unit)
+    if not dist and plate then
+        dist = 4
+    end
     if not py or not facing or not dist or dist <= 0 or dist > 55 then
         return nil
     end
@@ -1534,6 +1568,12 @@ function RememberFromPlate(unit, plate, kind, name)
         return
     end
     local guid = PlainGuid(unit)
+    if held and held.locked and guid and held.guid == guid then
+        held.kind = kind
+        held.name = name or held.name
+        held.t = GetTime()
+        return
+    end
     local y, x, z = AimPoint(unit, plate)
     if not y then
         return
@@ -1573,28 +1613,41 @@ local function ScreenFor(y, x, z)
         return nil
     end
     y, x = G.PlainNumber(y), G.PlainNumber(x)
-    z = G.PlainNumber(z) or 0
     if not y or not x then
         return nil
     end
-    local py, px, pz = PlayerSpot()
+    local py, px = PlayerSpot()
     local facing = ViewYaw()
     if not py or not facing then
         return nil
     end
-    local zoom = ViewZoom()
-    local sinF = math.sin(facing)
-    local cosF = math.cos(facing)
-    local dx = x - (px + sinF * zoom)
-    local dy = y - (py - cosF * zoom)
-    local dz = (z or 0) - ((pz or 0) + 2.4)
-    local forward = dx * (-sinF) + dy * cosF
-    local right = dx * cosF + dy * sinF
-    if forward < 1 then
+    local dx = x - px
+    local dy = y - py
+    local dist2 = dx * dx + dy * dy
+    if dist2 <= 1 or dist2 > 2704 then
+        return nil
+    end
+    local angle = math.atan2(dx, dy) - facing
+    local ahead = math.cos(angle)
+    local side = math.sin(angle)
+    if ahead <= 0.2 then
         return nil
     end
     local w, h = GetScreenWidth(), GetScreenHeight()
-    return w * 0.5 + (right / forward) * (w * 0.5), h * 0.45 + (dz / forward) * (h * 0.5)
+    local dist = math.sqrt(dist2)
+    local sx = w * 0.5 + (side / ahead) * math.min(w * 0.28, dist * 4)
+    local sy = h * 0.38 + math.min(dist, 36) * 1.6
+    if sx < 48 then
+        sx = 48
+    elseif sx > w - 48 then
+        sx = w - 48
+    end
+    if sy < 90 then
+        sy = 90
+    elseif sy > h - 90 then
+        sy = h - 90
+    end
+    return sx, sy
 end
 
 local function Within50(y, x)
@@ -1739,9 +1792,12 @@ local function ShowFar(kind, name, label, y, x, z, unit, guid)
     else
         step = StepFromSquared(raw)
     end
-    G.liveKind, G.liveName, G.liveUnit, G.liveLabel = kind, name, unit, label
     shownGuid = guid
-    G.PlaceOnWorld(G.WorldHost(), look, y, x, z, ScreenFor)
+    local placed = G.PlaceOnWorld(G.WorldHost(), look, y, x, z, ScreenFor)
+    if not placed then
+        return false
+    end
+    G.liveKind, G.liveName, G.liveUnit, G.liveLabel = kind, name, unit, label
     Announce(unit or "target", kind, name, false, label, step)
     return true
 end
@@ -1779,18 +1835,25 @@ local function ShowFarUnit(unit)
         return false
     end
     if kind == "loot" or kind == "skinning" then
-        held = {
-            y = y,
-            x = x,
-            z = z,
-            kind = kind,
-            name = name,
-            guid = PlainGuid(unit),
-            t = GetTime(),
-            locked = true,
-            real = true,
-        }
-        local shown = ShowFar(kind, name, label, y, x, z, unit, held.guid)
+        local guid = PlainGuid(unit)
+        if held and held.locked and guid and held.guid == guid then
+            held.kind = kind
+            held.name = name or held.name
+            held.t = GetTime()
+        else
+            held = {
+                y = y,
+                x = x,
+                z = z,
+                kind = kind,
+                name = name,
+                guid = guid,
+                t = GetTime(),
+                locked = true,
+                real = true,
+            }
+        end
+        local shown = ShowFar(kind, name, label, held.y, held.x, held.z, unit, held.guid)
         if shown then
             held.t = GetTime()
         end
@@ -1799,8 +1862,171 @@ local function ShowFarUnit(unit)
     return ShowFar(kind, name, label, y, x, z, unit, PlainGuid(unit))
 end
 
+local function SyncCorpse(unit)
+    if not unit or not G.IsTrue(UnitExists, unit) then
+        return
+    end
+    if not G.IsTrue(UnitIsDead, unit) or G.IsTrue(UnitIsPlayer, unit) or GameObjectUnit(unit) then
+        return
+    end
+    local guid = UnitGuid(unit)
+    if guid and skinned[guid] then
+        return
+    end
+    local picked = CorpseBeaconKind(unit)
+    if picked ~= "loot" and picked ~= "skinning" then
+        return
+    end
+    if guid and corpseAt[guid] then
+        corpseAt[guid].kind = picked
+        corpseAt[guid].t = GetTime()
+    end
+    if held and guid and held.guid == guid then
+        held.kind = picked
+        held.t = GetTime()
+    end
+end
+
+local function LootRemaining(clearedSlot)
+    if not GetNumLootItems then
+        return nil
+    end
+    local count = GetNumLootItems()
+    if G.Secret(count) or type(count) ~= "number" or count < 0 then
+        return nil
+    end
+    local left = 0
+    local slot = clearedSlot
+    if G.Secret(slot) or type(slot) ~= "number" then
+        slot = nil
+    end
+    for i = 1, count do
+        if i ~= slot then
+            local has = true
+            if LootSlotHasItem then
+                local ok, item = pcall(LootSlotHasItem, i)
+                if ok and G.Secret(item) then
+                    has = true
+                elseif ok then
+                    has = item == true or item == 1
+                end
+            end
+            if has then
+                left = left + 1
+            end
+        end
+    end
+    return left
+end
+
+local function DropLootSpot(guid)
+    if guid then
+        emptied[guid] = GetTime()
+    end
+    local function Matches(unit)
+        if not guid or not unit or not G.IsTrue(UnitExists, unit) then
+            return false
+        end
+        local id = UnitGuid(unit)
+        return id ~= nil and id == guid
+    end
+    if Matches("target") then
+        SyncCorpse("target")
+    elseif Matches("softinteract") then
+        SyncCorpse("softinteract")
+    else
+        if held and held.kind == "loot" and (not guid or held.guid == guid) then
+            held = nil
+        end
+        if guid and corpseAt[guid] and corpseAt[guid].kind == "loot" then
+            corpseAt[guid] = nil
+        end
+        if G.liveKind == "loot" then
+            ClearLive()
+        end
+    end
+    G.Refresh()
+end
+
+local function FinishLoot(clearedSlot)
+    local left = LootRemaining(clearedSlot)
+    if left == nil or left ~= 0 then
+        return
+    end
+    local guid = shownGuid or (held and held.guid) or UnitGuid("target") or UnitGuid("softinteract")
+    if guid then
+        emptied[guid] = GetTime()
+    end
+    local unit = "target"
+    if not (G.IsTrue(UnitExists, unit) and G.IsTrue(UnitIsDead, unit)) then
+        unit = "softinteract"
+    end
+    local picked = CorpseBeaconKind(unit)
+    if picked == "skinning" then
+        if held and (not guid or held.guid == guid) then
+            held.kind = "skinning"
+            held.t = GetTime()
+        end
+        if guid and corpseAt[guid] then
+            corpseAt[guid].kind = "skinning"
+            corpseAt[guid].t = GetTime()
+        end
+    else
+        DropLootSpot(guid)
+        return
+    end
+    G.Refresh()
+end
+
+local function FinishSkin()
+    local guid = UnitGuid("target") or shownGuid or (held and held.guid)
+    if guid then
+        skinned[guid] = GetTime()
+        emptied[guid] = emptied[guid] or GetTime()
+        corpseAt[guid] = nil
+    end
+    if held and (not guid or held.guid == guid) and (held.kind == "skinning" or held.kind == "loot") then
+        held = nil
+    end
+    if G.liveKind == "skinning" or G.liveKind == "loot" then
+        ClearLive()
+    end
+    G.Refresh()
+end
+
+local function SkinSpell(arg2, arg3)
+    local name = arg2
+    if G.Secret(name) or type(name) ~= "string" then
+        local id = arg3
+        if G.Secret(id) or type(id) ~= "number" then
+            id = arg2
+        end
+        if not G.Secret(id) and type(id) == "number" and C_Spell and C_Spell.GetSpellName then
+            name = C_Spell.GetSpellName(id)
+        elseif not G.Secret(id) and type(id) == "number" and GetSpellInfo then
+            name = GetSpellInfo(id)
+        end
+    end
+    if G.Secret(name) or type(name) ~= "string" then
+        return false
+    end
+    name = name:lower()
+    if name:find("skin", 1, true) then
+        return true
+    end
+    return false
+end
+
 local function ShowHeld()
     if not held then
+        return false
+    end
+    if held.guid and skinned[held.guid] then
+        held = nil
+        return false
+    end
+    if held.guid and emptied[held.guid] and held.kind == "loot" then
+        held = nil
         return false
     end
     if GetTime() - held.t > 120 then
@@ -1819,7 +2045,9 @@ local function ShowRemembered()
     local best, bestDist, bestGuid
     local now = GetTime()
     for guid, spot in pairs(corpseAt) do
-        if now - spot.t > 90 then
+        if skinned[guid] or (spot.kind == "loot" and emptied[guid]) then
+            corpseAt[guid] = nil
+        elseif now - spot.t > 90 then
             corpseAt[guid] = nil
         else
             local near, raw = Within50(spot.y, spot.x)
@@ -1849,6 +2077,16 @@ local function UpdateAll()
     for guid, spot in pairs(liveAt) do
         if now - spot.t > 20 then
             liveAt[guid] = nil
+        end
+    end
+    for guid, when in pairs(emptied) do
+        if now - when > 180 then
+            emptied[guid] = nil
+        end
+    end
+    for guid, when in pairs(skinned) do
+        if now - when > 180 then
+            skinned[guid] = nil
         end
     end
     local shown = false
@@ -1881,6 +2119,8 @@ local function UpdateAll()
             end
         end
     end
+    SyncCorpse("target")
+    SyncCorpse("softinteract")
     if not shown then
         if ShowHeld() or ShowFarUnit("target") or ShowFarUnit("softinteract") or ShowRemembered() then
             shown = true
@@ -1931,10 +2171,13 @@ function G.StartDetect()
     events:RegisterEvent("QUEST_LOG_UPDATE")
     events:RegisterEvent("UNIT_SPELLCAST_SENT")
     events:RegisterEvent("LOOT_OPENED")
+    events:RegisterEvent("LOOT_SLOT_CLEARED")
+    events:RegisterEvent("LOOT_CLOSED")
+    events:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
     events:RegisterEvent("UNIT_FLAGS")
     events:RegisterEvent("UNIT_HEALTH")
     events:RegisterEvent("SPELLS_CHANGED")
-    events:SetScript("OnEvent", function(_, event, arg1, arg2)
+    events:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         if event == "QUEST_LOG_UPDATE" then
             ReadQuests()
             return
@@ -1952,6 +2195,16 @@ function G.StartDetect()
             Announce(G.liveUnit or "softinteract", G.liveKind, G.liveName, true, G.liveLabel)
             return
         end
+        if event == "LOOT_SLOT_CLEARED" then
+            FinishLoot(arg1)
+            return
+        end
+        if event == "LOOT_CLOSED" then
+            SyncCorpse("target")
+            SyncCorpse("softinteract")
+            G.Refresh()
+            return
+        end
         if event == "UNIT_FLAGS" or event == "UNIT_HEALTH" then
             if NameplateUnit(arg1) or arg1 == "target" or arg1 == "softinteract" then
                 KeepDead(arg1)
@@ -1960,6 +2213,10 @@ function G.StartDetect()
         end
         if event == "UNIT_SPELLCAST_SENT" and arg1 == "player" then
             G.MarkArrived(arg2)
+            return
+        end
+        if event == "UNIT_SPELLCAST_SUCCEEDED" and arg1 == "player" and SkinSpell(arg2, arg3) then
+            FinishSkin()
             return
         end
         if event == "SPELLS_CHANGED" or event == "PLAYER_ENTERING_WORLD" then

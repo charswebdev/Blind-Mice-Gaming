@@ -393,11 +393,14 @@ function G.PlaceOnWorld(host, look, y, x, z, project)
     end
     host:SetFrameStrata("TOOLTIP")
     local ok, sx, sy = pcall(project, y, x, z)
-    if ok and not G.Secret(sx) and not G.Secret(sy) and type(sx) == "number" and type(sy) == "number" then
-        host:ClearAllPoints()
-        host:SetPoint("CENTER", UIParent, "BOTTOMLEFT", sx, sy)
+    if not ok or G.Secret(sx) or G.Secret(sy) or type(sx) ~= "number" or type(sy) ~= "number" then
+        host:Hide()
+        return false
     end
+    host:ClearAllPoints()
+    host:SetPoint("CENTER", UIParent, "BOTTOMLEFT", sx, sy)
     host:Show()
+    return true
 end
 
 function G.PlaceOnPlate(host, look, plate, y)
