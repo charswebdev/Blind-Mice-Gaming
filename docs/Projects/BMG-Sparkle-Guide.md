@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | Status | **Shipped** |
-| Version | **1.2.0** retail and **1.2.0** WoW Forever |
+| Version | **1.2.1** retail and **1.2.1** WoW Forever |
 | Type | In-game sparkle and spoken guide for the object in front of you |
 | Retail folder | `BMGSparkleGuide/` |
 | Forever folder | `BMGSparkleGuide-forever/` |
@@ -67,6 +67,7 @@ The sparkle drawing uses Blizzard’s star, starburst, and white textures.
 
 ## What did not work
 
+- In combat, the nameplate update called CheckInteractDistance while speaking a distance. That function is protected, and pcall still raised ADDON_ACTION_BLOCKED. Combat skips that check, spell range, and the 40-yard group check. Speech uses the other distance reads.
 - The game does not give a distance for every object. Saying “At” for a missing number called a far node “At loot,” and saying only the name left it as “Loot.” A hidden number is compared when the client allows it. Otherwise farther than about 11 yards says 50, and inside that says 10. “At” is 0 yards, and it is also spoken when the loot window opens or a gather cast starts. The beacon and the spoken line reach 50 yards. The steps are 50, 45, 40, 35, 30, 25, 20, 15, 10, 5, and At.
 - A wave file is not a safe sound for this client. The clips are ogg.
 - The Interact Key can still notice the object from about 15 yards even when the setting asks for 30. That is the client, not a second scan.
@@ -93,6 +94,7 @@ The sparkle drawing uses Blizzard’s star, starburst, and white textures.
 - The Corpse beacon stayed after the body was looted. The saved spot was drawn again every tick and never asked if the loot was gone. Taking the last item clears that spot. Skin shows only when the body can still be skinned.
 - Treating that loot check as empty from any distance cut the Corpse beacon down to about 5 yards, because the check only says yes beside the body. A no from farther away keeps the beacon. It clears beside the body once the loot is gone, and when the last item is taken.
 - The corpse nameplate itself ends around 5 yards, and the saved spot was guessed again every step, so the beacon never stayed out at 50. The spot is saved once. Another player looting or skinning does not clear a beacon. Only this player's loot and this player's skin do.
+- A guessed spot for the Corpse beacon kept landing on the player. Loot and Skin are now placed on the nameplate and dropped onto the body, the same way NodeSight Sparkles does. A guessed spot in the air is no longer drawn.
 
 ## Open work
 

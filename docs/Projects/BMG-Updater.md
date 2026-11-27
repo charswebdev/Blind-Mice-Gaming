@@ -16,6 +16,7 @@ The **player-facing install path** for every Blind Mice Gaming addon and the fir
 
 ## Features
 
+- **2026-11-26:** BMG Sparkle Guide **1.2.1** and BMG Sparkle Guide - WoW Forever **1.2.1**. Corpse and Skin sit on the nameplate, dropped onto the body. In combat, the distance check no longer raises a blocked-action error.
 - **2026-11-23:** Light Paws Loadouts (Retail) **1.2.9**. A hearthstone toy in an action bar set is placed on the bar. If the toy will not sit on the slot, the button uses that item.
 - **2026-11-23:** Light Paws Loadouts (Retail) **1.2.8**. A hearthstone toy in an action bar set is placed on the bar from the toy box.
 - **2026-11-22:** BMG Sparkle Guide **1.2.0** and BMG Sparkle Guide - WoW Forever **1.2.0**. The Corpse beacon stays out to 50 yards. It clears only when you loot, and the Skin beacon clears only when you skin. Another player does not clear them.

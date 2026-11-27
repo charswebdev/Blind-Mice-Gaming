@@ -707,6 +707,10 @@ local function InteractRange(unit, index)
     if not CheckInteractDistance or not unit then
         return nil
     end
+    -- Protected in combat. pcall still raises ADDON_ACTION_BLOCKED from the nameplate update.
+    if InCombatLockdown and InCombatLockdown() then
+        return nil
+    end
     local ok, value = pcall(CheckInteractDistance, unit, index)
     if not ok then
         return nil
@@ -880,6 +884,9 @@ local function AskSpell(spellID, unit)
     if not spellID or not C_Spell or not C_Spell.IsSpellInRange or not unit then
         return nil
     end
+    if InCombatLockdown and InCombatLockdown() then
+        return nil
+    end
     local ok, value = pcall(C_Spell.IsSpellInRange, spellID, unit)
     if not ok then
         return nil
@@ -889,6 +896,9 @@ end
 
 local function AskForty(unit)
     if not UnitInRange or not unit then
+        return nil
+    end
+    if InCombatLockdown and InCombatLockdown() then
         return nil
     end
     local ok, inRange, checked = pcall(UnitInRange, unit)
@@ -1401,8 +1411,16 @@ local function UpdateUnit(unit, plate)
     end
     G.liveKind, G.liveName, G.liveUnit, G.liveLabel = kind, name, unit, label
     local look = G.db.look[kind]
-    pcall(RememberFromPlate, unit, plate, kind, name)
-    G.PlaceOnPlate(G.WorldHost(), look, plate, look.height or -24)
+    -- A corpse plate stays up at head height. NodeSight drops the sparkle onto the body.
+    local anchorY = look.height or -24
+    if kind == "loot" or kind == "skinning" then
+        if look.height == nil or look.height == -24 then
+            anchorY = -115
+        end
+    else
+        pcall(RememberFromPlate, unit, plate, kind, name)
+    end
+    G.PlaceOnPlate(G.WorldHost(), look, plate, anchorY)
     pcall(Announce, unit, kind, name, false, label)
     return true
 end
@@ -1519,6 +1537,30 @@ local function PlainYards(unit)
     return tonumber(step)
 end
 
+-- The corpse nameplate is gone by the 8 to 28 yard mark. Use that bracket when the yard number is hidden.
+local function BeaconYards(unit)
+    local real = RealYards(unit)
+    if real and real > 0 and real <= 55 then
+        return real
+    end
+    local near8 = InteractRange(unit, 2)
+    local near28 = InteractRange(unit, 1)
+    if near8 == true then
+        return 6
+    end
+    if near28 == true then
+        return 18
+    end
+    local step = tonumber(StepFromUnit(unit))
+    if step and step >= 5 and step <= 50 then
+        return step
+    end
+    if near8 == false and near28 == false then
+        return 40
+    end
+    return nil
+end
+
 local function AimPoint(unit, plate)
     local y, x, z = MapWorld(unit)
     if not G.Secret(y) and not G.Secret(x) and y and x then
@@ -1529,7 +1571,7 @@ local function AimPoint(unit, plate)
     end
     local py, px, pz = PlayerSpot()
     local facing = ViewYaw()
-    local dist = RealYards(unit)
+    local dist = BeaconYards(unit)
     if not dist and plate then
         dist = 4
     end
@@ -1635,8 +1677,9 @@ local function ScreenFor(y, x, z)
     end
     local w, h = GetScreenWidth(), GetScreenHeight()
     local dist = math.sqrt(dist2)
-    local sx = w * 0.5 + (side / ahead) * math.min(w * 0.28, dist * 4)
-    local sy = h * 0.38 + math.min(dist, 36) * 1.6
+    local sx = w * 0.5 + (side / ahead) * math.min(w * 0.22, dist * 3)
+    -- Farther bodies sit higher in the scene. A short guess was landing on the player.
+    local sy = h * (0.30 + math.min(dist, 48) / 80)
     if sx < 48 then
         sx = 48
     elseif sx > w - 48 then
@@ -1836,7 +1879,20 @@ local function ShowFarUnit(unit)
     end
     if kind == "loot" or kind == "skinning" then
         local guid = PlainGuid(unit)
-        if held and held.locked and guid and held.guid == guid then
+        local yards = RealYards(unit)
+        local guess = not yards
+        local stale = false
+        if held and held.y and held.x then
+            local py, px = PlayerSpot()
+            local far = BeaconYards(unit)
+            if py and px and far and far >= 12 then
+                local dx, dy = held.x - px, held.y - py
+                if (dx * dx + dy * dy) < 100 then
+                    stale = true
+                end
+            end
+        end
+        if held and held.locked and not held.guess and not stale and guid and held.guid == guid then
             held.kind = kind
             held.name = name or held.name
             held.t = GetTime()
@@ -1849,8 +1905,9 @@ local function ShowFarUnit(unit)
                 name = name,
                 guid = guid,
                 t = GetTime(),
-                locked = true,
-                real = true,
+                locked = not guess,
+                guess = guess,
+                real = not guess,
             }
         end
         local shown = ShowFar(kind, name, label, held.y, held.x, held.z, unit, held.guid)
@@ -2121,11 +2178,7 @@ local function UpdateAll()
     end
     SyncCorpse("target")
     SyncCorpse("softinteract")
-    if not shown then
-        if ShowHeld() or ShowFarUnit("target") or ShowFarUnit("softinteract") or ShowRemembered() then
-            shown = true
-        end
-    end
+    -- Loot and skin stay on the nameplate. A guessed spot was landing on the player.
     if not shown and (readable > 0 or softPlate) then
         ClearLive()
     end

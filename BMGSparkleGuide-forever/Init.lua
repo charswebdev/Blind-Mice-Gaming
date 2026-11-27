@@ -1,6 +1,6 @@
 local _, G = ...
 
-G.VERSION = "1.2.0"
+G.VERSION = "1.2.1"
 
 G.KINDS = {
     { key = "herbs", label = "Herbs", blurb = "Sparkles on herbs", sample = "Herbs", model = 219481 },
